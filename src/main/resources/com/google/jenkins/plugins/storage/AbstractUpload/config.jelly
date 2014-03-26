@@ -1,0 +1,43 @@
+<!--
+ Copyright 2013 Google Inc. All Rights Reserved.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
+         xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
+	 xmlns:a="/lib/auth">
+
+  <!-- Allow implementations to hook in form elements describing the things
+  they intend to upload -->
+  <st:include class="${descriptor.clazz}" page="elements.jelly" optional="true" />
+
+  <!-- Allow the user to specify the name of a bucket containing build
+  variables to store the uploaded files -->
+  <f:entry title="${%Storage Location}" field="bucketNameWithVars">
+    <f:textbox default="gs://" />
+  </f:entry>
+
+  <!-- Allow the user to make the file world-visible -->
+  <f:entry title="${%Share Publicly?}" field="sharedPublicly">
+    <f:checkbox />
+  </f:entry>
+
+  <!-- Allow the user to indicate that they want this even if the
+  build failed -->
+  <f:entry title="${%For failed jobs?}" field="forFailedJobs">
+    <f:checkbox />
+  </f:entry>
+
+  <!-- Allow implementations to hook in an advanced form section -->
+  <st:include class="${descriptor.clazz}" page="advanced.jelly" optional="true" />
+</j:jelly>
