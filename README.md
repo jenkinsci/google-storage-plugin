@@ -3,7 +3,7 @@ Jenkins Google Storage Credentials Plugin
 
 This plugin provides the “Google Cloud Storage Uploader” post-build step for publishing build artifacts to Google Cloud Storage.
 
-Read more: [http://wiki.jenkins-ci.org/display/JENKINS/Google+Storage+Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Google+Storage+Plugin)
+Read more: [http://wiki.jenkins-ci.org/display/JENKINS/Google+Cloud+Storage+Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Google+Cloud+Storage+Plugin)
 
 Development
 ===========
