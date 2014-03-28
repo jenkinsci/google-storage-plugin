@@ -35,7 +35,7 @@
     post-build step for publishing build artifacts to Google Cloud
     Storage.
   </description>
-  <url>http://wiki.jenkins-ci.org/display/JENKINS/Google+Storage+Plugin</url>
+  <url>http://wiki.jenkins-ci.org/display/JENKINS/Google+Cloud+Storage+Plugin</url>
   <licenses>
     <license>
       <name>The Apache V2 License</name>
