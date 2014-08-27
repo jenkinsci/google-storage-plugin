@@ -214,7 +214,7 @@ public class AbstractBucketLifecycleManagerTest {
         new MockUploadModule(executor),
         FAKE_DETAILS, null /* bucket */);
 
-    assertEquals(BUCKET_URI, underTest.getBucketNameWithVars());
+    assertEquals(BUCKET_URI, underTest.getBucket());
     assertEquals(FAKE_DETAILS, underTest.getDetails());
   }
 

@@ -126,27 +126,42 @@ public class ClassicUploadTest {
     sharedPublicly = false;
     forFailedJobs = false;
     underTest = new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
-        new MockUploadModule(executor), glob);
+        new MockUploadModule(executor), glob,
+        null /* legacy arg */, null /* legacy arg */);
   }
 
   @Test
   @WithoutJenkins
   public void testGetters() {
-    assertEquals(glob, underTest.getSourceGlobWithVars());
+    assertEquals(glob, underTest.getPattern());
+  }
+
+  @Test
+  @WithoutJenkins
+  public void testLegacyArgs() {
+    ClassicUpload legacyVersion = new ClassicUpload(null /* bucket */,
+        sharedPublicly, forFailedJobs, new MockUploadModule(executor),
+        null /* glob */, bucket, glob);
+    assertEquals(underTest.getBucket(), legacyVersion.getBucket());
+    assertEquals(underTest.isSharedPublicly(),
+        legacyVersion.isSharedPublicly());
+    assertEquals(underTest.isForFailedJobs(), legacyVersion.isForFailedJobs());
+    assertEquals(underTest.getPattern(), legacyVersion.getPattern());
   }
 
   @Test(expected = NullPointerException.class)
   @WithoutJenkins
   public void testCheckNullGlob() throws Exception {
     new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
-        new MockUploadModule(executor), null);
+        new MockUploadModule(executor), null,
+        null /* legacy arg */, null /* legacy arg */);
   }
 
   @Test
   public void testCheckNullOnNullables() throws Exception {
     // The upload should handle null for the other fields.
     new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
-        null /* module */, glob);
+        null /* module */, glob, null /* legacy arg */, null /* legacy arg */);
   }
 
   @Test
@@ -155,21 +170,21 @@ public class ClassicUploadTest {
     DescriptorImpl descriptor = new DescriptorImpl();
 
     assertEquals(FormValidation.Kind.OK,
-        descriptor.doCheckSourceGlobWithVars("asdf").kind);
+        descriptor.doCheckPattern("asdf").kind);
     // Some good sample globs we should accept
     assertEquals(FormValidation.Kind.OK,
-        descriptor.doCheckSourceGlobWithVars("target/*.war").kind);
+        descriptor.doCheckPattern("target/*.war").kind);
     assertEquals(FormValidation.Kind.OK,
-        descriptor.doCheckSourceGlobWithVars("**/target/foo.*").kind);
+        descriptor.doCheckPattern("**/target/foo.*").kind);
     // Successfully resolved
     assertEquals(FormValidation.Kind.OK,
-        descriptor.doCheckSourceGlobWithVars("asdf$BUILD_NUMBER").kind);
+        descriptor.doCheckPattern("asdf$BUILD_NUMBER").kind);
     // UN-successfully resolved
     assertEquals(FormValidation.Kind.ERROR,
-        descriptor.doCheckSourceGlobWithVars("$foo").kind);
+        descriptor.doCheckPattern("$foo").kind);
     // Escaped $BUILD_NUMBER
     assertEquals(FormValidation.Kind.ERROR,
-        descriptor.doCheckSourceGlobWithVars("$$BUILD_NUMBER").kind);
+        descriptor.doCheckPattern("$$BUILD_NUMBER").kind);
   }
 
   private void dumpLog(Run<?, ?> run) throws IOException {

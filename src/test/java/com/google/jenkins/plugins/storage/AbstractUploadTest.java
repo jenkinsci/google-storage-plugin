@@ -243,7 +243,7 @@ public class AbstractUploadTest {
         FAKE_DETAILS,
         null /* uploads */);
 
-    assertEquals(BUCKET_URI, underTest.getBucketNameWithVars());
+    assertEquals(BUCKET_URI, underTest.getBucket());
     assertEquals(sharedPublicly, underTest.isSharedPublicly());
     assertEquals(forFailedJobs, underTest.isForFailedJobs());
   }

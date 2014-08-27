@@ -169,7 +169,8 @@ public class GoogleCloudStorageUploader extends Recorder {
       return ImmutableList.<AbstractUpload>of(
           new StdoutUpload(GCS_SCHEME,
               false /* public? */, true /* for failed? */,
-              null /* module */, "build-log.txt" /* log name */));
+              null /* module */, "build-log.txt" /* log name */,
+              null /* legacy arg: bucketNameWithVars */));
     }
 
     public List<AbstractUploadDescriptor> getUploads() {

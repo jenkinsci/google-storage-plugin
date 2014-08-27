@@ -136,14 +136,25 @@ public class ExpiringBucketLifecycleManagerTest {
     forbiddenException = new ForbiddenException();
 
     underTest = new ExpiringBucketLifecycleManager(BUCKET_URI,
-        new MockUploadModule(executor), TTL);
+        new MockUploadModule(executor), TTL,
+        null /* legacy arg */, null /* legacy arg */);
   }
 
   @Test
   @WithoutJenkins
   public void testGetters() {
-    assertEquals(BUCKET_URI, underTest.getBucketNameWithVars());
-    assertEquals(TTL, underTest.getBucketObjectTTL());
+    assertEquals(BUCKET_URI, underTest.getBucket());
+    assertEquals(TTL, underTest.getTtl());
+  }
+
+  @Test
+  @WithoutJenkins
+  public void testGettersWithLegacy() {
+    underTest = new ExpiringBucketLifecycleManager(null /* bucket */,
+        new MockUploadModule(executor), null /* ttl */,
+        BUCKET_URI, TTL);
+    assertEquals(BUCKET_URI, underTest.getBucket());
+    assertEquals(TTL, underTest.getTtl());
   }
 
   @Test

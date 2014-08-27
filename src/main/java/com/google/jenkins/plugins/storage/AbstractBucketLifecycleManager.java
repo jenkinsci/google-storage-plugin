@@ -65,9 +65,9 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
    * NOTE: this hides the "make public" and "for failed" options of the
    * base, which are mainly relevant for true uploads.
    */
-  public AbstractBucketLifecycleManager(String bucketNameWithVars,
+  public AbstractBucketLifecycleManager(String bucket,
       @Nullable UploadModule module) {
-    super(bucketNameWithVars, false /*sharedPublicly*/,
+    super(bucket, false /*sharedPublicly*/,
         false /*forFailedJobs*/, module);
   }
 
