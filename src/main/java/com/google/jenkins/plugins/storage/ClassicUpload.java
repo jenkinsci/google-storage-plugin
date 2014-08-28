@@ -23,8 +23,7 @@ import javax.annotation.Nullable;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
+import com.google.common.base.Objects;
 import com.google.jenkins.plugins.util.Resolve;
 
 import hudson.Extension;
@@ -46,11 +45,16 @@ public class ClassicUpload extends AbstractUpload {
    * and the glob for matching files.
    */
   @DataBoundConstructor
-  public ClassicUpload(String bucketNameWithVars, boolean sharedPublicly,
+  public ClassicUpload(String bucket, boolean sharedPublicly,
       boolean forFailedJobs, @Nullable UploadModule module,
-      String sourceGlobWithVars) {
-    super(bucketNameWithVars, sharedPublicly, forFailedJobs, module);
-    this.sourceGlobWithVars = checkNotNull(sourceGlobWithVars);
+      String pattern,
+      // Legacy arguments for backwards compatibility
+      @Deprecated @Nullable String bucketNameWithVars,
+      @Deprecated @Nullable String sourceGlobWithVars) {
+    super(Objects.firstNonNull(bucket, bucketNameWithVars), sharedPublicly,
+        forFailedJobs, module);
+    this.sourceGlobWithVars =
+        Objects.firstNonNull(pattern, sourceGlobWithVars);
   }
 
   /**
@@ -58,7 +62,7 @@ public class ClassicUpload extends AbstractUpload {
    */
   @Override
   public String getDetails() {
-    return getSourceGlobWithVars();
+    return getPattern();
   }
 
   /**
@@ -70,7 +74,7 @@ public class ClassicUpload extends AbstractUpload {
       FilePath workspace, TaskListener listener) throws UploadException {
     try {
       String globResolvedVars = Util.replaceMacro(
-          getSourceGlobWithVars(), build.getEnvironment(listener));
+          getPattern(), build.getEnvironment(listener));
       // In order to support absolute globs (e.g. /gagent/metaOutput/std*.txt)
       // we must identify absolute paths and rebase the "workspace" to be the
       // root directory and the glob to be relative to root.
@@ -98,7 +102,7 @@ public class ClassicUpload extends AbstractUpload {
       }
       listener.getLogger().println(module.prefix(
           Messages.ClassicUpload_FoundForPattern(
-              inclusions.length, getSourceGlobWithVars())));
+              inclusions.length, getPattern())));
       return new UploadSpec(workspace, Arrays.asList(inclusions));
     } catch (InterruptedException e) {
       throw new UploadException(Messages.AbstractUpload_IncludeException(), e);
@@ -124,9 +128,10 @@ public class ClassicUpload extends AbstractUpload {
    * The glob of files to upload, which potentially contains unresolved
    * symbols, such as $JOB_NAME and $BUILD_NUMBER.
    */
-  public String getSourceGlobWithVars() {
+  public String getPattern() {
     return sourceGlobWithVars;
   }
+  /** NOTE: old name kept for deserialization */
   private final String sourceGlobWithVars;
 
 
@@ -153,13 +158,13 @@ public class ClassicUpload extends AbstractUpload {
     }
 
     /**
-     * This callback validates the {@code sourceGlobWithVars} input field's
+     * This callback validates the {@code pattern} input field's
      * values.
      */
-    public FormValidation doCheckSourceGlobWithVars(
-        @QueryParameter final String sourceGlobWithVars)
+    public FormValidation doCheckPattern(
+        @QueryParameter final String pattern)
         throws IOException {
-      String resolvedInput = Resolve.resolveBuiltin(sourceGlobWithVars);
+      String resolvedInput = Resolve.resolveBuiltin(pattern);
       if (resolvedInput.isEmpty()) {
         return FormValidation.error(
             Messages.ClassicUpload_EmptyGlob());

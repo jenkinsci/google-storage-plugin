@@ -25,6 +25,7 @@ import javax.annotation.Nullable;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.google.api.services.storage.model.Bucket;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 import hudson.Extension;
@@ -43,11 +44,14 @@ public class ExpiringBucketLifecycleManager
    * common properties.
    */
   @DataBoundConstructor
-  public ExpiringBucketLifecycleManager(String bucketNameWithVars,
-      @Nullable UploadModule module, int bucketObjectTTL) {
-    super(bucketNameWithVars, module);
+  public ExpiringBucketLifecycleManager(String bucket,
+      @Nullable UploadModule module, Integer ttl,
+      // Legacy arguments for backwards compatibility
+      @Deprecated @Nullable String bucketNameWithVars,
+      @Deprecated @Nullable Integer bucketObjectTTL) {
+    super(Objects.firstNonNull(bucket, bucketNameWithVars), module);
 
-    this.bucketObjectTTL = bucketObjectTTL;
+    this.bucketObjectTTL = Objects.firstNonNull(ttl, bucketObjectTTL);
   }
 
   /**
@@ -56,7 +60,7 @@ public class ExpiringBucketLifecycleManager
   @Override
   public String getDetails() {
     return Messages.ExpiringBucketLifecycleManager_DetailsMessage(
-        getBucketObjectTTL());
+        getTtl());
   }
 
   /**
@@ -92,7 +96,7 @@ public class ExpiringBucketLifecycleManager
       if (age == null) {
         continue;
       }
-      if (age != getBucketObjectTTL()) {
+      if (age != getTtl()) {
         continue;
       }
 
@@ -110,7 +114,7 @@ public class ExpiringBucketLifecycleManager
   protected Bucket decorateBucket(Bucket bucket) {
     Bucket.Lifecycle.Rule rule = new Bucket.Lifecycle.Rule()
         .setCondition(new Bucket.Lifecycle.Rule.Condition()
-            .setAge(getBucketObjectTTL())) // age is in days
+            .setAge(getTtl())) // age is in days
         .setAction(new Bucket.Lifecycle.Rule.Action()
             .setType(DELETE));
 
@@ -140,9 +144,10 @@ public class ExpiringBucketLifecycleManager
    * Surface the TTL for objects contained within the bucket for roundtripping
    * to the jelly UI.
    */
-  public int getBucketObjectTTL() {
+  public int getTtl() {
     return bucketObjectTTL;
   }
+  /** NOTE: old name kept for deserialization */
   private final int bucketObjectTTL;
 
   private static final String DELETE = "Delete";

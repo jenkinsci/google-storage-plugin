@@ -26,6 +26,7 @@ import org.kohsuke.stapler.QueryParameter;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.io.ByteStreams.copy;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Closeables;
 import com.google.jenkins.plugins.util.Resolve;
@@ -52,10 +53,13 @@ public class StdoutUpload extends AbstractUpload {
    * information about how to name the build log file.
    */
   @DataBoundConstructor
-  public StdoutUpload(String bucketNameWithVars, boolean sharedPublicly,
+  public StdoutUpload(@Nullable String bucket, boolean sharedPublicly,
       boolean forFailedJobs, @Nullable UploadModule module,
-      String logName) {
-    super(bucketNameWithVars, sharedPublicly, forFailedJobs, module);
+      String logName,
+      // Legacy arguments for backwards compatibility
+      @Deprecated @Nullable String bucketNameWithVars) {
+    super(Objects.firstNonNull(bucket, bucketNameWithVars), sharedPublicly,
+        forFailedJobs, module);
     this.logName = checkNotNull(logName);
   }
 

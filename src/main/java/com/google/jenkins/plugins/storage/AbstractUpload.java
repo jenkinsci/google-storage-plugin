@@ -106,20 +106,20 @@ public abstract class AbstractUpload
   /**
    * Construct the base upload from a handful of universal properties.
    *
-   * @param bucketNameWithVars The unresolved name of the storage bucket within
+   * @param bucket The unresolved name of the storage bucket within
    * which to store the resulting objects.
    * @param sharedPublicly Whether to publicly share the objects being uploaded
    * @param forFailedJobs Whether to perform the upload regardless of the
    * build's outcome
    */
-  public AbstractUpload(String bucketNameWithVars, boolean sharedPublicly,
+  public AbstractUpload(String bucket, boolean sharedPublicly,
       boolean forFailedJobs, @Nullable UploadModule module) {
     if (module != null) {
       this.module = module;
     } else {
       this.module = getDescriptor().getModule();
     }
-    this.bucketNameWithVars = checkNotNull(bucketNameWithVars);
+    this.bucketNameWithVars = checkNotNull(bucket);
     this.sharedPublicly = sharedPublicly;
     this.forFailedJobs = forFailedJobs;
   }
@@ -141,7 +141,7 @@ public abstract class AbstractUpload
       // Turn paths containing things like $BUILD_NUMBER and $JOB_NAME into
       // their fully resolved forms.
       String bucketNameResolvedVars = Util.replaceMacro(
-          getBucketNameWithVars(), build.getEnvironment(listener));
+          getBucket(), build.getEnvironment(listener));
 
       if (!bucketNameResolvedVars.startsWith(GCS_SCHEME)) {
         listener.error(module.prefix(
@@ -248,9 +248,10 @@ public abstract class AbstractUpload
    * The bucket name specified by the user, which potentially contains
    * unresolved symbols, such as $JOB_NAME and $BUILD_NUMBER.
    */
-  public String getBucketNameWithVars() {
+  public String getBucket() {
     return bucketNameWithVars;
   }
+  /** NOTE: old name kept for deserialization */
   private final String bucketNameWithVars;
 
   /**

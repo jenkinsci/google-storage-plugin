@@ -18,7 +18,7 @@
 	 xmlns:a="/lib/auth">
   <!-- Allow the user to specify the amount of time (in days) that the objects
   contained within the given bucket should last.  -->
-  <f:entry title="${%Days to retain objects}" field="bucketObjectTTL">
+  <f:entry title="${%Days to retain objects}" field="ttl">
     <f:number clazz="positive-number" />
   </f:entry>
 </j:jelly>

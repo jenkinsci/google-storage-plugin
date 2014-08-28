@@ -23,7 +23,7 @@
 
   <!-- Allow the user to specify the name of a bucket containing build
   variables to store the uploaded files -->
-  <f:entry title="${%Storage Location}" field="bucketNameWithVars">
+  <f:entry title="${%Storage Location}" field="bucket">
     <f:textbox default="gs://" />
   </f:entry>
 
