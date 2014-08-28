@@ -47,8 +47,10 @@ import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.metadata.MetadataContainer;
 import com.google.jenkins.plugins.storage.reports.BuildGcsUploadReport;
@@ -96,6 +98,10 @@ public abstract class AbstractUpload
     implements Describable<AbstractUpload>, ExtensionPoint, Serializable {
   private static final Logger logger =
       Logger.getLogger(AbstractUpload.class.getName());
+  private static final ImmutableMap<String, String> CONTENT_TYPES =
+      ImmutableMap.of(
+        "css", "text/css"
+      );
 
   /**
    * Construct the base upload from a handful of universal properties.
@@ -371,7 +377,7 @@ public abstract class AbstractUpload
             .setContentDisposition(
                 HttpHeaders.getContentDisposition(include.getName()))
             .setContentType(
-                URLConnection.guessContentTypeFromName(include.getName()))
+                detectMIMEType(include.getName()))
             .setSize(BigInteger.valueOf(include.length()));
 
         if (isSharedPublicly()) {
@@ -401,6 +407,19 @@ public abstract class AbstractUpload
     } catch (InterruptedException e) {
       throw new UploadException(
           Messages.AbstractUpload_ExceptionFileUpload(), e);
+    }
+  }
+  
+  /**
+   * Auxiliar method for detecting web-related filename extensions, so
+   * setting correctly Content-Type.
+   */
+  private String detectMIMEType(String filename) {
+    String extension = Files.getFileExtension(filename);
+    if (CONTENT_TYPES.containsKey(extension)) {
+        return CONTENT_TYPES.get(extension);
+    } else {
+        return URLConnection.guessContentTypeFromName(filename);
     }
   }
 
