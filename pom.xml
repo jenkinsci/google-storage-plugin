@@ -163,7 +163,7 @@
 
   <!-- Bring some sanity to version numbering... -->
   <properties>
-    <google.api.version>1.17.0-rc</google.api.version>
+    <google.api.version>1.19.0</google.api.version>
   </properties>
 
   <dependencies>
@@ -222,11 +222,11 @@
     </dependency>
 
     <!-- com.google.apis -->
-    <!-- https://code.google.com/p/google-api-java-client/wiki/APIs -->
+    <!-- https://developers.google.com/api-client-library/java/apis/storage/v1 -->
     <dependency>
       <groupId>com.google.apis</groupId>
       <artifactId>google-api-services-storage</artifactId>
-      <version>v1beta2-rev25-${google.api.version}</version>
+      <version>v1-rev12-${google.api.version}</version>
     </dependency>
   </dependencies>
 </project>
