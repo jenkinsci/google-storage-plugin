@@ -27,7 +27,7 @@
   -->
   <artifactId>google-storage-plugin</artifactId>
   <packaging>hpi</packaging>
-  <version>0.7</version>
+  <version>0.8-SNAPSHOT</version>
 
   <name>Google Cloud Storage plugin</name>
   <description>
