@@ -67,6 +67,8 @@ public class ClassicUploadTest {
   private ClassicUpload underTest;
   private boolean sharedPublicly;
   private boolean forFailedJobs;
+  private boolean stripPathPrefix;
+  private String pathPrefix;
 
   private final MockExecutor executor = new MockExecutor();
   private ConflictException conflictException;
@@ -125,8 +127,10 @@ public class ClassicUploadTest {
     glob = "bar.txt";
     sharedPublicly = false;
     forFailedJobs = false;
+    stripPathPrefix = false;
+    pathPrefix = null;
     underTest = new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
-        new MockUploadModule(executor), glob,
+        stripPathPrefix, pathPrefix, new MockUploadModule(executor), glob,
         null /* legacy arg */, null /* legacy arg */);
   }
 
@@ -140,8 +144,8 @@ public class ClassicUploadTest {
   @WithoutJenkins
   public void testLegacyArgs() {
     ClassicUpload legacyVersion = new ClassicUpload(null /* bucket */,
-        sharedPublicly, forFailedJobs, new MockUploadModule(executor),
-        null /* glob */, bucket, glob);
+        sharedPublicly, forFailedJobs, stripPathPrefix, pathPrefix,
+        new MockUploadModule(executor), null /* glob */, bucket, glob);
     assertEquals(underTest.getBucket(), legacyVersion.getBucket());
     assertEquals(underTest.isSharedPublicly(),
         legacyVersion.isSharedPublicly());
@@ -152,16 +156,17 @@ public class ClassicUploadTest {
   @Test(expected = NullPointerException.class)
   @WithoutJenkins
   public void testCheckNullGlob() throws Exception {
-    new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
-        new MockUploadModule(executor), null,
+    new ClassicUpload(bucket, sharedPublicly, forFailedJobs, stripPathPrefix,
+        pathPrefix, new MockUploadModule(executor), null,
         null /* legacy arg */, null /* legacy arg */);
   }
 
   @Test
   public void testCheckNullOnNullables() throws Exception {
     // The upload should handle null for the other fields.
-    new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
-        null /* module */, glob, null /* legacy arg */, null /* legacy arg */);
+    new ClassicUpload(bucket, sharedPublicly, forFailedJobs, stripPathPrefix,
+        null /* pathPrefix */, null /* module */, glob, null /* legacy arg */,
+        null /* legacy arg */);
   }
 
   @Test

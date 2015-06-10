@@ -111,9 +111,14 @@ public abstract class AbstractUpload
    * @param sharedPublicly Whether to publicly share the objects being uploaded
    * @param forFailedJobs Whether to perform the upload regardless of the
    * build's outcome
+   * @param stripPathPrefix Whether to strip the path prefix of uploaded files
+   * when determining the filename in GCS.
+   * @param pathPrefix Path prefix to optionally strip
    */
   public AbstractUpload(String bucket, boolean sharedPublicly,
-      boolean forFailedJobs, @Nullable UploadModule module) {
+      boolean forFailedJobs, boolean stripPathPrefix,
+      @Nullable String pathPrefix,
+      @Nullable UploadModule module) {
     if (module != null) {
       this.module = module;
     } else {
@@ -122,6 +127,8 @@ public abstract class AbstractUpload
     this.bucketNameWithVars = checkNotNull(bucket);
     this.sharedPublicly = sharedPublicly;
     this.forFailedJobs = forFailedJobs;
+    this.stripPathPrefix = stripPathPrefix;
+    this.pathPrefix = pathPrefix;
   }
 
   /**
@@ -271,6 +278,23 @@ public abstract class AbstractUpload
   private final boolean forFailedJobs;
 
   /**
+   * Whether to strip path prefixes from uploaded files.
+   */
+  public boolean isStripPathPrefix() {
+    return stripPathPrefix;
+  }
+  private final boolean stripPathPrefix;
+
+  /**
+   * The path prefix that will be optionally stripped from uploaded files.
+   * See {@link isStripPathPrefix()}.
+   */
+  public String getPathPrefix() {
+    return pathPrefix;
+  }
+  private final String pathPrefix;
+
+  /**
    * The module to use for providing dependencies.
    */
   protected final UploadModule module;
@@ -371,9 +395,14 @@ public abstract class AbstractUpload
 
       for (FilePath include : uploads.inclusions) {
         String relativePath = getRelative(include, uploads.workspace);
+        String uploadedFileName = relativePath;
+        if (stripPathPrefix && pathPrefix != null &&
+            relativePath.startsWith(pathPrefix)) {
+          uploadedFileName = relativePath.substring(pathPrefix.length());
+        }
 
         StorageObject object = new StorageObject()
-            .setName(FilenameUtils.concat(objectPrefix, relativePath))
+            .setName(FilenameUtils.concat(objectPrefix, uploadedFileName))
             .setMetadata(metadata)
             .setContentDisposition(
                 HttpHeaders.getContentDisposition(include.getName()))
@@ -410,7 +439,7 @@ public abstract class AbstractUpload
           Messages.AbstractUpload_ExceptionFileUpload(), e);
     }
   }
-  
+
   /**
    * Auxiliar method for detecting web-related filename extensions, so
    * setting correctly Content-Type.
