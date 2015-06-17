@@ -111,13 +111,12 @@ public abstract class AbstractUpload
    * @param sharedPublicly Whether to publicly share the objects being uploaded
    * @param forFailedJobs Whether to perform the upload regardless of the
    * build's outcome
-   * @param stripPathPrefix Whether to strip the path prefix of uploaded files
-   * when determining the filename in GCS.
-   * @param pathPrefix Path prefix to optionally strip
+   * @param pathPrefix Path prefix to strip from uploaded files when determining
+   * the filename in GCS. Null indicates no stripping. Filenames that do not
+   * start with this prefix will not be modified.
    */
   public AbstractUpload(String bucket, boolean sharedPublicly,
-      boolean forFailedJobs, boolean stripPathPrefix,
-      @Nullable String pathPrefix,
+      boolean forFailedJobs, @Nullable String pathPrefix,
       @Nullable UploadModule module) {
     if (module != null) {
       this.module = module;
@@ -127,7 +126,6 @@ public abstract class AbstractUpload
     this.bucketNameWithVars = checkNotNull(bucket);
     this.sharedPublicly = sharedPublicly;
     this.forFailedJobs = forFailedJobs;
-    this.stripPathPrefix = stripPathPrefix;
     this.pathPrefix = pathPrefix;
   }
 
@@ -278,17 +276,10 @@ public abstract class AbstractUpload
   private final boolean forFailedJobs;
 
   /**
-   * Whether to strip path prefixes from uploaded files.
+   * The path prefix that will be stripped from uploaded files. May be null
+   * if no path prefix needs to be stripped.
    */
-  public boolean isStripPathPrefix() {
-    return stripPathPrefix;
-  }
-  private final boolean stripPathPrefix;
-
-  /**
-   * The path prefix that will be optionally stripped from uploaded files.
-   * See {@link isStripPathPrefix()}.
-   */
+  @Nullable
   public String getPathPrefix() {
     return pathPrefix;
   }
@@ -396,8 +387,7 @@ public abstract class AbstractUpload
       for (FilePath include : uploads.inclusions) {
         String relativePath = getRelative(include, uploads.workspace);
         String uploadedFileName = relativePath;
-        if (stripPathPrefix && pathPrefix != null &&
-            relativePath.startsWith(pathPrefix)) {
+        if (pathPrefix != null && relativePath.startsWith(pathPrefix)) {
           uploadedFileName = relativePath.substring(pathPrefix.length());
         }
 

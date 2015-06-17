@@ -41,7 +41,7 @@
   <!-- Allow the user to indicate that they want to strip path prefixes
   from uploaded file names -->
   <f:optionalBlock title="${%Strip path prefix?}" name="stripPathPrefix"
-  inline="true" checked="${instance.stripPathPrefix}" >
+  inline="true" checked="${instance.pathPrefix != null}" >
     <f:entry title="${%Path prefix}" field="pathPrefix">
       <f:textbox default="" />
     </f:entry>

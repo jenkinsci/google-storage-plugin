@@ -60,7 +60,7 @@ public class StdoutUpload extends AbstractUpload {
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars) {
     super(Objects.firstNonNull(bucket, bucketNameWithVars), sharedPublicly,
-        forFailedJobs, stripPathPrefix, pathPrefix, module);
+        forFailedJobs, stripPathPrefix ? pathPrefix : null, module);
     this.logName = checkNotNull(logName);
   }
 

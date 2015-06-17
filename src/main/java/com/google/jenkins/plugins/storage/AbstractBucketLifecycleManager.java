@@ -62,14 +62,13 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
   /**
    * Constructs the base bucket OLM plugin from the bucket name and module.
    *
-   * NOTE: this hides the "make public", "for failed" and "strip path prefix"
+   * NOTE: this hides the "make public", "for failed" and "path prefix"
    * options of the base, which are mainly relevant for true uploads.
    */
   public AbstractBucketLifecycleManager(String bucket,
       @Nullable UploadModule module) {
     super(bucket, false /*sharedPublicly*/,
-        false /*forFailedJobs*/, false /*stripPathPrefix */,
-        null /*pathPrefix */, module);
+        false /*forFailedJobs*/, null /*pathPrefix */, module);
   }
 
   /**

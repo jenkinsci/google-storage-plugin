@@ -156,17 +156,17 @@ public class ClassicUploadTest {
   @Test(expected = NullPointerException.class)
   @WithoutJenkins
   public void testCheckNullGlob() throws Exception {
-    new ClassicUpload(bucket, sharedPublicly, forFailedJobs, stripPathPrefix,
-        pathPrefix, new MockUploadModule(executor), null,
+    new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
+        stripPathPrefix, pathPrefix, new MockUploadModule(executor), null,
         null /* legacy arg */, null /* legacy arg */);
   }
 
   @Test
   public void testCheckNullOnNullables() throws Exception {
     // The upload should handle null for the other fields.
-    new ClassicUpload(bucket, sharedPublicly, forFailedJobs, stripPathPrefix,
-        null /* pathPrefix */, null /* module */, glob, null /* legacy arg */,
-        null /* legacy arg */);
+    new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
+        false /* stripPathPrefix */, null /* pathPrefix */,
+        null /* module */, glob, null /* legacy arg */, null /* legacy arg */);
   }
 
   @Test
