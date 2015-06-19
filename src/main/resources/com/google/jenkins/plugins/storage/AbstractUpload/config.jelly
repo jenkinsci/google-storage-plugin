@@ -38,6 +38,15 @@
     <f:checkbox />
   </f:entry>
 
+  <!-- Allow the user to indicate that they want to strip path prefixes
+  from uploaded file names -->
+  <f:optionalBlock title="${%Strip path prefix?}" name="stripPathPrefix"
+  inline="true" checked="${instance.pathPrefix != null}" >
+    <f:entry title="${%Path prefix}" field="pathPrefix">
+      <f:textbox default="" />
+    </f:entry>
+  </f:optionalBlock>
+
   <!-- Allow implementations to hook in an advanced form section -->
   <st:include class="${descriptor.clazz}" page="advanced.jelly" optional="true" />
 </j:jelly>
