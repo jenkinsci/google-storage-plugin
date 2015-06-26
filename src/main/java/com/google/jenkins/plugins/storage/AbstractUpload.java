@@ -113,7 +113,8 @@ public abstract class AbstractUpload
    * build's outcome
    * @param pathPrefix Path prefix to strip from uploaded files when determining
    * the filename in GCS. Null indicates no stripping. Filenames that do not
-   * start with this prefix will not be modified.
+   * start with this prefix will not be modified. Trailing slash is
+   * automatically added if it is missing.
    */
   public AbstractUpload(String bucket, boolean sharedPublicly,
       boolean forFailedJobs, @Nullable String pathPrefix,
@@ -126,6 +127,9 @@ public abstract class AbstractUpload
     this.bucketNameWithVars = checkNotNull(bucket);
     this.sharedPublicly = sharedPublicly;
     this.forFailedJobs = forFailedJobs;
+    if (pathPrefix != null && !pathPrefix.endsWith("/")) {
+      pathPrefix += "/";
+    }
     this.pathPrefix = pathPrefix;
   }
 
