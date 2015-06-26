@@ -306,7 +306,7 @@ public class AbstractUploadTest {
   }
 
   @Test
-  public void testStripPathPrefix() throws Exception {
+  public void testStripPathPrefixWithCorrectPrefix() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
     final String pathPrefix = STRIP_PREFIX;
@@ -326,6 +326,83 @@ public class AbstractUploadTest {
         checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class,
         checkObjectName(PREFIX_STRIPPED_FILENAME));
+
+    underTest.perform(credentials, build, TaskListener.NULL);
+  }
+
+  @Test
+  public void testStripPathPrefixWithWrongPrefix() throws Exception {
+    final boolean sharedPublicly = false;
+    final boolean forFailedJobs = true;
+    final String pathPrefix = WRONG_PREFIX;
+
+    final AbstractUpload.UploadSpec uploads =
+        new AbstractUpload.UploadSpec(workspace,
+            ImmutableList.of(workspaceSubdirFile));
+
+    FakeUpload underTest = new FakeUpload(BUCKET_URI,
+        sharedPublicly, forFailedJobs, pathPrefix,
+        new MockUploadModule(executor),
+        FAKE_DETAILS,
+        uploads);
+
+    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+    executor.passThruWhen(Storage.Buckets.Insert.class,
+        checkBucketName(BUCKET_NAME));
+    executor.passThruWhen(Storage.Objects.Insert.class,
+        checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
+
+    underTest.perform(credentials, build, TaskListener.NULL);
+  }
+
+  @Test
+  public void testStripPathPrefixNoTrailingSlash() throws Exception {
+    final boolean sharedPublicly = false;
+    final boolean forFailedJobs = true;
+    final String pathPrefix = STRIP_PREFIX_NO_SLASH;
+
+    final AbstractUpload.UploadSpec uploads =
+        new AbstractUpload.UploadSpec(workspace,
+            ImmutableList.of(workspaceSubdirFile));
+
+    FakeUpload underTest = new FakeUpload(BUCKET_URI,
+        sharedPublicly, forFailedJobs, pathPrefix,
+        new MockUploadModule(executor),
+        FAKE_DETAILS,
+        uploads);
+
+    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+    executor.passThruWhen(Storage.Buckets.Insert.class,
+        checkBucketName(BUCKET_NAME));
+    executor.passThruWhen(Storage.Objects.Insert.class,
+        checkObjectName(PREFIX_STRIPPED_FILENAME));
+
+    underTest.perform(credentials, build, TaskListener.NULL);
+  }
+
+  @Test
+  public void testStripPathPrefixWithNonDirectoryPrefix() throws Exception {
+    final boolean sharedPublicly = false;
+    final boolean forFailedJobs = true;
+    // This string is a prefix of the input file string,
+    // but is not at a directory boundary;  it should not be stripped.
+    final String pathPrefix = STRIP_PREFIX_MALFORMED;
+
+    final AbstractUpload.UploadSpec uploads =
+        new AbstractUpload.UploadSpec(workspace,
+            ImmutableList.of(workspaceSubdirFile));
+
+    FakeUpload underTest = new FakeUpload(BUCKET_URI,
+        sharedPublicly, forFailedJobs, pathPrefix,
+        new MockUploadModule(executor),
+        FAKE_DETAILS,
+        uploads);
+
+    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+    executor.passThruWhen(Storage.Buckets.Insert.class,
+        checkBucketName(BUCKET_NAME));
+    executor.passThruWhen(Storage.Objects.Insert.class,
+        checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -718,10 +795,12 @@ public class AbstractUploadTest {
   private static final String FILENAME = "bar.baz";
   private static final String SUBDIR_PREFIX = "foo/bar";
   private static final String SUBDIR_FILENAME = "foo/bar/bar.baz";
+  private static final String WRONG_PREFIX = "qqq/";
   private static final String STRIP_PREFIX = "foo/";
+  private static final String STRIP_PREFIX_NO_SLASH = "foo";
+  private static final String STRIP_PREFIX_MALFORMED = "foo/ba";
   private static final String PREFIX_STRIPPED_FILENAME = "bar/bar.baz";
   private static final String FAKE_DETAILS = "These are my fake details";
-
   private static final String FIRST_NAME = "foo";
   private static final String SECOND_NAME = "bar";
 }
