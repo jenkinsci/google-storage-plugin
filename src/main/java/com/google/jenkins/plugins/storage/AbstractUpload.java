@@ -301,7 +301,7 @@ public abstract class AbstractUpload
    */
   public static DescriptorExtensionList<AbstractUpload,
       AbstractUploadDescriptor> all() {
-    return Hudson.getInstance().<AbstractUpload,
+    return checkNotNull(Hudson.getInstance()).<AbstractUpload,
         AbstractUploadDescriptor>getDescriptorList(AbstractUpload.class);
   }
 
@@ -310,8 +310,8 @@ public abstract class AbstractUpload
    * https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
    */
   public AbstractUploadDescriptor getDescriptor() {
-    return (AbstractUploadDescriptor) Hudson.getInstance().getDescriptor(
-        getClass());
+    return (AbstractUploadDescriptor) checkNotNull(Hudson.getInstance())
+        .getDescriptor(getClass());
   }
 
   /**
