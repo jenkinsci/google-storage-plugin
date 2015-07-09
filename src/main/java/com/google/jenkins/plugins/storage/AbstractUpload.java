@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 import javax.annotation.Nullable;
 
 import org.apache.commons.io.FilenameUtils;
+import org.jenkinsci.remoting.RoleChecker;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor.GCS_SCHEME;
@@ -350,6 +351,13 @@ public abstract class AbstractUpload
                   remoteCredentials, uploads, listener);
               return (Void) null;
             }
+
+            @Override
+            public void checkRoles(RoleChecker checker)
+                throws SecurityException {
+              // We know by definition that this is the correct role;
+              // the callable exists only in this method context.
+            }
           });
 
       // We can't do this over the wire, so do it in bulk here
@@ -453,8 +461,9 @@ public abstract class AbstractUpload
    */
   private void performUploadWithRetry(Executor executor, Storage service,
       Bucket bucket, StorageObject object, FilePath include)
-      throws ExecutorException, IOException {
-    IOException lastException = null;
+      throws ExecutorException, IOException, InterruptedException {
+    IOException lastIOException = null;
+    InterruptedException lastInterruptedException = null;
     for (int i = 0; i < module.getInsertRetryCount(); ++i) {
       try {
         // Create the insertion operation with the decorated object and
@@ -475,7 +484,10 @@ public abstract class AbstractUpload
         return;
       } catch (IOException e) {
         logger.log(SEVERE, Messages.AbstractUpload_UploadError(i), e);
-        lastException = e;
+        lastIOException = e;
+      } catch (InterruptedException e) {
+        logger.log(SEVERE, Messages.AbstractUpload_UploadError(i), e);
+        lastInterruptedException = e;
       }
 
       // Pause before we retry
@@ -484,7 +496,10 @@ public abstract class AbstractUpload
 
     // NOTE: We only reach here along paths that encountered an exception.
     // The "happy path" returns from the "try" statement above.
-    throw checkNotNull(lastException);
+    if (lastIOException != null) {
+      throw lastIOException;
+    }
+    throw checkNotNull(lastInterruptedException);
   }
 
   // Fetch the default object ACL for this bucket. Return an empty list if
