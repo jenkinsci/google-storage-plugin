@@ -19,6 +19,8 @@ import java.io.IOException;
 
 import javax.annotation.Nullable;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Bucket;
 import com.google.common.collect.ImmutableList;
@@ -170,6 +172,6 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
    */
   public AbstractBucketLifecycleManagerDescriptor getDescriptor() {
     return (AbstractBucketLifecycleManagerDescriptor)
-        Hudson.getInstance().getDescriptor(getClass());
+        checkNotNull(Hudson.getInstance()).getDescriptor(getClass());
   }
 }
