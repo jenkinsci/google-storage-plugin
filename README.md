@@ -3,9 +3,7 @@ Jenkins Google Storage Credentials Plugin
 
 This plugin provides the “Google Cloud Storage Uploader” post-build step for publishing build artifacts to Google Cloud Storage.
 
-Why did I clone this repo?
---------------
-I wanted to remove Content-Disposition header being automaticly added to the upload since html files where downloaded instead of viewed.
+[![Build Status](https://jenkins.ci.cloudbees.com/buildStatus/icon?job=plugins/google-storage-plugin)](https://jenkins.ci.cloudbees.com/job/plugins/job/google-storage-plugin/)
 
 Read more: [http://wiki.jenkins-ci.org/display/JENKINS/Google+Cloud+Storage+Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Google+Cloud+Storage+Plugin)
 
