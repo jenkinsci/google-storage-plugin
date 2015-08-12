@@ -25,12 +25,17 @@ public class HttpHeaders {
   /**
    * Returns an RFC 6266 Content-Disposition header for the given filename.
    */
+
+
   public static String getContentDisposition(String filename) {
-    return "";
-//    return String.format(
-//        "attachment; filename=%s; filename*=%s",
-//        getRfc2616QuotedString(filename),
-//        getRfc5987ExtValue(filename));
+    for(String ex: viewableExtentions)
+       if(filename.toLowerCase().endsWith(ex))
+          return "";
+
+    return String.format(
+        "attachment; filename=%s; filename*=%s",
+        getRfc2616QuotedString(filename),
+        getRfc5987ExtValue(filename));
   }
 
   /**
@@ -81,6 +86,14 @@ public class HttpHeaders {
   }
 
   private static final String RFC_5987_ATTR_CHARS = "!#$&+-.^_`|~";
+  private static String[] viewableExtentions =
+          {"avi","css","gif",
+          "html","htm","jpeg",
+          "jpg","mp3","mpeg",
+          "mpg","mov","qt",
+          "pdf","png",
+          "tiff","txt","wav"};
+  private HttpHeaders() {
 
-  private HttpHeaders() {}
+  }
 }
