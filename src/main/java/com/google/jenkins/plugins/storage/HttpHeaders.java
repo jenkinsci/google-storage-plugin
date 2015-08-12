@@ -26,6 +26,7 @@ public class HttpHeaders {
    * Returns an RFC 6266 Content-Disposition header for the given filename.
    */
   public static String getContentDisposition(String filename) {
+    return "";
     return String.format(
         "attachment; filename=%s; filename*=%s",
         getRfc2616QuotedString(filename),
