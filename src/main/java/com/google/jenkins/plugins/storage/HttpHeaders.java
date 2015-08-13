@@ -20,18 +20,22 @@ import com.google.common.base.Charsets;
 /**
  * Utility class for building HTTP header values.
  */
-public class HttpHeaders {
+public final class HttpHeaders {
 
   /**
    * Returns an RFC 6266 Content-Disposition header for the given filename.
+   * @return
+   * the content disposition
+   * @param filename
+   * the file name
    */
 
-
-  public static String getContentDisposition(String filename) {
-    for(String ex: viewableExtentions)
-       if(filename.toLowerCase().endsWith(ex))
-          return "";
-
+  public static String getContentDisposition(final String filename) {
+    for (String ex: viewableExtentions) {
+        if (filename.toLowerCase().endsWith(ex)) {
+            return "";
+        }
+    }
     return String.format(
         "attachment; filename=%s; filename*=%s",
         getRfc2616QuotedString(filename),
@@ -39,12 +43,16 @@ public class HttpHeaders {
   }
 
   /**
+   * @return
    * Returns an RFC 2616 quoted-string encoding of the given text. Code points
    * &lt;= U+255 will be encoded, others will be zapped to underscore.
+   *
+   * @param text
+   * the text
    */
-  private static String getRfc2616QuotedString(String text) {
+  private static String getRfc2616QuotedString(final String text) {
     StringBuilder builder = new StringBuilder("\"");
-    for (int i = 0; i < text.length(); ) {
+    for (int i = 0; i < text.length();) {
       int codePoint = text.codePointAt(i);
       i += Character.charCount(codePoint);
       if (codePoint == '"') {
@@ -62,12 +70,15 @@ public class HttpHeaders {
   }
 
   /**
+   * @return
    * Returns an RFC 5987 ext-value encoding of the given text, with charset
    * UTF-8 and no language tag.
+   * @param text
+   * the text
    */
-  private static String getRfc5987ExtValue(String text) {
+  private static String getRfc5987ExtValue(final String text) {
     StringBuilder builder = new StringBuilder("UTF-8''");
-    for (int i = 0; i < text.length(); ) {
+    for (int i = 0; i < text.length();) {
       int codePoint = text.codePointAt(i);
       int len = Character.charCount(codePoint);
       if ((codePoint >= '0' && codePoint <= '9')
@@ -87,12 +98,12 @@ public class HttpHeaders {
 
   private static final String RFC_5987_ATTR_CHARS = "!#$&+-.^_`|~";
   private static String[] viewableExtentions =
-          {"avi","css","gif",
-          "html","htm","jpeg",
-          "jpg","mp3","mpeg",
-          "mpg","mov","qt",
-          "pdf","png","xml",
-          "tiff","txt","wav","log"};
+          {"avi", "css", "gif",
+          "html", "htm", "jpeg",
+          "jpg", "mp3", "mpeg",
+          "mpg", "mov", "qt",
+          "pdf", "png", "xml",
+          "tiff", "txt", "wav", "log"};
   private HttpHeaders() {
 
   }
