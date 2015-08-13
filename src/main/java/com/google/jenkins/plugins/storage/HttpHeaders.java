@@ -91,8 +91,8 @@ public class HttpHeaders {
           "html","htm","jpeg",
           "jpg","mp3","mpeg",
           "mpg","mov","qt",
-          "pdf","png",
-          "tiff","txt","wav"};
+          "pdf","png","xml",
+          "tiff","txt","wav","log"};
   private HttpHeaders() {
 
   }
