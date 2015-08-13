@@ -80,8 +80,8 @@ public class HttpHeadersTest {
                         "Html","htm","jpeg",
                         "jpg","MP3","mpeg",
                         "mpg","mov","qt",
-                        "pdf","png",
-                        "tiff","TXT","wav"};
+                        "pdf","png","XML",
+                        "tiff","TXT","wav","log"};
         for(String ex: viewableExtentions)
             assertEquals("",HttpHeaders.getContentDisposition("someFile." + ex));
     }
