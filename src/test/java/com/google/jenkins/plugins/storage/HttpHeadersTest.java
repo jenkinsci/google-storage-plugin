@@ -22,8 +22,8 @@ import org.junit.Test;
 /**
  * Tests for {@link HttpHeaders}.
  */
-public class HttpHeadersTest {
 
+public class HttpHeadersTest {
   @Test
   public void testGetContentDisposition_ascii() {
     assertEquals(
@@ -31,17 +31,17 @@ public class HttpHeadersTest {
         HttpHeaders.getContentDisposition("myapp.war"));
 
     assertEquals(
-        "attachment; filename=\"contains space.txt\"; "
-            + "filename*=UTF-8''contains%20space.txt",
-        HttpHeaders.getContentDisposition("contains space.txt"));
+        "attachment; filename=\"contains space.txt2\"; "
+            + "filename*=UTF-8''contains%20space.txt2",
+        HttpHeaders.getContentDisposition("contains space.txt2"));
   }
 
   @Test
   public void testGetContentDisposition_unicodeBmp() {
     assertEquals(
-        "attachment; filename=\"snowman _.txt\"; "
-            + "filename*=UTF-8''snowman%20%E2%98%83.txt",
-        HttpHeaders.getContentDisposition("snowman ☃.txt"));
+        "attachment; filename=\"snowman _.txt2\"; "
+            + "filename*=UTF-8''snowman%20%E2%98%83.txt2",
+        HttpHeaders.getContentDisposition("snowman ☃.txt2"));
   }
 
   @Test
@@ -73,4 +73,19 @@ public class HttpHeadersTest {
             + "%3C%3E%2C%2F%3F",
         HttpHeaders.getContentDisposition("@%*()=[]{}\\:;\"'<>,/?"));
   }
+
+    @Test
+    public void testGetContentDisposition_emptyForViewableFiles() {
+        String[] viewableExtentions =
+                {"avi", "css", "gif",
+                        "Html", "htm", "jpeg",
+                        "jpg", "MP3", "mpeg",
+                        "mpg", "mov", "qt",
+                        "pdf", "png", "XML",
+                        "tiff", "TXT", "wav", "log"};
+        for (String ex: viewableExtentions) {
+            assertEquals("",
+                    HttpHeaders.getContentDisposition("someFile." + ex));
+        }
+    }
 }
