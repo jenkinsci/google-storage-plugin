@@ -28,12 +28,19 @@ public class HttpHeadersTest {
   public void testGetContentDisposition_ascii() {
     assertEquals(
         "attachment; filename=\"myapp.war\"; filename*=UTF-8''myapp.war",
-        HttpHeaders.getContentDisposition("myapp.war"));
+        HttpHeaders.getContentDisposition("myapp.war", false));
 
     assertEquals(
         "attachment; filename=\"contains space.txt\"; "
             + "filename*=UTF-8''contains%20space.txt",
-        HttpHeaders.getContentDisposition("contains space.txt"));
+        HttpHeaders.getContentDisposition("contains space.txt", false));
+  }
+
+  @Test
+  public void testGetContentDisposition_asciiInline() {
+    assertEquals(
+        "inline; filename=\"build-log.txt\"; filename*=UTF-8''build-log.txt",
+        HttpHeaders.getContentDisposition("build-log.txt", true));
   }
 
   @Test
@@ -41,28 +48,28 @@ public class HttpHeadersTest {
     assertEquals(
         "attachment; filename=\"snowman _.txt\"; "
             + "filename*=UTF-8''snowman%20%E2%98%83.txt",
-        HttpHeaders.getContentDisposition("snowman ☃.txt"));
+        HttpHeaders.getContentDisposition("snowman ☃.txt", false));
   }
 
   @Test
   public void testGetContentDisposition_unicodeNonBmp() {
     assertEquals(
         "attachment; filename=\"_.zip\"; filename*=UTF-8''%F0%9D%92%9E.zip",
-        HttpHeaders.getContentDisposition("𝒞.zip"));
+        HttpHeaders.getContentDisposition("𝒞.zip", false));
   }
 
   @Test
   public void testGetContentDisposition_rfc2616Escapes() {
     assertEquals(
         "attachment; filename=\"-\\\\-\\\"-\"; filename*=UTF-8''-%5C-%22-",
-        HttpHeaders.getContentDisposition("-\\-\"-"));
+        HttpHeaders.getContentDisposition("-\\-\"-", false));
   }
 
   @Test
   public void testGetContentDisposition_rfc5987IdentitySymbols() {
     assertEquals(
         "attachment; filename=\"!#$&+-.^_`|~\"; filename*=UTF-8''!#$&+-.^_`|~",
-        HttpHeaders.getContentDisposition("!#$&+-.^_`|~"));
+        HttpHeaders.getContentDisposition("!#$&+-.^_`|~", false));
   }
 
   @Test
@@ -71,6 +78,6 @@ public class HttpHeadersTest {
         "attachment; filename=\"@%*()=[]{}\\\\:;\\\"'<>,/?\"; "
             + "filename*=UTF-8''%40%25%2A%28%29%3D%5B%5D%7B%7D%5C%3A%3B%22%27"
             + "%3C%3E%2C%2F%3F",
-        HttpHeaders.getContentDisposition("@%*()=[]{}\\:;\"'<>,/?"));
+        HttpHeaders.getContentDisposition("@%*()=[]{}\\:;\"'<>,/?", false));
   }
 }

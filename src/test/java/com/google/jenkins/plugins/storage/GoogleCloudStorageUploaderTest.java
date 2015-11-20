@@ -85,6 +85,7 @@ public class GoogleCloudStorageUploaderTest {
   private GoogleCloudStorageUploader underTest;
   private boolean sharedPublicly;
   private boolean forFailedJobs;
+  private boolean showInline;
   private boolean stripPathPrefix;
   private String pathPrefix;
 
@@ -167,11 +168,12 @@ public class GoogleCloudStorageUploaderTest {
     glob = "bar.txt";
     sharedPublicly = false;
     forFailedJobs = false;
+    showInline = false;
     stripPathPrefix = false;
     pathPrefix = null;
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
+            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
                 stripPathPrefix, pathPrefix, new MockUploadModule(executor),
                 glob, null /* legacy arg*/, null /* legacy arg */)));
   }
@@ -232,7 +234,7 @@ public class GoogleCloudStorageUploaderTest {
     bucket = "bucket";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
+            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
                 stripPathPrefix, pathPrefix, new MockUploadModule(executor),
                 glob, null /* legacy arg */, null /* legacy arg */)));
 
@@ -281,7 +283,7 @@ public class GoogleCloudStorageUploaderTest {
     forFailedJobs = true;
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
+            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
                 stripPathPrefix, pathPrefix, new MockUploadModule(executor),
                 glob, null /* legacy arg */, null /* legacy arg */)));
 
@@ -303,7 +305,7 @@ public class GoogleCloudStorageUploaderTest {
   public void testStdoutUpload() throws Exception {
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new StdoutUpload(bucket, sharedPublicly, forFailedJobs,
+            new StdoutUpload(bucket, sharedPublicly, forFailedJobs, showInline,
                 stripPathPrefix, pathPrefix, new MockUploadModule(executor),
                 "build-log.txt", null /* legacy arg */)));
 
@@ -324,7 +326,7 @@ public class GoogleCloudStorageUploaderTest {
     glob = "*.txt";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
+            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
                 stripPathPrefix, pathPrefix, new MockUploadModule(executor),
                 glob, null /* legacy arg */, null /* legacy arg */)));
 
@@ -346,7 +348,7 @@ public class GoogleCloudStorageUploaderTest {
     glob = absoluteFilePath;
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
+            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
                 stripPathPrefix, pathPrefix, new MockUploadModule(executor),
                 glob, null /* legacy arg */, null /* legacy arg */)));
 
@@ -370,7 +372,7 @@ public class GoogleCloudStorageUploaderTest {
     glob = "/tmp/bar.*.txt";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
+            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
                 stripPathPrefix, pathPrefix, new MockUploadModule(executor),
                 glob, null /* legacy arg */, null /* legacy arg */)));
 
@@ -395,7 +397,7 @@ public class GoogleCloudStorageUploaderTest {
     glob = "bar.$BUILD_NUMBER.txt";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
+            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
                 stripPathPrefix, pathPrefix, new MockUploadModule(executor),
                 glob, null /* legacy arg */, null /* legacy arg */)));
 
@@ -417,7 +419,7 @@ public class GoogleCloudStorageUploaderTest {
     glob = "blah/bar.txt";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
+            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
                 stripPathPrefix, pathPrefix, new MockUploadModule(executor),
                 glob, null /* legacy arg */, null /* legacy arg */)));
 
@@ -439,7 +441,7 @@ public class GoogleCloudStorageUploaderTest {
     glob = "**/*.txt";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
+            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
                 stripPathPrefix, pathPrefix, new MockUploadModule(executor),
                 glob, null /* legacy arg */, null /* legacy arg */)));
 
@@ -461,7 +463,7 @@ public class GoogleCloudStorageUploaderTest {
     glob = "*.txt";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
+            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
                 stripPathPrefix, pathPrefix, new MockUploadModule(executor),
                 glob, null /* legacy arg */, null /* legacy arg */)));
 

@@ -170,6 +170,7 @@ public class GoogleCloudStorageUploader extends Recorder {
           new StdoutUpload(GCS_SCHEME,
               false /* public? */, true /* for failed? */,
               false /* strip path prefix? */,
+              false /* show inline? */,
               null /* path prefix */,
               null /* module */, "build-log.txt" /* log name */,
               null /* legacy arg: bucketNameWithVars */));

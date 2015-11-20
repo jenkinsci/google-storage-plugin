@@ -162,9 +162,9 @@ public class AbstractUploadTest {
 
   private static class FakeUpload extends AbstractUpload {
     public FakeUpload(String bucket, boolean isPublic, boolean forFailed,
-        @Nullable String pathPrefix, MockUploadModule module, String details,
-        @Nullable UploadSpec uploads) {
-      super(bucket, isPublic, forFailed, pathPrefix, module);
+        boolean showInline, @Nullable String pathPrefix,
+        MockUploadModule module, String details, @Nullable UploadSpec uploads) {
+      super(bucket, isPublic, forFailed, showInline, pathPrefix, module);
       this.details = details;
       this.uploads = uploads;
     }
@@ -255,9 +255,10 @@ public class AbstractUploadTest {
   public void testGetters() {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = true;
     final String pathPrefix = null;
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         null /* uploads */);
@@ -265,6 +266,7 @@ public class AbstractUploadTest {
     assertEquals(BUCKET_URI, underTest.getBucket());
     assertEquals(sharedPublicly, underTest.isSharedPublicly());
     assertEquals(forFailedJobs, underTest.isForFailedJobs());
+    assertEquals(showInline, underTest.isShowInline());
   }
 
   @Test(expected = NullPointerException.class)
@@ -273,6 +275,7 @@ public class AbstractUploadTest {
     new FakeUpload(null /* TESTING NULL BUCKET*/,
         false /* sharedPublicly */,
         true /* forFailedJobs */,
+        false /* showInline */,
         null /* pathPrefix */,
         new MockUploadModule(executor),
         FAKE_DETAILS,
@@ -285,6 +288,7 @@ public class AbstractUploadTest {
     new FakeUpload(BUCKET_URI,
         false /* sharedPublicly */,
         true /* forFailedJobs */,
+        false /* showInline */,
         null /* pathPrefix */,
         null /* TESTING NULL MODULE*/,
         FAKE_DETAILS,
@@ -295,6 +299,7 @@ public class AbstractUploadTest {
   public void testKeepPathPrefix() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     final AbstractUpload.UploadSpec uploads =
@@ -302,7 +307,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceSubdirFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -320,6 +325,7 @@ public class AbstractUploadTest {
   public void testStripPathPrefixWithCorrectPrefix() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = STRIP_PREFIX;
 
     final AbstractUpload.UploadSpec uploads =
@@ -327,7 +333,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceSubdirFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -351,6 +357,7 @@ public class AbstractUploadTest {
   public void testStripPathPrefixWithWrongPrefix() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = WRONG_PREFIX;
 
     final AbstractUpload.UploadSpec uploads =
@@ -358,7 +365,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceSubdirFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -376,6 +383,7 @@ public class AbstractUploadTest {
   public void testStripPathPrefixNoTrailingSlash() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = STRIP_PREFIX_NO_SLASH;
 
     final AbstractUpload.UploadSpec uploads =
@@ -383,7 +391,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceSubdirFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -401,6 +409,7 @@ public class AbstractUploadTest {
   public void testStripPathPrefixWithNonDirectoryPrefix() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     // This string is a prefix of the input file string,
     // but is not at a directory boundary;  it should not be stripped.
     final String pathPrefix = STRIP_PREFIX_MALFORMED;
@@ -410,7 +419,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceSubdirFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -428,6 +437,7 @@ public class AbstractUploadTest {
   public void testOnePartPrefix() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     final AbstractUpload.UploadSpec uploads =
@@ -435,7 +445,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -453,6 +463,7 @@ public class AbstractUploadTest {
   public void testTwoPartPrefix() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     final AbstractUpload.UploadSpec uploads =
@@ -460,7 +471,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI + "/" + STORAGE_PREFIX,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -478,6 +489,7 @@ public class AbstractUploadTest {
   public void testRetryOnFailure() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     final AbstractUpload.UploadSpec uploads =
@@ -485,7 +497,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor, 2 /* retries */),
         FAKE_DETAILS,
         uploads);
@@ -505,6 +517,7 @@ public class AbstractUploadTest {
   public void testRetryOnFailureStillFails() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     final AbstractUpload.UploadSpec uploads =
@@ -512,7 +525,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor, 2 /* retries */),
         FAKE_DETAILS,
         uploads);
@@ -532,6 +545,7 @@ public class AbstractUploadTest {
   public void testRetryOn401() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
     
     Bucket bucket = new Bucket();
@@ -543,7 +557,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceFile, workspaceFile2));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor), /* no retries */
         FAKE_DETAILS,
         uploads);
@@ -567,6 +581,7 @@ public class AbstractUploadTest {
   public void testRetryOn401StillFails() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
     
     Bucket bucket = new Bucket();
@@ -578,7 +593,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor), /* no retries */
         FAKE_DETAILS,
         uploads);
@@ -600,10 +615,11 @@ public class AbstractUploadTest {
   public void testNullUploadSpec() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI + "/" + STORAGE_PREFIX,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         null /* uploads */);
@@ -616,13 +632,14 @@ public class AbstractUploadTest {
   public void testWorkspaceNoFiles() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     final AbstractUpload.UploadSpec uploads =
         new AbstractUpload.UploadSpec(workspace, ImmutableList.<FilePath>of());
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI + "/" + STORAGE_PREFIX,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -639,13 +656,14 @@ public class AbstractUploadTest {
   public void testBucketConflict() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     final AbstractUpload.UploadSpec uploads =
         new AbstractUpload.UploadSpec(workspace, ImmutableList.<FilePath>of());
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -666,13 +684,14 @@ public class AbstractUploadTest {
   public void testBucketException() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     final AbstractUpload.UploadSpec uploads =
         new AbstractUpload.UploadSpec(workspace, ImmutableList.<FilePath>of());
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -687,6 +706,7 @@ public class AbstractUploadTest {
   public void testTrailingSlash() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     final AbstractUpload.UploadSpec uploads =
@@ -695,7 +715,7 @@ public class AbstractUploadTest {
 
     FakeUpload underTest = new FakeUpload(
         BUCKET_URI + "/" + STORAGE_PREFIX + "/",
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -714,6 +734,7 @@ public class AbstractUploadTest {
   public void testSharedPublicly() throws Exception {
     final boolean sharedPublicly = true;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     final AbstractUpload.UploadSpec uploads =
@@ -721,7 +742,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -760,6 +781,7 @@ public class AbstractUploadTest {
   public void testNotShared() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     final AbstractUpload.UploadSpec uploads =
@@ -767,7 +789,7 @@ public class AbstractUploadTest {
             ImmutableList.of(workspaceFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);
@@ -795,6 +817,7 @@ public class AbstractUploadTest {
   public void upload_nofile() throws UploadException, IOException {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
+    final boolean showInline = false;
     final String pathPrefix = null;
 
     FilePath nonExistentFile = workspace.child("non-existent-file");
@@ -803,7 +826,7 @@ public class AbstractUploadTest {
             ImmutableList.of(nonExistentFile));
 
     FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
+        sharedPublicly, forFailedJobs, showInline, pathPrefix,
         new MockUploadModule(executor),
         FAKE_DETAILS,
         uploads);

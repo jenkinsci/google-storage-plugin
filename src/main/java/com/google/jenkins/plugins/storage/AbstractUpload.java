@@ -117,13 +117,16 @@ public abstract class AbstractUpload
    * @param sharedPublicly Whether to publicly share the objects being uploaded
    * @param forFailedJobs Whether to perform the upload regardless of the
    * build's outcome
+   * @param showInline Whether to indicate in metadata that the file should be
+   * viewable inline in web browsers, rather than requiring it to be downloaded
+   * first.
    * @param pathPrefix Path prefix to strip from uploaded files when determining
    * the filename in GCS. Null indicates no stripping. Filenames that do not
    * start with this prefix will not be modified. Trailing slash is
    * automatically added if it is missing.
    */
   public AbstractUpload(String bucket, boolean sharedPublicly,
-      boolean forFailedJobs, @Nullable String pathPrefix,
+      boolean forFailedJobs, boolean showInline, @Nullable String pathPrefix,
       @Nullable UploadModule module) {
     if (module != null) {
       this.module = module;
@@ -133,6 +136,7 @@ public abstract class AbstractUpload
     this.bucketNameWithVars = checkNotNull(bucket);
     this.sharedPublicly = sharedPublicly;
     this.forFailedJobs = forFailedJobs;
+    this.showInline = showInline;
     if (pathPrefix != null && !pathPrefix.endsWith("/")) {
       pathPrefix += "/";
     }
@@ -286,6 +290,15 @@ public abstract class AbstractUpload
   private final boolean forFailedJobs;
 
   /**
+   * Whether to indicate in metadata that the file should be viewable inline
+   * in web browsers, rather than requiring it to be downloaded first.
+   */
+  public boolean isShowInline() {
+    return showInline;
+  }
+  private final boolean showInline;
+
+  /**
    * The path prefix that will be stripped from uploaded files. May be null
    * if no path prefix needs to be stripped.
    */
@@ -417,7 +430,8 @@ public abstract class AbstractUpload
           StorageObject object = new StorageObject()
               .setName(finalName)
               .setContentDisposition(
-                  HttpHeaders.getContentDisposition(include.getName()))
+                  HttpHeaders.getContentDisposition(
+                    include.getName(), isShowInline()))
               .setContentType(
                   detectMIMEType(include.getName()))
               .setSize(BigInteger.valueOf(include.length()));
