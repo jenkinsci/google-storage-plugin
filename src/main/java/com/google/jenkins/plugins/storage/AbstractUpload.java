@@ -412,9 +412,11 @@ public abstract class AbstractUpload
       for (FilePath include : uploads.inclusions) {
         String relativePath = getRelative(include, uploads.workspace);
         String uploadedFileName = getUploadedFileName(relativePath);
-
+        String finalName = FilenameUtils.separatorsToUnix(
+            FilenameUtils.concat(objectPrefix, uploadedFileName));
+ 
         StorageObject object = new StorageObject()
-            .setName(FilenameUtils.concat(objectPrefix, uploadedFileName))
+            .setName(finalName)
             .setMetadata(metadata)
             .setContentDisposition(
                 HttpHeaders.getContentDisposition(include.getName()))
