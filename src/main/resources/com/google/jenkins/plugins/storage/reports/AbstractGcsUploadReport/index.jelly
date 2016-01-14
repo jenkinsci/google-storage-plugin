@@ -19,8 +19,8 @@
     <st:include it="${it.parent}" page="sidepanel.jelly" />
     <l:main-panel>
       <h1>Uploaded artifacts (build #${it.buildNumber})</h1>
-        <j:set var="baseUrl" value="https://cloud.google.com/console/storage" />
-        <j:set var="downloadUrl" value="https://storage.cloud.google.com" />
+        <j:set var="baseUrl" value="https://console.cloud.google.com/storage" />
+        <j:set var="downloadUrl" value="https://storage.googleapis.com" />
         <h3>Buckets</h3>
         <ul>
         <j:forEach items="${it.buckets}" var="bucket">
