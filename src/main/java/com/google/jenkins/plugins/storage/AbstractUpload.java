@@ -363,7 +363,8 @@ public abstract class AbstractUpload
       // We can't do this over the wire, so do it in bulk here
       BuildGcsUploadReport report = BuildGcsUploadReport.of(build);
       for (FilePath include : uploads.inclusions) {
-          String uploadedFileName = getUploadedFileName(getRelative(include, uploads.workspace));
+          String uploadedFileName = getUploadedFileName(
+              getRelative(include, uploads.workspace));
           report.addUpload(uploadedFileName,
             storagePrefix);
       }
@@ -383,8 +384,7 @@ public abstract class AbstractUpload
   /**
    * Get uploaded file name with pathPrefix stripped if required.
    */
-  private String getUploadedFileName(String relativePath)
-  {
+  private String getUploadedFileName(String relativePath) {
       String uploadedFileName = relativePath;
       if (pathPrefix != null && relativePath.startsWith(pathPrefix)) {
           uploadedFileName = relativePath.substring(pathPrefix.length());
