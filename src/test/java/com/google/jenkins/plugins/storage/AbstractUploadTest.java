@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
@@ -57,6 +58,7 @@ import com.google.common.collect.Sets;
 import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.ClassicUpload.DescriptorImpl;
+import com.google.jenkins.plugins.storage.reports.BuildGcsUploadReport;
 import com.google.jenkins.plugins.util.ConflictException;
 import com.google.jenkins.plugins.util.ForbiddenException;
 import com.google.jenkins.plugins.util.MockExecutor;
@@ -328,6 +330,12 @@ public class AbstractUploadTest {
         checkObjectName(PREFIX_STRIPPED_FILENAME));
 
     underTest.perform(credentials, build, TaskListener.NULL);
+
+    BuildGcsUploadReport buildReport = BuildGcsUploadReport.of(build);
+    assertNotNull(buildReport);
+    assertEquals(1, buildReport.getStorageObjects().size());
+    assertEquals(BUCKET_PREFIX_STRIPPED_FILENAME,
+        Iterables.getLast(buildReport.getStorageObjects()));
   }
 
   @Test
@@ -800,6 +808,8 @@ public class AbstractUploadTest {
   private static final String STRIP_PREFIX_NO_SLASH = "foo";
   private static final String STRIP_PREFIX_MALFORMED = "foo/ba";
   private static final String PREFIX_STRIPPED_FILENAME = "bar/bar.baz";
+  private static final String BUCKET_PREFIX_STRIPPED_FILENAME
+      = "ma-bucket/bar/bar.baz";
   private static final String FAKE_DETAILS = "These are my fake details";
   private static final String FIRST_NAME = "foo";
   private static final String SECOND_NAME = "bar";

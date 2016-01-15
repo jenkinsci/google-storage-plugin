@@ -363,8 +363,8 @@ public abstract class AbstractUpload
       // We can't do this over the wire, so do it in bulk here
       BuildGcsUploadReport report = BuildGcsUploadReport.of(build);
       for (FilePath include : uploads.inclusions) {
-        report.addUpload(getRelative(include, uploads.workspace),
-            storagePrefix);
+        report.addUpload(getStrippedFilename(
+            getRelative(include, uploads.workspace)), storagePrefix);
       }
 
     } catch (IOException e) {
@@ -398,10 +398,7 @@ public abstract class AbstractUpload
 
       for (FilePath include : uploads.inclusions) {
         String relativePath = getRelative(include, uploads.workspace);
-        String uploadedFileName = relativePath;
-        if (pathPrefix != null && relativePath.startsWith(pathPrefix)) {
-          uploadedFileName = relativePath.substring(pathPrefix.length());
-        }
+        String uploadedFileName = getStrippedFilename(relativePath);
 
         StorageObject object = new StorageObject()
             .setName(FilenameUtils.concat(objectPrefix, uploadedFileName))
@@ -585,6 +582,19 @@ public abstract class AbstractUpload
       throw new UploadException(
           Messages.AbstractUpload_ExceptionGetBucket(bucketName), e);
     }
+  }
+
+  /**
+   * If a path prefix to strip has been specified, and the input string
+   * starts with that prefix, returns the portion of the input after that
+   * prefix. Otherwise, returns the unmodified input.
+   */
+  protected String getStrippedFilename(String filename) {
+    if (pathPrefix != null && filename != null
+        && filename.startsWith(pathPrefix)) {
+      return filename.substring(pathPrefix.length());
+    }
+    return filename;
   }
 
   /**
