@@ -1,3 +1,5 @@
 {"timestamp":"1452902112","author":"astroilov@google.com","location":{"commit":"7bdfb9c66a0c40bbe448ba611491e96f19e27f4a"},"description":"Ignore this comment."}
 
 {"timestamp":"1452903436","author":"jsand","description":"LG2M"}
+
+{"timestamp":"1452903436","author":"jsand","location":{"commit":"7bdfb9c66a0c40bbe448ba611491e96f19e27f4a","path":"src/main/java/com/google/jenkins/plugins/storage/AbstractUpload.java","range":{"startLine":592}},"description":"Is there a reason why this is protected other than private?"}
