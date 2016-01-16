@@ -5,3 +5,5 @@
 {"timestamp":"1452903436","author":"jsand","location":{"commit":"7bdfb9c66a0c40bbe448ba611491e96f19e27f4a","path":"src/main/java/com/google/jenkins/plugins/storage/AbstractUpload.java","range":{"startLine":592}},"description":"Is there a reason why this is protected other than private?"}
 
 {"timestamp":"1452904042","author":"jsand","resolved":true}
+
+{"timestamp":"1452904250","author":"astroilov","location":{"commit":"7bdfb9c66a0c40bbe448ba611491e96f19e27f4a","path":"src/main/java/com/google/jenkins/plugins/storage/AbstractUpload.java","range":{"startLine":592}},"description":"Several classes extend AbstractUpload and there's no reason not to give them access to this method."}
