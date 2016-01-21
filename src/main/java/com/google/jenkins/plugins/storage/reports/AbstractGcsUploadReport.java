@@ -46,7 +46,6 @@ public abstract class AbstractGcsUploadReport implements Action {
     this.parent = checkNotNull(parent);
   }
 
-  
   /**
    * {@inheritDoc}
    */
