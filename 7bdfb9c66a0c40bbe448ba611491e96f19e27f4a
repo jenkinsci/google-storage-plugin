@@ -1,0 +1,1 @@
+{"timestamp":"1452901603","reviewRef":"refs/heads/features/astroilov-fix-path-prefix","targetRef":"refs/heads/master","requester":"astroilov@google.com","reviewers":["jsand"],"description":"Strip path prefixes in the links of reports.","baseCommit":"5a27408ed1dd679ac91c3b6a9302b61fbfed4765"}
