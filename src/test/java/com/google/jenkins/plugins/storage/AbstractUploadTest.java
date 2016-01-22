@@ -40,16 +40,11 @@ import org.jvnet.hudson.test.WithoutJenkins;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_UNAUTHORIZED;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.http.HttpResponse;
-import com.google.api.client.http.HttpResponseException;
-import com.google.api.client.http.HttpResponseException.Builder;
-import com.google.api.client.http.StubHttpResponseException;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Bucket;
 import com.google.api.services.storage.model.ObjectAccessControl;
@@ -91,7 +86,6 @@ public class AbstractUploadTest {
   private FilePath workspace;
   private FilePath nonWorkspace;
   private FilePath workspaceFile;
-  private FilePath workspaceFile2;
   private FilePath workspaceSubdir;
   private FilePath workspaceSubdirFile;
   private String workspaceFileContent;
@@ -104,7 +98,6 @@ public class AbstractUploadTest {
   private ConflictException conflictException;
   private ForbiddenException forbiddenException;
   private NotFoundException notFoundException;
-  @Mock private HttpResponseException httpResponseException;
 
   private Predicate<Storage.Buckets.Insert> checkBucketName(
       final String bucketName) {
@@ -234,14 +227,11 @@ public class AbstractUploadTest {
     notFoundException = new NotFoundException();
     conflictException = new ConflictException();
     forbiddenException = new ForbiddenException();
-    httpResponseException = new StubHttpResponseException(STATUS_CODE_UNAUTHORIZED, "Stub!");
 
     workspace = new FilePath(makeTempDir("workspace"));
     workspaceFile = workspace.child(FILENAME);
     workspaceFileContent = "Some filler content";
     workspaceFile.write(workspaceFileContent, Charsets.UTF_8.name());
-    workspaceFile2 = workspace.child(FILENAME2);
-    workspaceFile2.write(workspaceFileContent, Charsets.UTF_8.name());
 
     workspaceSubdir = workspace.child(SUBDIR_PREFIX);
     workspaceSubdir.mkdirs();
@@ -498,41 +488,6 @@ public class AbstractUploadTest {
         new IOException("should trigger retry"));
     executor.passThruWhen(Storage.Objects.Insert.class,
         checkObjectName(FILENAME));
-
-    underTest.perform(credentials, build, TaskListener.NULL);
-  }
-  
-  @Test
-  public void testRetryOn401() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final String pathPrefix = null;
-    
-    Bucket bucket = new Bucket();
-    bucket.setName(BUCKET_NAME);
-    bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace,
-            ImmutableList.of(workspaceFile, workspaceFile2));
-
-    FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        sharedPublicly, forFailedJobs, pathPrefix,
-        new MockUploadModule(executor), /* no retries */
-        FAKE_DETAILS,
-        uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(Storage.Objects.Insert.class,
-        checkObjectName(FILENAME));
-    executor.throwWhen(Storage.Objects.Insert.class,
-        httpResponseException,
-        checkObjectName(FILENAME2));
-    executor.when(Storage.Buckets.Get.class, bucket);
-    executor.passThruWhen(Storage.Objects.Insert.class,
-        checkObjectName(FILENAME2));
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -846,7 +801,6 @@ public class AbstractUploadTest {
   private static final String BUCKET_URI = "gs://" + BUCKET_NAME;
   private static final String STORAGE_PREFIX = "foo";
   private static final String FILENAME = "bar.baz";
-  private static final String FILENAME2 = "bar2.baz";
   private static final String SUBDIR_PREFIX = "foo/bar";
   private static final String SUBDIR_FILENAME = "foo/bar/bar.baz";
   private static final String WRONG_PREFIX = "qqq/";
