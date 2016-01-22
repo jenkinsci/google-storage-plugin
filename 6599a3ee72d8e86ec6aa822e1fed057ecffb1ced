@@ -1,3 +1,5 @@
 {"timestamp":"1453495252","author":"astroilov","location":{"commit":"7586c2122a222eb8fb7dc5e9f7903e0230832ca6","path":"src/test/java/com/google/jenkins/plugins/storage/AbstractUploadTest.java","range":{"startLine":505}},"description":"Recommend adding a test for correctly exiting the loop after the maximum number of retries."}
 
 {"timestamp":"1453495252","author":"astroilov","location":{"commit":"7586c2122a222eb8fb7dc5e9f7903e0230832ca6","path":"src/test/java/com/google/api/client/http/StubHttpResponseException.java","range":{"startLine":2}},"description":"2016."}
+
+{"timestamp":"1453495252","author":"astroilov","location":{"commit":"7586c2122a222eb8fb7dc5e9f7903e0230832ca6","path":"src/main/java/com/google/jenkins/plugins/storage/AbstractUpload.java","range":{"startLine":462}},"description":"This works fine for the transient 401 (that can be solved by re-authenticating) - but it's also possible for a permanent 401, in which case this loop never terminates. Recommend adding a maximum number of retries. Given the nature of the transient error we're looking for, one retry is probably enough."}
