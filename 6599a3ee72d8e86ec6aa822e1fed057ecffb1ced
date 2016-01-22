@@ -1,0 +1,1 @@
+{"timestamp":"1453495252","author":"astroilov","location":{"commit":"7586c2122a222eb8fb7dc5e9f7903e0230832ca6","path":"src/test/java/com/google/jenkins/plugins/storage/AbstractUploadTest.java","range":{"startLine":505}},"description":"Recommend adding a test for correctly exiting the loop after the maximum number of retries."}
