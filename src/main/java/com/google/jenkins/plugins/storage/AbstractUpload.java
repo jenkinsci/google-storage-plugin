@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.logging.Logger;
 
 import javax.annotation.Nullable;
@@ -34,10 +35,12 @@ import javax.annotation.Nullable;
 import org.apache.commons.io.FilenameUtils;
 import org.jenkinsci.remoting.RoleChecker;
 
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_UNAUTHORIZED;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor.GCS_SCHEME;
 
 import com.google.api.client.googleapis.media.MediaHttpUploader;
+import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Bucket;
@@ -97,6 +100,8 @@ import hudson.remoting.Callable;
  */
 public abstract class AbstractUpload
     implements Describable<AbstractUpload>, ExtensionPoint, Serializable {
+  // Only attempt to refresh the remote credentials once per 401 received.
+  protected static final int MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES = 1;
   private static final Logger logger =
       Logger.getLogger(AbstractUpload.class.getName());
   private static final ImmutableMap<String, String> CONTENT_TYPES =
@@ -321,8 +326,10 @@ public abstract class AbstractUpload
    *
    * @throws UploadException if anything goes awry
    */
-  private void initiateUploadsAtWorkspace(GoogleRobotCredentials credentials,
-      final AbstractBuild build, String storagePrefix, final UploadSpec uploads,
+  private void initiateUploadsAtWorkspace(
+      final GoogleRobotCredentials credentials,
+      final AbstractBuild build, String storagePrefix,
+      final UploadSpec uploads,
       final TaskListener listener) throws UploadException {
     try {
       // Break things down to a compatible format:
@@ -337,10 +344,7 @@ public abstract class AbstractUpload
       final String bucketName = halves[0];
       final String objectPrefix = (halves.length == 1) ? "" : halves[1];
 
-      // Within the workspace, upload all of the files, using a remotable
-      // credential to access the storage service from the remote machine.
-      final GoogleRobotCredentials remoteCredentials =
-          checkNotNull(credentials).forRemote(module.getRequirement());
+      // Within the workspace, upload all of the files.
       final Map<String, String> metadata = getMetadata(build);
 
       uploads.workspace.act(
@@ -348,7 +352,7 @@ public abstract class AbstractUpload
             @Override
             public Void call() throws UploadException {
               performUploads(metadata, bucketName, objectPrefix,
-                  remoteCredentials, uploads, listener);
+                  credentials, uploads, listener);
               return (Void) null;
             }
 
@@ -373,9 +377,6 @@ public abstract class AbstractUpload
     } catch (InterruptedException e) {
       throw new UploadException(
           Messages.AbstractUpload_ExceptionFileUpload(), e);
-    } catch (GeneralSecurityException e) {
-      throw new UploadException(
-          Messages.AbstractUpload_RemoteCredentialError(), e);
     }
   }
 
@@ -387,58 +388,85 @@ public abstract class AbstractUpload
   private void performUploads(Map<String, String> metadata, String bucketName,
       String objectPrefix, GoogleRobotCredentials credentials,
       UploadSpec uploads, TaskListener listener) throws UploadException {
-    try {
-      Storage service = module.getStorageService(credentials);
-      Executor executor = module.newExecutor();
+    
+    Queue<FilePath> paths = new LinkedList<>(uploads.inclusions);
+    int credRefreshesRemaining = MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES;
+    
+    do {
+      try {
+        // Use remotable credential to access the storage service from the
+        // remote machine.
+        final GoogleRobotCredentials remoteCredentials =
+            checkNotNull(credentials).forRemote(module.getRequirement());
+        
+        Storage service = module.getStorageService(remoteCredentials);
+        Executor executor = module.newExecutor();
 
-      // Ensure the bucket exists, fetching it regardless so that we can
-      // attach its default ACLs to the objects we upload.
-      Bucket bucket = getOrCreateBucket(service, credentials, executor,
-          bucketName);
+        // Ensure the bucket exists, fetching it regardless so that we can
+        // attach its default ACLs to the objects we upload.
+        Bucket bucket = getOrCreateBucket(service, remoteCredentials, executor,
+            bucketName);
+        
+        while (!paths.isEmpty()) {
+          FilePath include = paths.peek();
+          String relativePath = getRelative(include, uploads.workspace);
+          String uploadedFileName = getStrippedFilename(relativePath);
+          String finalName = FilenameUtils.separatorsToUnix(
+              FilenameUtils.concat(objectPrefix, uploadedFileName));
+   
+          StorageObject object = new StorageObject()
+              .setName(finalName)
+              .setContentDisposition(
+                  HttpHeaders.getContentDisposition(include.getName()))
+              .setContentType(
+                  detectMIMEType(include.getName()))
+              .setSize(BigInteger.valueOf(include.length()));
 
-      for (FilePath include : uploads.inclusions) {
-        String relativePath = getRelative(include, uploads.workspace);
-        String uploadedFileName = getStrippedFilename(relativePath);
-        String finalName = FilenameUtils.separatorsToUnix(
-            FilenameUtils.concat(objectPrefix, uploadedFileName));
- 
-        StorageObject object = new StorageObject()
-            .setName(finalName)
-            .setMetadata(metadata)
-            .setContentDisposition(
-                HttpHeaders.getContentDisposition(include.getName()))
-            .setContentType(
-                detectMIMEType(include.getName()))
-            .setSize(BigInteger.valueOf(include.length()));
+          if (isSharedPublicly()) {
+            object.setAcl(addPublicReadAccess(
+                getDefaultObjectAcl(bucket, listener)));
+          }
+          
+          // Give clients an opportunity to decorate the storage
+          // object before we store it.
+          annotateObject(object, listener);
 
-        if (isSharedPublicly()) {
-          object.setAcl(addPublicReadAccess(
-              getDefaultObjectAcl(bucket, listener)));
+          // Log that we are uploading the file and begin executing the upload.
+          listener.getLogger().println(module.prefix(
+              Messages.AbstractUpload_Uploading(relativePath)));
+          
+          performUploadWithRetry(executor, service, bucket, object, include);
+          paths.remove();
+          credRefreshesRemaining = MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES;
         }
-
-        // Give clients an opportunity to decorate the storage
-        // object before we store it.
-        annotateObject(object, listener);
-
-        // Log that we are uploading the file and begin executing the upload.
-        listener.getLogger().println(module.prefix(
-            Messages.AbstractUpload_Uploading(relativePath)));
-        performUploadWithRetry(executor, service, bucket, object, include);
+      } catch (ForbiddenException e) {
+        // If the user doesn't own a bucket then they will end up here.
+        throw new UploadException(
+            Messages.AbstractUpload_ForbiddenFileUpload(), e);
+      } catch (HttpResponseException e) {
+        // is this a retryable HTTP 401?
+        if (credRefreshesRemaining > 0
+            && e.getStatusCode() == STATUS_CODE_UNAUTHORIZED) {
+          logger.fine("Remote credentials expired, retrying.");
+          credRefreshesRemaining--;
+        } else {
+          throw new UploadException(
+              Messages.AbstractUpload_ExceptionFileUpload(), e);
+        }
+      } catch (ExecutorException e) {
+        throw new UploadException(
+            Messages.AbstractUpload_ExceptionFileUpload(), e);
+      } catch (IOException e) {
+        throw new UploadException(
+            Messages.AbstractUpload_ExceptionFileUpload(), e);
+      } catch (InterruptedException e) {
+        throw new UploadException(
+            Messages.AbstractUpload_ExceptionFileUpload(), e);
+      }  catch (GeneralSecurityException e) {
+        throw new UploadException(
+            Messages.AbstractUpload_RemoteCredentialError(), e);
       }
-    } catch (ForbiddenException e) {
-      // If the user doesn't own a bucket then they will end up here.
-      throw new UploadException(
-          Messages.AbstractUpload_ForbiddenFileUpload(), e);
-    } catch (ExecutorException e) {
-      throw new UploadException(
-          Messages.AbstractUpload_ExceptionFileUpload(), e);
-    } catch (IOException e) {
-      throw new UploadException(
-          Messages.AbstractUpload_ExceptionFileUpload(), e);
-    } catch (InterruptedException e) {
-      throw new UploadException(
-          Messages.AbstractUpload_ExceptionFileUpload(), e);
-    }
+    } while (!paths.isEmpty());
   }
 
   /**
