@@ -1,0 +1,1 @@
+{"timestamp":"1453746037","reviewRef":"refs/heads/fix/401_retry","targetRef":"refs/heads/master","requester":"jsand@google.com","reviewers":["astroilov@google.com"],"description":"Add upload retry logic for transient 401 errors","baseCommit":"da872a5b860c5ef485a2936d865ff1b280da72cf"}
