@@ -54,13 +54,13 @@ public class StdoutUpload extends AbstractUpload {
    */
   @DataBoundConstructor
   public StdoutUpload(@Nullable String bucket, boolean sharedPublicly,
-      boolean forFailedJobs, boolean stripPathPrefix,
+      boolean forFailedJobs, boolean showInline, boolean stripPathPrefix,
       @Nullable String pathPrefix,
       @Nullable UploadModule module, String logName,
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars) {
     super(Objects.firstNonNull(bucket, bucketNameWithVars), sharedPublicly,
-        forFailedJobs, stripPathPrefix ? pathPrefix : null, module);
+        forFailedJobs, showInline, stripPathPrefix ? pathPrefix : null, module);
     this.logName = checkNotNull(logName);
   }
 

@@ -25,9 +25,11 @@ public class HttpHeaders {
   /**
    * Returns an RFC 6266 Content-Disposition header for the given filename.
    */
-  public static String getContentDisposition(String filename) {
+  public static String getContentDisposition(String filename,
+      boolean showInline) {
     return String.format(
-        "attachment; filename=%s; filename*=%s",
+        "%s; filename=%s; filename*=%s",
+        showInline ? "inline" : "attachment",
         getRfc2616QuotedString(filename),
         getRfc5987ExtValue(filename));
   }

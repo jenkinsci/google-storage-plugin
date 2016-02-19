@@ -69,8 +69,8 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
    */
   public AbstractBucketLifecycleManager(String bucket,
       @Nullable UploadModule module) {
-    super(bucket, false /*sharedPublicly*/,
-        false /*forFailedJobs*/, null /*pathPrefix */, module);
+    super(bucket, false /*sharedPublicly*/, false /*forFailedJobs*/,
+        false /*showInline*/, null /*pathPrefix */, module);
   }
 
   /**
