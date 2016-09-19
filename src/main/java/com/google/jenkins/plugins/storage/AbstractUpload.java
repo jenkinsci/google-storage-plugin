@@ -360,22 +360,33 @@ public abstract class AbstractUpload
       // Within the workspace, upload all of the files.
       final Map<String, String> metadata = getMetadata(build);
 
-      uploads.workspace.act(
-          new Callable<Void, UploadException>() {
-            @Override
-            public Void call() throws UploadException {
-              performUploads(metadata, bucketName, objectPrefix,
-                  credentials, uploads, listener);
-              return (Void) null;
-            }
+      try {
+          // Use remotable credential to access the storage service from the
+          // remote machine.
+          final GoogleRobotCredentials remoteCredentials =
+              checkNotNull(credentials).forRemote(module.getRequirement());
 
-            @Override
-            public void checkRoles(RoleChecker checker)
-                throws SecurityException {
-              // We know by definition that this is the correct role;
-              // the callable exists only in this method context.
-            }
-          });
+          uploads.workspace.act(
+              new Callable<Void, UploadException>() {
+                @Override
+                public Void call() throws UploadException {
+                  performUploads(metadata, bucketName, objectPrefix,
+                      remoteCredentials, uploads, listener);
+                  return (Void) null;
+                }
+
+                @Override
+                public void checkRoles(RoleChecker checker)
+                    throws SecurityException {
+                  // We know by definition that this is the correct role;
+                  // the callable exists only in this method context.
+                }
+              });
+      }  catch (GeneralSecurityException e) {
+        throw new UploadException(
+            Messages.AbstractUpload_RemoteCredentialError(), e);
+      }
+
 
       // We can't do this over the wire, so do it in bulk here
       BuildGcsUploadReport report = BuildGcsUploadReport.of(build);
@@ -407,17 +418,12 @@ public abstract class AbstractUpload
     
     do {
       try {
-        // Use remotable credential to access the storage service from the
-        // remote machine.
-        final GoogleRobotCredentials remoteCredentials =
-            checkNotNull(credentials).forRemote(module.getRequirement());
-        
-        Storage service = module.getStorageService(remoteCredentials);
+        Storage service = module.getStorageService(credentials);
         Executor executor = module.newExecutor();
 
         // Ensure the bucket exists, fetching it regardless so that we can
         // attach its default ACLs to the objects we upload.
-        Bucket bucket = getOrCreateBucket(service, remoteCredentials, executor,
+        Bucket bucket = getOrCreateBucket(service, credentials, executor,
             bucketName);
         
         while (!paths.isEmpty()) {
@@ -476,9 +482,6 @@ public abstract class AbstractUpload
       } catch (InterruptedException e) {
         throw new UploadException(
             Messages.AbstractUpload_ExceptionFileUpload(), e);
-      }  catch (GeneralSecurityException e) {
-        throw new UploadException(
-            Messages.AbstractUpload_RemoteCredentialError(), e);
       }
     } while (!paths.isEmpty());
   }
