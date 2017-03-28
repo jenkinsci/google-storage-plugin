@@ -43,9 +43,6 @@ import hudson.util.FormValidation;
  * This upload extension allow the user to upload the build log
  * for the Jenkins build to a given bucket, with a specified file
  * name.  By default, the file is named "build-log.txt".
- *
- * NOTE: Unlike other Uploads, we use a {@link BuildEventListener} to
- * continuously upload the build log at build waypoints.
  */
 public class StdoutUpload extends AbstractUpload {
   /**

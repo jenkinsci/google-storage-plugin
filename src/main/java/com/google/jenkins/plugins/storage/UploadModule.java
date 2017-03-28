@@ -36,8 +36,6 @@ public class UploadModule implements Serializable {
    * Interface for requesting the {@link Executor} for executing requests.
    *
    * @return a new {@link Executor} instance for issuing requests
-   * @throws CloudManagementException if a service connection cannot
-   *         be established.
    */
   public Executor newExecutor() {
     return new Executor.Default();

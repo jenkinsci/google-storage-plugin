@@ -28,7 +28,7 @@ import hudson.model.AbstractProject;
 /**
  * A build {@link hudson.model.Action} to surface direct links of objects
  * uploaded through the
- * {@link com.google.jenkins.plugins.storage.StdoutUpload.Listener}
+ * {@link com.google.jenkins.plugins.storage.StdoutUpload} Listener
  * to the Jenkins UI.
  */
 public class BuildGcsUploadReport extends AbstractGcsUploadReport {
