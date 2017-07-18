@@ -106,7 +106,9 @@ public abstract class AbstractUpload
       Logger.getLogger(AbstractUpload.class.getName());
   private static final ImmutableMap<String, String> CONTENT_TYPES =
       ImmutableMap.of(
-        "css", "text/css"
+        "css", "text/css",
+        "js", "application/javascript",
+        "svg", "image/svg+xml"
       );
 
   /**
