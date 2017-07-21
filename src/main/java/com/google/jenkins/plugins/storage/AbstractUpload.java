@@ -108,7 +108,8 @@ public abstract class AbstractUpload
       ImmutableMap.of(
         "css", "text/css",
         "js", "application/javascript",
-        "svg", "image/svg+xml"
+        "svg", "image/svg+xml",
+        "woff2", "font/woff2"
       );
 
   /**
