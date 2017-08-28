@@ -37,6 +37,7 @@ import hudson.console.PlainTextConsoleOutputStream;
 import hudson.model.AbstractBuild;
 import hudson.model.Result;
 import hudson.model.TaskListener;
+import hudson.Util;
 import hudson.util.FormValidation;
 
 /**
@@ -102,7 +103,10 @@ public class StdoutUpload extends AbstractUpload {
       OutputStream outputStream = null;
       try {
         FilePath logDir = new FilePath(build.getLogFile()).getParent();
-        FilePath logFile = new FilePath(logDir, getLogName());
+
+        String resolvedLogName =
+            Util.replaceMacro(getLogName(), build.getEnvironment(listener));
+        FilePath logFile = new FilePath(logDir, resolvedLogName);
 
         outputStream = new PlainTextConsoleOutputStream(logFile.write());
         copy(build.getLogInputStream(), outputStream);
