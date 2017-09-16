@@ -104,53 +104,6 @@ public class AbstractUploadTest {
   private NotFoundException notFoundException;
   @Mock private HttpResponseException httpResponseException;
 
-  private Predicate<Storage.Buckets.Insert> checkBucketName(
-      final String bucketName) {
-    return new Predicate<Storage.Buckets.Insert>() {
-      @Override
-      public boolean apply(Storage.Buckets.Insert operation) {
-        Bucket bucket = (Bucket) operation.getJsonContent();
-        assertEquals(bucketName, bucket.getName());
-        return true;
-      }
-    };
-  }
-
-  private Predicate<Storage.Objects.Insert> checkObjectName(
-      final String objectName) {
-    return new Predicate<Storage.Objects.Insert>() {
-      @Override
-      public boolean apply(Storage.Objects.Insert operation) {
-        StorageObject object = (StorageObject) operation.getJsonContent();
-        assertEquals(objectName, object.getName());
-        return true;
-      }
-    };
-  }
-
-  private static class MockUploadModule extends UploadModule {
-    public MockUploadModule(MockExecutor executor) {
-      this(executor, 1 /* retries */);
-    }
-
-    public MockUploadModule(MockExecutor executor, int retries) {
-      this.executor = executor;
-      this.retryCount = retries;
-    }
-
-    @Override
-    public int getInsertRetryCount() {
-      return retryCount;
-    }
-
-    @Override
-    public MockExecutor newExecutor() {
-      return executor;
-    }
-    private final MockExecutor executor;
-    private final int retryCount;
-  }
-
   @Rule
   public Verifier verifySawAll = new Verifier() {
       @Override
@@ -314,9 +267,9 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class,
-        checkObjectName(SUBDIR_FILENAME));
+        MockUploadModule.checkObjectName(SUBDIR_FILENAME));
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -340,9 +293,9 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class,
-        checkObjectName(PREFIX_STRIPPED_FILENAME));
+        MockUploadModule.checkObjectName(PREFIX_STRIPPED_FILENAME));
 
     underTest.perform(credentials, build, TaskListener.NULL);
 
@@ -372,9 +325,9 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class,
-        checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
+        MockUploadModule.checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -398,9 +351,9 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class,
-        checkObjectName(PREFIX_STRIPPED_FILENAME));
+        MockUploadModule.checkObjectName(PREFIX_STRIPPED_FILENAME));
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -426,9 +379,9 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class,
-        checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
+        MockUploadModule.checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -452,9 +405,9 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class,
-        checkObjectName(FILENAME));
+        MockUploadModule.checkObjectName(FILENAME));
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -478,9 +431,9 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class,
-        checkObjectName(STORAGE_PREFIX + "/" + FILENAME));
+        MockUploadModule.checkObjectName(STORAGE_PREFIX + "/" + FILENAME));
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -504,11 +457,11 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.throwWhen(Storage.Objects.Insert.class,
         new IOException("should trigger retry"));
     executor.passThruWhen(Storage.Objects.Insert.class,
-        checkObjectName(FILENAME));
+        MockUploadModule.checkObjectName(FILENAME));
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -532,7 +485,7 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.throwWhen(Storage.Objects.Insert.class,
         new IOException("should trigger retry"));
     executor.throwWhen(Storage.Objects.Insert.class,
@@ -564,15 +517,15 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class,
-        checkObjectName(FILENAME));
+        MockUploadModule.checkObjectName(FILENAME));
     executor.throwWhen(Storage.Objects.Insert.class,
         httpResponseException,
-        checkObjectName(FILENAME2));
+        MockUploadModule.checkObjectName(FILENAME2));
     executor.when(Storage.Buckets.Get.class, bucket);
     executor.passThruWhen(Storage.Objects.Insert.class,
-        checkObjectName(FILENAME2));
+        MockUploadModule.checkObjectName(FILENAME2));
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -605,7 +558,7 @@ public class AbstractUploadTest {
       executor.when(Storage.Buckets.Get.class, bucket);
       executor.throwWhen(Storage.Objects.Insert.class,
           httpResponseException,
-          checkObjectName(FILENAME));
+          MockUploadModule.checkObjectName(FILENAME));
     }
 
     underTest.perform(credentials, build, TaskListener.NULL);
@@ -646,7 +599,7 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     // No object insertions
 
     underTest.perform(credentials, build, TaskListener.NULL);
@@ -674,7 +627,7 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.throwWhen(Storage.Buckets.Insert.class, conflictException,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.when(Storage.Buckets.Get.class, bucket);
 
     underTest.perform(credentials, build, TaskListener.NULL);
@@ -722,10 +675,10 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class,
         // Verify there isn't a double-'/'
-        checkObjectName(STORAGE_PREFIX + "/" + FILENAME));
+        MockUploadModule.checkObjectName(STORAGE_PREFIX + "/" + FILENAME));
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -833,7 +786,7 @@ public class AbstractUploadTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(Storage.Buckets.Insert.class,
-        checkBucketName(BUCKET_NAME));
+        MockUploadModule.checkBucketName(BUCKET_NAME));
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }

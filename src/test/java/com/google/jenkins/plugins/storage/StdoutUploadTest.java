@@ -18,15 +18,31 @@ package com.google.jenkins.plugins.storage;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.when;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
+import com.google.api.services.storage.Storage;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.StdoutUpload.DescriptorImpl;
+import com.google.jenkins.plugins.util.MockExecutor;
+import com.google.jenkins.plugins.util.NotFoundException;
 
+import hudson.model.TaskListener;
+
+import hudson.model.FreeStyleProject;
+import hudson.model.FreeStyleBuild;
 import hudson.util.FormValidation;
 
 /**
@@ -36,9 +52,43 @@ public class StdoutUploadTest {
 
   @Rule public JenkinsRule jenkins = new JenkinsRule();
 
+  @Mock
+  private GoogleRobotCredentials credentials;
+  private GoogleCredential credential;
+
+  private final MockExecutor executor = new MockExecutor();
+
+  private FreeStyleProject project;
+  private FreeStyleBuild build;
+
+  private NotFoundException notFoundException;
+
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
+
+    when(credentials.getId()).thenReturn(CREDENTIALS_ID);
+    when(credentials.getProjectId()).thenReturn(PROJECT_ID);
+
+    if (jenkins.jenkins != null) {
+      SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
+
+      project = jenkins.createFreeStyleProject("test");
+      project.getPublishersList().add(
+          // Create a storage plugin with no uploaders to fake things out.
+          new GoogleCloudStorageUploader(CREDENTIALS_ID, null));
+      build = project.scheduleBuild2(0).get();
+    }
+    credential = new GoogleCredential();
+    when(credentials.getGoogleCredential(isA(
+        GoogleOAuth2ScopeRequirement.class)))
+        .thenReturn(credential);
+
+    // Return ourselves as remotable
+    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class)))
+        .thenReturn(credentials);
+
+    notFoundException = new NotFoundException();
   }
 
   @Test
@@ -57,4 +107,24 @@ public class StdoutUploadTest {
     assertEquals(FormValidation.Kind.ERROR,
         descriptor.doCheckLogName("$$BUILD_NUMBER").kind);
   }
+
+  @Test
+  public void doCheckLogNameExpansion() throws Exception {
+    StdoutUpload underTest = new StdoutUpload(BUCKET_URI, false, false,
+        false, false, null, new MockUploadModule(executor),
+        "build.$BUILD_NUMBER.log", null);
+
+    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+    executor.passThruWhen(Storage.Buckets.Insert.class,
+        MockUploadModule.checkBucketName(BUCKET_NAME));
+    executor.passThruWhen(Storage.Objects.Insert.class,
+        MockUploadModule.checkObjectName("build.1.log"));
+
+    underTest.perform(credentials, build, TaskListener.NULL);
+  }
+
+  private static final String PROJECT_ID = "foo.com:bar-baz";
+  private static final String CREDENTIALS_ID = "bazinga";
+  private static final String BUCKET_NAME = "bucket";
+  private static final String BUCKET_URI = "gs://" + BUCKET_NAME;
 }
