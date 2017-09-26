@@ -64,8 +64,7 @@ public abstract class AbstractUploadDescriptor
    * This callback validates the {@code bucketNameWithVars} input field's
    * values.
    */
-  public static FormValidation staticDoCheckBucket(
-      @QueryParameter final String bucketNameWithVars)
+  public static FormValidation staticDoCheckBucket(final String bucketNameWithVars)
       throws IOException {
     String resolvedInput = Resolve.resolveBuiltin(bucketNameWithVars);
     if (!resolvedInput.startsWith(GCS_SCHEME)) {
