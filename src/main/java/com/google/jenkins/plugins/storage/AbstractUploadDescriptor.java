@@ -64,8 +64,7 @@ public abstract class AbstractUploadDescriptor
    * This callback validates the {@code bucketNameWithVars} input field's
    * values.
    */
-  public FormValidation doCheckBucketNameWithVars(
-      @QueryParameter final String bucketNameWithVars)
+  public static FormValidation staticDoCheckBucket(final String bucketNameWithVars)
       throws IOException {
     String resolvedInput = Resolve.resolveBuiltin(bucketNameWithVars);
     if (!resolvedInput.startsWith(GCS_SCHEME)) {
@@ -95,6 +94,18 @@ public abstract class AbstractUploadDescriptor
     // Cloud Console.
     // TODO(mattmoor): Check availability or ownership of the bucket
     return FormValidation.ok();
+  }
+
+  public FormValidation doCheckBucketNameWithVars(
+      @QueryParameter final String bucketNameWithVars)
+      throws IOException {
+    return staticDoCheckBucket(bucketNameWithVars);
+  }
+
+  public FormValidation doCheckBucket(
+      @QueryParameter final String bucket)
+      throws IOException {
+    return staticDoCheckBucket(bucket);
   }
 
   /**
