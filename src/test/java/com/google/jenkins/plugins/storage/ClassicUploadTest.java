@@ -126,13 +126,7 @@ public class ClassicUploadTest {
 
     bucket = "gs://bucket";
     glob = "bar.txt";
-    sharedPublicly = false;
-    forFailedJobs = false;
-    showInline = false;
-    stripPathPrefix = false;
-    pathPrefix = null;
-    underTest = new ClassicUpload(bucket, sharedPublicly, forFailedJobs,
-        showInline, stripPathPrefix, pathPrefix, new MockUploadModule(executor),
+    underTest = new ClassicUpload(bucket, new MockUploadModule(executor),
         glob, null /* legacy arg */, null /* legacy arg */);
   }
 
@@ -146,8 +140,12 @@ public class ClassicUploadTest {
   @WithoutJenkins
   public void testLegacyArgs() {
     ClassicUpload legacyVersion = new ClassicUpload(null /* bucket */,
-        sharedPublicly, forFailedJobs, showInline, stripPathPrefix, pathPrefix,
         new MockUploadModule(executor), null /* glob */, bucket, glob);
+    legacyVersion.setSharedPublicly(sharedPublicly);
+    legacyVersion.setForFailedJobs(forFailedJobs);
+    legacyVersion.setShowInline(showInline);
+    legacyVersion.setPathPrefix(pathPrefix);
+
     assertEquals(underTest.getBucket(), legacyVersion.getBucket());
     assertEquals(underTest.isSharedPublicly(),
         legacyVersion.isSharedPublicly());
@@ -158,16 +156,14 @@ public class ClassicUploadTest {
   @Test(expected = NullPointerException.class)
   @WithoutJenkins
   public void testCheckNullGlob() throws Exception {
-    new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-        stripPathPrefix, pathPrefix, new MockUploadModule(executor), null,
+    new ClassicUpload(bucket, new MockUploadModule(executor), null,
         null /* legacy arg */, null /* legacy arg */);
   }
 
   @Test
   public void testCheckNullOnNullables() throws Exception {
     // The upload should handle null for the other fields.
-    new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-        false /* stripPathPrefix */, null /* pathPrefix */,
+    new ClassicUpload(bucket,
         null /* module */, glob, null /* legacy arg */, null /* legacy arg */);
   }
 

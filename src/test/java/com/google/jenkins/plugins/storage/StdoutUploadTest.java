@@ -110,8 +110,7 @@ public class StdoutUploadTest {
 
   @Test
   public void doCheckLogNameExpansion() throws Exception {
-    StdoutUpload underTest = new StdoutUpload(BUCKET_URI, false, false,
-        false, false, null, new MockUploadModule(executor),
+    StdoutUpload underTest = new StdoutUpload(BUCKET_URI, new MockUploadModule(executor),
         "build.$BUILD_NUMBER.log", null);
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);

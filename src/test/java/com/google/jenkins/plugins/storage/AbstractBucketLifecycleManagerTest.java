@@ -232,7 +232,7 @@ public class AbstractBucketLifecycleManagerTest {
     executor.passThruWhen(Storage.Buckets.Update.class,
         checkSameBucket(bucket));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test
@@ -247,7 +247,7 @@ public class AbstractBucketLifecycleManagerTest {
     // A get that passes our check should incur no further RPC
     executor.when(Storage.Buckets.Get.class, bucket);
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test
@@ -267,7 +267,7 @@ public class AbstractBucketLifecycleManagerTest {
     executor.passThruWhen(Storage.Buckets.Update.class,
         checkSameBucket(bucket));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test(expected = UploadException.class)
@@ -279,7 +279,7 @@ public class AbstractBucketLifecycleManagerTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, conflictException);
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test(expected = UploadException.class)
@@ -291,7 +291,7 @@ public class AbstractBucketLifecycleManagerTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, new IOException("test"));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test
