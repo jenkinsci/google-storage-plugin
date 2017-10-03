@@ -15,6 +15,7 @@
  */
 package com.google.jenkins.plugins.storage;
 
+import hudson.model.Run;
 import java.io.IOException;
 
 import javax.annotation.Nullable;
@@ -31,7 +32,6 @@ import com.google.jenkins.plugins.util.ExecutorException;
 import com.google.jenkins.plugins.util.NotFoundException;
 
 import hudson.FilePath;
-import hudson.model.AbstractBuild;
 import hudson.model.Hudson;
 import hudson.model.TaskListener;
 
@@ -63,14 +63,10 @@ import hudson.model.TaskListener;
 public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
   /**
    * Constructs the base bucket OLM plugin from the bucket name and module.
-   *
-   * NOTE: this hides the "make public", "for failed" and "path prefix"
-   * options of the base, which are mainly relevant for true uploads.
    */
   public AbstractBucketLifecycleManager(String bucket,
       @Nullable UploadModule module) {
-    super(bucket, false /*sharedPublicly*/, false /*forFailedJobs*/,
-        false /*showInline*/, null /*pathPrefix */, module);
+    super(bucket, module);
   }
 
   /**
@@ -78,7 +74,7 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
    */
   @Override
   @Nullable
-  protected final UploadSpec getInclusions(AbstractBuild<?, ?> build,
+  protected final UploadSpec getInclusions(Run<?, ?> run,
       FilePath workspace, TaskListener listener) throws UploadException {
     // Return an empty list, we don't actually do any uploads.
     return new UploadSpec(workspace, ImmutableList.<FilePath>of());

@@ -15,6 +15,7 @@
  */
 package com.google.jenkins.plugins.storage;
 
+import hudson.model.Run;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -45,15 +46,12 @@ public class ClassicUpload extends AbstractUpload {
    * and the glob for matching files.
    */
   @DataBoundConstructor
-  public ClassicUpload(String bucket, boolean sharedPublicly,
-      boolean forFailedJobs, boolean showInline, boolean stripPathPrefix,
-      @Nullable String pathPrefix, @Nullable UploadModule module,
+  public ClassicUpload(String bucket, @Nullable UploadModule module,
       String pattern,
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars,
       @Deprecated @Nullable String sourceGlobWithVars) {
-    super(Objects.firstNonNull(bucket, bucketNameWithVars), sharedPublicly,
-        forFailedJobs, showInline, stripPathPrefix ? pathPrefix : null, module);
+    super(Objects.firstNonNull(bucket, bucketNameWithVars), module);
     this.sourceGlobWithVars =
         Objects.firstNonNull(pattern, sourceGlobWithVars);
   }
@@ -71,11 +69,16 @@ public class ClassicUpload extends AbstractUpload {
    */
   @Override
   @Nullable
-  protected UploadSpec getInclusions(AbstractBuild<?, ?> build,
+  protected UploadSpec getInclusions(Run<?, ?> run,
       FilePath workspace, TaskListener listener) throws UploadException {
     try {
-      String globResolvedVars = Util.replaceMacro(
-          getPattern(), build.getEnvironment(listener));
+
+      String globResolvedVars = getPattern();
+      if(run instanceof AbstractBuild) {
+        globResolvedVars = Util.replaceMacro(
+            getPattern(), run.getEnvironment(listener));
+      }
+
       // In order to support absolute globs (e.g. /gagent/metaOutput/std*.txt)
       // we must identify absolute paths and rebase the "workspace" to be the
       // root directory and the glob to be relative to root.
@@ -162,7 +165,7 @@ public class ClassicUpload extends AbstractUpload {
      * This callback validates the {@code pattern} input field's
      * values.
      */
-    public FormValidation doCheckPattern(
+    public static FormValidation staticDoCheckPattern(
         @QueryParameter final String pattern)
         throws IOException {
       String resolvedInput = Resolve.resolveBuiltin(pattern);
@@ -188,6 +191,16 @@ public class ClassicUpload extends AbstractUpload {
       // NOTE: This side of things must work well with windows backward
       // slashes.
       return FormValidation.ok();
+    }
+
+    /**
+     * This callback validates the {@code pattern} input field's
+     * values.
+     */
+    public FormValidation doCheckPattern(
+        @QueryParameter final String pattern)
+        throws IOException {
+      return staticDoCheckPattern(pattern);
     }
   }
 }

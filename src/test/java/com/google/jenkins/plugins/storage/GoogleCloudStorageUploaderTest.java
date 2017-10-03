@@ -94,6 +94,16 @@ public class GoogleCloudStorageUploaderTest {
   private ForbiddenException forbiddenException;
   private NotFoundException notFoundException;
 
+  private AbstractUpload setOptionalParams(AbstractUpload a) {
+    a.setSharedPublicly(sharedPublicly);
+    a.setForFailedJobs(forFailedJobs);
+    a.setShowInline(showInline);
+    if(stripPathPrefix) {
+      a.setPathPrefix(pathPrefix);
+    }
+    return a;
+  }
+
   private static class MockUploadModule extends UploadModule {
     public MockUploadModule(MockExecutor executor) {
       this.executor = executor;
@@ -166,15 +176,9 @@ public class GoogleCloudStorageUploaderTest {
 
     bucket = "gs://bucket";
     glob = "bar.txt";
-    sharedPublicly = false;
-    forFailedJobs = false;
-    showInline = false;
-    stripPathPrefix = false;
-    pathPrefix = null;
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-                stripPathPrefix, pathPrefix, new MockUploadModule(executor),
+            new ClassicUpload(bucket, new MockUploadModule(executor),
                 glob, null /* legacy arg*/, null /* legacy arg */)));
   }
 
@@ -233,10 +237,9 @@ public class GoogleCloudStorageUploaderTest {
   public void testBadBucket() throws Exception {
     bucket = "bucket";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
-        ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-                stripPathPrefix, pathPrefix, new MockUploadModule(executor),
-                glob, null /* legacy arg */, null /* legacy arg */)));
+        ImmutableList.<AbstractUpload>of(setOptionalParams(
+            new ClassicUpload(bucket, new MockUploadModule(executor), glob,
+                null /* legacy arg */, null /* legacy arg */))));
 
     project.getBuildersList().add(new Shell("echo foo > bar.txt"));
     project.getPublishersList().add(underTest);
@@ -281,11 +284,10 @@ public class GoogleCloudStorageUploaderTest {
   @Test
   public void testFilePlainWithFailureAndUpload() throws Exception {
     forFailedJobs = true;
+
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
-        ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-                stripPathPrefix, pathPrefix, new MockUploadModule(executor),
-                glob, null /* legacy arg */, null /* legacy arg */)));
+        ImmutableList.<AbstractUpload>of( setOptionalParams(new ClassicUpload(bucket, new MockUploadModule(executor),
+                glob, null /* legacy arg */, null /* legacy arg */))));
 
     project.getBuildersList().add(new Shell("echo foo > bar.txt"));
     // Fail the build to show that the uploader does nothing.
@@ -305,9 +307,8 @@ public class GoogleCloudStorageUploaderTest {
   public void testStdoutUpload() throws Exception {
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
         ImmutableList.<AbstractUpload>of(
-            new StdoutUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-                stripPathPrefix, pathPrefix, new MockUploadModule(executor),
-                "build-log.txt", null /* legacy arg */)));
+            setOptionalParams(new StdoutUpload(bucket, new MockUploadModule(executor),
+                "build-log.txt", null /* legacy arg */))));
 
     project.getBuildersList().add(new Shell("echo Hello World!"));
     project.getPublishersList().add(underTest);
@@ -325,10 +326,9 @@ public class GoogleCloudStorageUploaderTest {
   public void testFileGlob() throws Exception {
     glob = "*.txt";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
-        ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-                stripPathPrefix, pathPrefix, new MockUploadModule(executor),
-                glob, null /* legacy arg */, null /* legacy arg */)));
+        ImmutableList.<AbstractUpload>of(setOptionalParams(
+            new ClassicUpload(bucket, new MockUploadModule(executor),
+                glob, null /* legacy arg */, null /* legacy arg */))));
 
     project.getBuildersList().add(new Shell("echo foo > bar.txt"));
     project.getPublishersList().add(underTest);
@@ -347,10 +347,9 @@ public class GoogleCloudStorageUploaderTest {
     String absoluteFilePath = "/tmp/bar.txt";
     glob = absoluteFilePath;
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
-        ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-                stripPathPrefix, pathPrefix, new MockUploadModule(executor),
-                glob, null /* legacy arg */, null /* legacy arg */)));
+        ImmutableList.<AbstractUpload>of(setOptionalParams(
+            new ClassicUpload(bucket, new MockUploadModule(executor),
+                glob, null /* legacy arg */, null /* legacy arg */))));
 
     project.getBuildersList().add(new Shell("echo foo > " +
             absoluteFilePath));
@@ -371,10 +370,9 @@ public class GoogleCloudStorageUploaderTest {
     String absoluteFilePath2 = "/tmp/bar.2.txt";
     glob = "/tmp/bar.*.txt";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
-        ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-                stripPathPrefix, pathPrefix, new MockUploadModule(executor),
-                glob, null /* legacy arg */, null /* legacy arg */)));
+        ImmutableList.<AbstractUpload>of(setOptionalParams(
+            new ClassicUpload(bucket, new MockUploadModule(executor),
+                glob, null /* legacy arg */, null /* legacy arg */))));
 
     project.getBuildersList().add(new Shell("echo foo > " +
             absoluteFilePath1));
@@ -396,10 +394,9 @@ public class GoogleCloudStorageUploaderTest {
   public void testFileWithVar() throws Exception {
     glob = "bar.$BUILD_NUMBER.txt";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
-        ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-                stripPathPrefix, pathPrefix, new MockUploadModule(executor),
-                glob, null /* legacy arg */, null /* legacy arg */)));
+        ImmutableList.<AbstractUpload>of(setOptionalParams(
+            new ClassicUpload(bucket, new MockUploadModule(executor),
+                glob, null /* legacy arg */, null /* legacy arg */))));
 
     project.getBuildersList().add(
         new Shell("echo foo > bar.$BUILD_NUMBER.txt"));
@@ -418,10 +415,9 @@ public class GoogleCloudStorageUploaderTest {
   public void testFileWithDir() throws Exception {
     glob = "blah/bar.txt";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
-        ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-                stripPathPrefix, pathPrefix, new MockUploadModule(executor),
-                glob, null /* legacy arg */, null /* legacy arg */)));
+        ImmutableList.<AbstractUpload>of(setOptionalParams(
+            new ClassicUpload(bucket, new MockUploadModule(executor),
+                glob, null /* legacy arg */, null /* legacy arg */))));
 
     project.getBuildersList().add(
         new Shell("mkdir blah; echo foo > blah/bar.txt"));
@@ -440,10 +436,9 @@ public class GoogleCloudStorageUploaderTest {
   public void testFileWithRecursiveGlob() throws Exception {
     glob = "**/*.txt";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
-        ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-                stripPathPrefix, pathPrefix, new MockUploadModule(executor),
-                glob, null /* legacy arg */, null /* legacy arg */)));
+        ImmutableList.<AbstractUpload>of(setOptionalParams(
+            new ClassicUpload(bucket, new MockUploadModule(executor),
+                glob, null /* legacy arg */, null /* legacy arg */))));
 
     project.getBuildersList().add(
         new Shell("mkdir blah; echo foo > blah/bar.txt"));
@@ -462,10 +457,9 @@ public class GoogleCloudStorageUploaderTest {
   public void testMultiFileGlob() throws Exception {
     glob = "*.txt";
     underTest = new GoogleCloudStorageUploader(CREDENTIALS_ID,
-        ImmutableList.<AbstractUpload>of(
-            new ClassicUpload(bucket, sharedPublicly, forFailedJobs, showInline,
-                stripPathPrefix, pathPrefix, new MockUploadModule(executor),
-                glob, null /* legacy arg */, null /* legacy arg */)));
+        ImmutableList.<AbstractUpload>of(setOptionalParams(
+            new ClassicUpload(bucket, new MockUploadModule(executor),
+                glob, null /* legacy arg */, null /* legacy arg */))));
 
     project.getBuildersList().add(
         new Shell("echo foo > foo.txt; echo bar > bar.txt"));

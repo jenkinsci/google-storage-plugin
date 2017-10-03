@@ -17,6 +17,7 @@ package com.google.jenkins.plugins.storage;
 
 import java.io.IOException;
 
+import net.sf.json.JSONObject;
 import org.kohsuke.stapler.QueryParameter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -25,12 +26,14 @@ import com.google.jenkins.plugins.util.Resolve;
 
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
+import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * Descriptor from which Upload extensions must derive their descriptor.
  */
 public abstract class AbstractUploadDescriptor
     extends Descriptor<AbstractUpload> {
+
   /**
    * Create the descriptor of the Upload from it's type on associated module
    * for instantiating dependencies.
@@ -106,6 +109,19 @@ public abstract class AbstractUploadDescriptor
       @QueryParameter final String bucket)
       throws IOException {
     return staticDoCheckBucket(bucket);
+  }
+
+  @Override
+  public AbstractUpload newInstance(StaplerRequest req, JSONObject formData)
+      throws FormException {
+    // Since the config form lists the optional parameter pathPrefix as inline, it will be
+    // passed through even if stripPathPrefix is false. This might cause problems if the user,
+    // for example, fills in the field and then unchecks the checkbox. So, explicitly remove
+    // pathPrefix whenever stripPathPrefix is false.
+    if (Boolean.FALSE.equals(formData.remove("stripPathPrefix"))) {
+      formData.remove("pathPrefix");
+    }
+    return super.newInstance(req, formData);
   }
 
   /**
