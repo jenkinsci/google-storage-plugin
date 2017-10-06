@@ -20,7 +20,7 @@
     <l:main-panel>
       <h1>Uploaded artifacts (build #${it.buildNumber})</h1>
         <j:set var="baseUrl" value="https://console.cloud.google.com/storage" />
-        <j:set var="downloadUrl" value="https://storage.googleapis.com" />
+        <j:set var="downloadUrl" value="https://storage.cloud.google.com" />
         <h3>Buckets</h3>
         <ul>
         <j:forEach items="${it.buckets}" var="bucket">
