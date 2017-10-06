@@ -15,6 +15,7 @@
  */
 package com.google.jenkins.plugins.storage;
 
+import hudson.Plugin;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 
@@ -25,6 +26,7 @@ import com.google.jenkins.plugins.credentials.domains.DomainRequirementProvider;
 import com.google.jenkins.plugins.credentials.domains.RequiresDomain;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.util.Executor;
+import jenkins.model.Jenkins;
 
 /**
  * This module abstracts how the Upload implementations instantiate
@@ -48,10 +50,25 @@ public class UploadModule implements Serializable {
 
   public Storage getStorageService(GoogleRobotCredentials credentials)
       throws UploadException {
+    String version = "";
+    Plugin plugin = Jenkins.getInstance().getPlugin(PLUGIN_NAME);
+    if(plugin != null) {
+      version = plugin.getWrapper().getVersion();
+    }
+    return getStorageService(credentials, version);
+  }
+
+  public Storage getStorageService(GoogleRobotCredentials credentials, String version)
+      throws UploadException {
     try {
+      String appName = Messages.UploadModule_AppName();
+      if (version.length() > 0) {
+        version = version.split(" ")[0];
+        appName = appName.concat("/").concat(version);
+      }
       return new Storage.Builder(new NetHttpTransport(), new JacksonFactory(),
           credentials.getGoogleCredential(getRequirement()))
-          .setApplicationName(Messages.UploadModule_AppName())
+          .setApplicationName(appName)
           .build();
     } catch (GeneralSecurityException e) {
       throw new UploadException(
@@ -73,4 +90,6 @@ public class UploadModule implements Serializable {
     return Messages.UploadModule_PrefixFormat(
         Messages.GoogleCloudStorageUploader_DisplayName(), x);
   }
+
+  final static String PLUGIN_NAME = "google-storage-plugin";
 }

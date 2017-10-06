@@ -15,8 +15,11 @@
  */
 package com.google.jenkins.plugins.storage;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.services.storage.Storage;
 import java.security.GeneralSecurityException;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -44,11 +47,35 @@ public class UploadModuleTest {
   @Mock private GoogleRobotCredentials mockGoogleRobotCredentials;
   private UploadModule underTest;
 
+  GoogleCredential credential = new GoogleCredential();
+
   @SuppressWarnings("serial")
   @Before
-  public void setup() {
+  public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
     underTest = new UploadModule();
+
+    when(mockGoogleRobotCredentials.getGoogleCredential(isA(
+        GoogleOAuth2ScopeRequirement.class)))
+        .thenReturn(credential);
+  }
+
+  @Test
+  public void version_space() throws Exception {
+    Storage storage = underTest.getStorageService(mockGoogleRobotCredentials, "0.14-SNAPSHOT (other details)");
+    assertEquals(storage.getApplicationName(), "Jenkins-GCS-Plugin/0.14-SNAPSHOT");
+  }
+
+  @Test
+  public void version_noSpace() throws Exception {
+    Storage storage = underTest.getStorageService(mockGoogleRobotCredentials, "v");
+    assertEquals(storage.getApplicationName(), "Jenkins-GCS-Plugin/v");
+  }
+
+  @Test
+  public void version_none() throws Exception {
+    Storage storage = underTest.getStorageService(mockGoogleRobotCredentials, "");
+    assertEquals(storage.getApplicationName(), "Jenkins-GCS-Plugin");
   }
 
   @Test
