@@ -103,10 +103,7 @@ public class StdoutUpload extends AbstractUpload {
         FilePath logDir = new FilePath(run.getLogFile()).getParent();
 
 
-        String resolvedLogName = getLogName();
-        if(run instanceof AbstractBuild) {
-          resolvedLogName = Util.replaceMacro(getLogName(), run.getEnvironment(listener));
-        }
+        String resolvedLogName = StorageUtil.replaceMacro(getLogName(), run, listener);
         FilePath logFile = new FilePath(logDir, resolvedLogName);
 
         outputStream = new PlainTextConsoleOutputStream(logFile.write());

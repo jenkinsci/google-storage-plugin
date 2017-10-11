@@ -15,6 +15,7 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
+import com.google.jenkins.plugins.storage.StorageUtil.BucketPath;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -68,12 +69,11 @@ public class BuildGcsUploadReportTest {
   }
 
   @Test
-  public void addUpload() {
+  public void addUpload() throws Exception {
     String relativePath = "relative/path";
-    String bucketDir = "myBucket/helloworld/18";
     assertEquals(0, underTest.getStorageObjects().size());
-    underTest.addUpload(relativePath, bucketDir);
-    assertEquals(bucketDir + "/" + relativePath,
+    underTest.addUpload(relativePath, new BucketPath("myBucket", "helloworld/18"));
+    assertEquals("myBucket/helloworld/18/" + relativePath,
         Iterables.getLast(underTest.getStorageObjects()));
   }
 

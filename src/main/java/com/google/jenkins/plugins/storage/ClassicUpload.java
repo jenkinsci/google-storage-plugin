@@ -73,11 +73,7 @@ public class ClassicUpload extends AbstractUpload {
       FilePath workspace, TaskListener listener) throws UploadException {
     try {
 
-      String globResolvedVars = getPattern();
-      if(run instanceof AbstractBuild) {
-        globResolvedVars = Util.replaceMacro(
-            getPattern(), run.getEnvironment(listener));
-      }
+      String globResolvedVars = StorageUtil.replaceMacro(getPattern(), run, listener);
 
       // In order to support absolute globs (e.g. /gagent/metaOutput/std*.txt)
       // we must identify absolute paths and rebase the "workspace" to be the

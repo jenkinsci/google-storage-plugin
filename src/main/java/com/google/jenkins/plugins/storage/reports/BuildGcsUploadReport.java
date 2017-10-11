@@ -15,6 +15,7 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
+import com.google.jenkins.plugins.storage.StorageUtil.BucketPath;
 import hudson.model.Run;
 import java.util.Collections;
 import java.util.Set;
@@ -95,11 +96,11 @@ public class BuildGcsUploadReport extends AbstractGcsUploadReport {
   /**
    * @param relativePath
    *          the relative path (to the workspace) of the uploaded file.
-   * @param bucketDir
-   *          the storage prefix, including the bucket name.
+   * @param bucket
+   *          the directory location in the cloud
    */
-  public void addUpload(String relativePath, String bucketDir) {
-    files.add(bucketDir + "/" + relativePath);
+  public void addUpload(String relativePath, BucketPath bucket) {
+    files.add(bucket.getPath() + "/" + relativePath);
   }
 
   /**
