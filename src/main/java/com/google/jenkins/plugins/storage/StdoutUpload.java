@@ -15,6 +15,7 @@
  */
 package com.google.jenkins.plugins.storage;
 
+import com.google.jenkins.plugins.storage.util.StorageUtil;
 import hudson.model.Run;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,10 +36,8 @@ import com.google.jenkins.plugins.util.Resolve;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.console.PlainTextConsoleOutputStream;
-import hudson.model.AbstractBuild;
 import hudson.model.Result;
 import hudson.model.TaskListener;
-import hudson.Util;
 import hudson.util.FormValidation;
 
 /**

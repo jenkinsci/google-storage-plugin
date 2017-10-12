@@ -15,6 +15,7 @@
  */
 package com.google.jenkins.plugins.storage;
 
+import com.google.jenkins.plugins.storage.util.StorageUtil;
 import hudson.model.Run;
 import java.io.IOException;
 import java.util.Arrays;
@@ -29,8 +30,6 @@ import com.google.jenkins.plugins.util.Resolve;
 
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.Util;
-import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 

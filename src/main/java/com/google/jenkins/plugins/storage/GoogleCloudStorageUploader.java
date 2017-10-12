@@ -109,7 +109,7 @@ public class GoogleCloudStorageUploader extends Recorder {
         upload.perform(credentials, build, listener);
       } catch (UploadException e) {
         e.printStackTrace(listener.error(
-            Messages.UploadModule_PrefixFormat(
+            Messages.StorageUtil_PrefixFormat(
                 getDescriptor().getDisplayName(),
                 Messages.GoogleCloudStorageUploader_ExceptionDuringUpload(
                     e.getMessage()))));

@@ -15,7 +15,7 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
-import com.google.jenkins.plugins.storage.StorageUtil.BucketPath;
+import com.google.jenkins.plugins.storage.util.BucketPath;
 import hudson.model.Run;
 import java.util.Collections;
 import java.util.Set;

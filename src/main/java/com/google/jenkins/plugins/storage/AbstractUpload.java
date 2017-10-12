@@ -17,7 +17,8 @@ package com.google.jenkins.plugins.storage;
 
 import static java.util.logging.Level.SEVERE;
 
-import com.google.jenkins.plugins.storage.StorageUtil.BucketPath;
+import com.google.jenkins.plugins.storage.util.StorageUtil;
+import com.google.jenkins.plugins.storage.util.BucketPath;
 import hudson.model.Run;
 import java.io.IOException;
 import java.io.Serializable;
@@ -39,7 +40,6 @@ import org.jenkinsci.remoting.RoleChecker;
 
 import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_UNAUTHORIZED;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor.GCS_SCHEME;
 
 import com.google.api.client.googleapis.media.MediaHttpUploader;
 import com.google.api.client.http.HttpResponseException;
@@ -48,10 +48,8 @@ import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Bucket;
 import com.google.api.services.storage.model.ObjectAccessControl;
 import com.google.api.services.storage.model.StorageObject;
-import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -69,7 +67,6 @@ import com.google.jenkins.plugins.util.NotFoundException;
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionPoint;
 import hudson.FilePath;
-import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.Describable;
 import hudson.model.Hudson;
@@ -139,10 +136,6 @@ public abstract class AbstractUpload
     perform(credentials, build, build.getWorkspace(), listener);
   }
 
-  private String moduleName() {
-    return Messages.GoogleCloudStorageUploader_DisplayName();
-  }
-
   /**
    * The main action entrypoint of this extension.  This uploads the
    * contents included by the implementation to our resolved storage
@@ -159,17 +152,15 @@ public abstract class AbstractUpload
     try {
       // Turn paths containing things like $BUILD_NUMBER and $JOB_NAME into
       // their fully resolved forms.
-      BucketPath storagePrefix = new BucketPath(getBucket(), run, listener, moduleName());
-      if (storagePrefix.error()) {
-        return;
-      }
+      String resolvedBucket = StorageUtil.replaceMacro(getBucket(), run, listener);
+      BucketPath storagePrefix = new BucketPath(resolvedBucket);
 
       UploadSpec uploads = getInclusions(
           run, checkNotNull(workspace), listener);
 
       if (uploads != null) {
         BuildGcsUploadReport links = BuildGcsUploadReport.of(run);
-        links.addBucket(storagePrefix.bucket);
+        links.addBucket(storagePrefix.getBucket());
 
         initiateUploadsAtWorkspace(credentials, run, storagePrefix,
             uploads, listener);
@@ -377,7 +368,7 @@ public abstract class AbstractUpload
               new Callable<Void, UploadException>() {
                 @Override
                 public Void call() throws UploadException {
-                  performUploads(metadata, storagePrefix.bucket, storagePrefix.object,
+                  performUploads(metadata, storagePrefix.getBucket(), storagePrefix.getObject(),
                       remoteCredentials, uploads, listener);
                   return (Void) null;
                 }
@@ -458,7 +449,7 @@ public abstract class AbstractUpload
           annotateObject(object, listener);
 
           // Log that we are uploading the file and begin executing the upload.
-          listener.getLogger().println(StorageUtil.prefix(moduleName(),
+          listener.getLogger().println(module.prefix(
               Messages.AbstractUpload_Uploading(relativePath)));
           
           performUploadWithRetry(executor, service, bucket, object, include);
