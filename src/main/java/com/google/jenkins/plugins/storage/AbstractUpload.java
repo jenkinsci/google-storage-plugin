@@ -17,9 +17,6 @@ package com.google.jenkins.plugins.storage;
 
 import static java.util.logging.Level.SEVERE;
 
-import com.google.jenkins.plugins.storage.util.StorageUtil;
-import com.google.jenkins.plugins.storage.util.BucketPath;
-import hudson.model.Run;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
@@ -37,8 +34,10 @@ import javax.annotation.Nullable;
 
 import org.apache.commons.io.FilenameUtils;
 import org.jenkinsci.remoting.RoleChecker;
+import org.kohsuke.stapler.DataBoundSetter;
 
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_UNAUTHORIZED;
+import static com.google.api.client.http.HttpStatusCodes
+    .STATUS_CODE_UNAUTHORIZED;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.api.client.googleapis.media.MediaHttpUploader;
@@ -58,6 +57,8 @@ import com.google.common.io.Files;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.metadata.MetadataContainer;
 import com.google.jenkins.plugins.storage.reports.BuildGcsUploadReport;
+import com.google.jenkins.plugins.storage.util.BucketPath;
+import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.ConflictException;
 import com.google.jenkins.plugins.util.Executor;
 import com.google.jenkins.plugins.util.ExecutorException;
@@ -71,52 +72,49 @@ import hudson.model.AbstractBuild;
 import hudson.model.Describable;
 import hudson.model.Hudson;
 import hudson.model.Result;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.remoting.Callable;
-import org.kohsuke.stapler.DataBoundSetter;
 
 /**
  * This new extension point is used for surfacing different kinds of
  * Google Cloud Storage (GCS) uploads.  The most obvious implementations
  * are provided as:
+ *
  * @see ClassicUpload
  * @see StdoutUpload
  *
  * We provide the following hooks for implementations to inject additional
- * functionality:
- * <ul>
- *   <li> Required {@link #getDetails}: provides detail information for the
- * GCS upload report.
- *   <li> Required {@link #getInclusions}: surfaces the set of
- * {@link UploadSpec} for the base class to upload to GCS.
+ * functionality: <ul> <li> Required {@link #getDetails}: provides detail
+ * information for the GCS upload report. <li> Required {@link #getInclusions}:
+ * surfaces the set of {@link UploadSpec} for the base class to upload to GCS.
  *
- *   <li> Optional {@link #forResult}: determines the build states for which
- * uploading should be performed.
- *   <li> Optional {@link #getMetadata}: allows the implementation to surface
- * additional metadata on the storage object
- *   <li> Optional {@link #annotateObject}: allows the implementation to
- * ~arbitrarily rewrite parts of the object prior to insertion.
- * </ul>
+ * <li> Optional {@link #forResult}: determines the build states for which
+ * uploading should be performed. <li> Optional {@link #getMetadata}: allows the
+ * implementation to surface additional metadata on the storage object <li>
+ * Optional {@link #annotateObject}: allows the implementation to ~arbitrarily
+ * rewrite parts of the object prior to insertion. </ul>
  */
 public abstract class AbstractUpload
     implements Describable<AbstractUpload>, ExtensionPoint, Serializable {
+
   // Only attempt to refresh the remote credentials once per 401 received.
   protected static final int MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES = 1;
   private static final Logger logger =
       Logger.getLogger(AbstractUpload.class.getName());
   private static final ImmutableMap<String, String> CONTENT_TYPES =
       ImmutableMap.of(
-        "css", "text/css",
-        "js", "application/javascript",
-        "svg", "image/svg+xml",
-        "woff2", "font/woff2"
+          "css", "text/css",
+          "js", "application/javascript",
+          "svg", "image/svg+xml",
+          "woff2", "font/woff2"
       );
 
   /**
    * Construct the base upload from a handful of universal properties.
    *
-   * @param bucket The unresolved name of the storage bucket within
-   * which to store the resulting objects.
+   * @param bucket The unresolved name of the storage bucket within which to
+   * store the resulting objects.
    * @param module An {@link UploadModule} to use for execution.
    */
   public AbstractUpload(String bucket, @Nullable UploadModule module) {
@@ -152,7 +150,8 @@ public abstract class AbstractUpload
     try {
       // Turn paths containing things like $BUILD_NUMBER and $JOB_NAME into
       // their fully resolved forms.
-      String resolvedBucket = StorageUtil.replaceMacro(getBucket(), run, listener);
+      String resolvedBucket = StorageUtil
+          .replaceMacro(getBucket(), run, listener);
       BucketPath storagePrefix = new BucketPath(resolvedBucket);
 
       UploadSpec uploads = getInclusions(
@@ -182,6 +181,7 @@ public abstract class AbstractUpload
    * not, then the absolute path will be appended.
    */
   protected static class UploadSpec implements Serializable {
+
     public UploadSpec(FilePath workspace, List<FilePath> inclusions) {
       this.workspace = checkNotNull(workspace);
       this.inclusions = Collections.unmodifiableCollection(inclusions);
@@ -258,7 +258,10 @@ public abstract class AbstractUpload
   public String getBucket() {
     return bucketNameWithVars;
   }
-  /** NOTE: old name kept for deserialization */
+
+  /**
+   * NOTE: old name kept for deserialization
+   */
   private final String bucketNameWithVars;
 
   /**
@@ -268,9 +271,11 @@ public abstract class AbstractUpload
   public void setSharedPublicly(boolean sharedPublicly) {
     this.sharedPublicly = sharedPublicly;
   }
+
   public boolean isSharedPublicly() {
     return sharedPublicly;
   }
+
   private boolean sharedPublicly;
 
   /**
@@ -280,9 +285,11 @@ public abstract class AbstractUpload
   public void setForFailedJobs(boolean forFailedJobs) {
     this.forFailedJobs = forFailedJobs;
   }
+
   public boolean isForFailedJobs() {
     return forFailedJobs;
   }
+
   private boolean forFailedJobs;
 
   /**
@@ -293,17 +300,19 @@ public abstract class AbstractUpload
   public void setShowInline(boolean showInline) {
     this.showInline = showInline;
   }
+
   public boolean isShowInline() {
     return showInline;
   }
+
   private boolean showInline;
 
   /**
-   * The path prefix that will be stripped from uploaded files. May be null
-   * if no path prefix needs to be stripped.
+   * The path prefix that will be stripped from uploaded files. May be null if
+   * no path prefix needs to be stripped.
    *
-   * Filenames that do not start with this prefix will not be modified. Trailing slash is
-   * automatically added if it is missing.
+   * Filenames that do not start with this prefix will not be modified. Trailing
+   * slash is automatically added if it is missing.
    */
   @DataBoundSetter
   public void setPathPrefix(@Nullable String pathPrefix) {
@@ -312,10 +321,12 @@ public abstract class AbstractUpload
     }
     this.pathPrefix = pathPrefix;
   }
+
   @Nullable
   public String getPathPrefix() {
     return pathPrefix;
   }
+
   private String pathPrefix;
 
   /**
@@ -359,28 +370,29 @@ public abstract class AbstractUpload
       final Map<String, String> metadata = getMetadata(run);
 
       try {
-          // Use remotable credential to access the storage service from the
-          // remote machine.
-          final GoogleRobotCredentials remoteCredentials =
-              checkNotNull(credentials).forRemote(module.getRequirement());
+        // Use remotable credential to access the storage service from the
+        // remote machine.
+        final GoogleRobotCredentials remoteCredentials =
+            checkNotNull(credentials).forRemote(module.getRequirement());
 
-          uploads.workspace.act(
-              new Callable<Void, UploadException>() {
-                @Override
-                public Void call() throws UploadException {
-                  performUploads(metadata, storagePrefix.getBucket(), storagePrefix.getObject(),
-                      remoteCredentials, uploads, listener);
-                  return (Void) null;
-                }
+        uploads.workspace.act(
+            new Callable<Void, UploadException>() {
+              @Override
+              public Void call() throws UploadException {
+                performUploads(metadata, storagePrefix.getBucket(),
+                    storagePrefix.getObject(),
+                    remoteCredentials, uploads, listener);
+                return (Void) null;
+              }
 
-                @Override
-                public void checkRoles(RoleChecker checker)
-                    throws SecurityException {
-                  // We know by definition that this is the correct role;
-                  // the callable exists only in this method context.
-                }
-              });
-      }  catch (GeneralSecurityException e) {
+              @Override
+              public void checkRoles(RoleChecker checker)
+                  throws SecurityException {
+                // We know by definition that this is the correct role;
+                // the callable exists only in this method context.
+              }
+            });
+      } catch (GeneralSecurityException e) {
         throw new UploadException(
             Messages.AbstractUpload_RemoteCredentialError(), e);
       }
@@ -389,7 +401,8 @@ public abstract class AbstractUpload
       BuildGcsUploadReport report = BuildGcsUploadReport.of(run);
       for (FilePath include : uploads.inclusions) {
         report.addUpload(StorageUtil.getStrippedFilename(
-            StorageUtil.getRelative(include, uploads.workspace), pathPrefix), storagePrefix);
+            StorageUtil.getRelative(include, uploads.workspace), pathPrefix),
+            storagePrefix);
       }
 
     } catch (IOException e) {
@@ -409,10 +422,10 @@ public abstract class AbstractUpload
   private void performUploads(Map<String, String> metadata, String bucketName,
       String objectPrefix, GoogleRobotCredentials credentials,
       UploadSpec uploads, TaskListener listener) throws UploadException {
-    
+
     Queue<FilePath> paths = new LinkedList<>(uploads.inclusions);
     int credRefreshesRemaining = MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES;
-    
+
     do {
       try {
         Storage service = module.getStorageService(credentials);
@@ -422,19 +435,21 @@ public abstract class AbstractUpload
         // attach its default ACLs to the objects we upload.
         Bucket bucket = getOrCreateBucket(service, credentials, executor,
             bucketName);
-        
+
         while (!paths.isEmpty()) {
           FilePath include = paths.peek();
-          String relativePath = StorageUtil.getRelative(include, uploads.workspace);
-          String uploadedFileName = StorageUtil.getStrippedFilename(relativePath, pathPrefix);
+          String relativePath = StorageUtil
+              .getRelative(include, uploads.workspace);
+          String uploadedFileName = StorageUtil
+              .getStrippedFilename(relativePath, pathPrefix);
           String finalName = FilenameUtils.separatorsToUnix(
               FilenameUtils.concat(objectPrefix, uploadedFileName));
-   
+
           StorageObject object = new StorageObject()
               .setName(finalName)
               .setContentDisposition(
                   HttpHeaders.getContentDisposition(
-                    include.getName(), isShowInline()))
+                      include.getName(), isShowInline()))
               .setContentType(
                   detectMIMEType(include.getName()))
               .setSize(BigInteger.valueOf(include.length()));
@@ -443,7 +458,7 @@ public abstract class AbstractUpload
             object.setAcl(addPublicReadAccess(
                 getDefaultObjectAcl(bucket, listener)));
           }
-          
+
           // Give clients an opportunity to decorate the storage
           // object before we store it.
           annotateObject(object, listener);
@@ -451,7 +466,7 @@ public abstract class AbstractUpload
           // Log that we are uploading the file and begin executing the upload.
           listener.getLogger().println(module.prefix(
               Messages.AbstractUpload_Uploading(relativePath)));
-          
+
           performUploadWithRetry(executor, service, bucket, object, include);
           paths.remove();
           credRefreshesRemaining = MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES;
@@ -490,9 +505,9 @@ public abstract class AbstractUpload
   private String detectMIMEType(String filename) {
     String extension = Files.getFileExtension(filename);
     if (CONTENT_TYPES.containsKey(extension)) {
-        return CONTENT_TYPES.get(extension);
+      return CONTENT_TYPES.get(extension);
     } else {
-        return URLConnection.guessContentTypeFromName(filename);
+      return URLConnection.guessContentTypeFromName(filename);
     }
   }
 

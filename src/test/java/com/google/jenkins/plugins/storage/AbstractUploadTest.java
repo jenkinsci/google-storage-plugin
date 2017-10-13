@@ -15,7 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import hudson.model.Run;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -41,7 +40,8 @@ import org.jvnet.hudson.test.WithoutJenkins;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_UNAUTHORIZED;
+import static com.google.api.client.http.HttpStatusCodes
+    .STATUS_CODE_UNAUTHORIZED;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 
@@ -59,7 +59,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
+import com.google.jenkins.plugins.credentials.oauth
+    .GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.ClassicUpload.DescriptorImpl;
 import com.google.jenkins.plugins.storage.reports.BuildGcsUploadReport;
@@ -70,9 +71,9 @@ import com.google.jenkins.plugins.util.NotFoundException;
 
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.model.AbstractBuild;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 
@@ -103,18 +104,20 @@ public class AbstractUploadTest {
   private ConflictException conflictException;
   private ForbiddenException forbiddenException;
   private NotFoundException notFoundException;
-  @Mock private HttpResponseException httpResponseException;
+  @Mock
+  private HttpResponseException httpResponseException;
 
   @Rule
   public Verifier verifySawAll = new Verifier() {
-      @Override
-      public void verify() {
-        assertTrue(executor.sawAll());
-        assertFalse(executor.sawUnexpected());
-      }
-    };
+    @Override
+    public void verify() {
+      assertTrue(executor.sawAll());
+      assertFalse(executor.sawUnexpected());
+    }
+  };
 
   private static class FakeUpload extends AbstractUpload {
+
     public FakeUpload(String bucket, boolean isPublic, boolean forFailed,
         boolean showInline, @Nullable String pathPrefix,
         MockUploadModule module, String details, @Nullable UploadSpec uploads) {
@@ -140,7 +143,8 @@ public class AbstractUploadTest {
     }
 
     private final String details;
-    @Nullable private final UploadSpec uploads;
+    @Nullable
+    private final UploadSpec uploads;
 
     /**
      * We need this because it is used to retrieve the module when
@@ -148,6 +152,7 @@ public class AbstractUploadTest {
      */
     @Extension
     public static class DescriptorImpl extends AbstractUploadDescriptor {
+
       public DescriptorImpl() {
         super(FakeUpload.class);
       }
@@ -332,7 +337,8 @@ public class AbstractUploadTest {
     executor.passThruWhen(Storage.Buckets.Insert.class,
         MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class,
-        MockUploadModule.checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
+        MockUploadModule
+            .checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -386,7 +392,8 @@ public class AbstractUploadTest {
     executor.passThruWhen(Storage.Buckets.Insert.class,
         MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class,
-        MockUploadModule.checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
+        MockUploadModule
+            .checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
@@ -470,7 +477,7 @@ public class AbstractUploadTest {
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
-  
+
   @Test(expected = UploadException.class)
   public void testRetryOnFailureStillFails() throws Exception {
     final boolean sharedPublicly = false;
@@ -498,14 +505,14 @@ public class AbstractUploadTest {
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
-  
+
   @Test
   public void testRetryOn401() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
     final boolean showInline = false;
     final String pathPrefix = null;
-    
+
     Bucket bucket = new Bucket();
     bucket.setName(BUCKET_NAME);
     bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
@@ -534,14 +541,14 @@ public class AbstractUploadTest {
 
     underTest.perform(credentials, build, TaskListener.NULL);
   }
-  
+
   @Test(expected = UploadException.class)
   public void testRetryOn401StillFails() throws Exception {
     final boolean sharedPublicly = false;
     final boolean forFailedJobs = true;
     final boolean showInline = false;
     final String pathPrefix = null;
-    
+
     Bucket bucket = new Bucket();
     bucket.setName(BUCKET_NAME);
     bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
@@ -555,10 +562,10 @@ public class AbstractUploadTest {
         new MockUploadModule(executor), /* no retries */
         FAKE_DETAILS,
         uploads);
-    
+
     int maxRetriesPlus1 =
         AbstractUpload.MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES + 1;
-    
+
     for (int i = 0; i < maxRetriesPlus1; i++) {
       executor.when(Storage.Buckets.Get.class, bucket);
       executor.throwWhen(Storage.Objects.Insert.class,
@@ -721,7 +728,7 @@ public class AbstractUploadTest {
 
             List<ObjectAccessControl> addedAcl =
                 Lists.newArrayList(Iterables.filter(
-                object.getAcl(), not(in(bucket.getDefaultObjectAcl()))));
+                    object.getAcl(), not(in(bucket.getDefaultObjectAcl()))));
             Set<String> addedEntities = Sets.newHashSet();
             for (ObjectAccessControl access : addedAcl) {
               assertEquals("READER", access.getRole());

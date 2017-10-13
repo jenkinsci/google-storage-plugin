@@ -15,8 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import com.google.jenkins.plugins.storage.util.StorageUtil;
-import hudson.model.Run;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -31,12 +29,14 @@ import static com.google.common.io.ByteStreams.copy;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Closeables;
+import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.Resolve;
 
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.console.PlainTextConsoleOutputStream;
 import hudson.model.Result;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 
@@ -46,6 +46,7 @@ import hudson.util.FormValidation;
  * name.  By default, the file is named "build-log.txt".
  */
 public class StdoutUpload extends AbstractUpload {
+
   /**
    * Construct the Upload with the stock properties, and the additional
    * information about how to name the build log file.
@@ -65,6 +66,7 @@ public class StdoutUpload extends AbstractUpload {
   public String getLogName() {
     return logName;
   }
+
   private final String logName;
 
   /**
@@ -101,8 +103,8 @@ public class StdoutUpload extends AbstractUpload {
       try {
         FilePath logDir = new FilePath(run.getLogFile()).getParent();
 
-
-        String resolvedLogName = StorageUtil.replaceMacro(getLogName(), run, listener);
+        String resolvedLogName = StorageUtil
+            .replaceMacro(getLogName(), run, listener);
         FilePath logFile = new FilePath(logDir, resolvedLogName);
 
         outputStream = new PlainTextConsoleOutputStream(logFile.write());
@@ -124,12 +126,13 @@ public class StdoutUpload extends AbstractUpload {
    */
   @Extension
   public static class DescriptorImpl extends AbstractUploadDescriptor {
+
     public DescriptorImpl() {
       this(StdoutUpload.class);
     }
 
     public DescriptorImpl(
-      Class<? extends StdoutUpload> clazz) {
+        Class<? extends StdoutUpload> clazz) {
       super(clazz);
     }
 

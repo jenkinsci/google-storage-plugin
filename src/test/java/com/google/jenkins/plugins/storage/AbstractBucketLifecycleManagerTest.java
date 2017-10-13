@@ -42,9 +42,9 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Bucket;
 import com.google.common.base.Predicate;
-import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
+import com.google.jenkins.plugins.credentials.oauth
+    .GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
-import com.google.jenkins.plugins.storage.ClassicUpload.DescriptorImpl;
 import com.google.jenkins.plugins.util.ConflictException;
 import com.google.jenkins.plugins.util.ForbiddenException;
 import com.google.jenkins.plugins.util.MockExecutor;
@@ -60,6 +60,7 @@ import hudson.util.FormValidation;
  * Tests for {@link AbstractBucketLifecycleManager}.
  */
 public class AbstractBucketLifecycleManagerTest {
+
   @Rule
   public JenkinsRule jenkins = new JenkinsRule();
 
@@ -97,6 +98,7 @@ public class AbstractBucketLifecycleManagerTest {
   }
 
   private static class MockUploadModule extends UploadModule {
+
     public MockUploadModule(MockExecutor executor) {
       this(executor, 1 /* retries */);
     }
@@ -115,20 +117,22 @@ public class AbstractBucketLifecycleManagerTest {
     public MockExecutor newExecutor() {
       return executor;
     }
+
     private final MockExecutor executor;
     private final int retryCount;
   }
 
   @Rule
   public Verifier verifySawAll = new Verifier() {
-      @Override
-      public void verify() {
-        assertTrue(executor.sawAll());
-        assertFalse(executor.sawUnexpected());
-      }
-    };
+    @Override
+    public void verify() {
+      assertTrue(executor.sawAll());
+      assertFalse(executor.sawUnexpected());
+    }
+  };
 
   private static class FakeUpload extends AbstractBucketLifecycleManager {
+
     public FakeUpload(String bucketName, MockUploadModule module,
         String details, @Nullable Bucket bucket) {
       super(bucketName, module);
@@ -140,6 +144,7 @@ public class AbstractBucketLifecycleManagerTest {
     public String getDetails() {
       return details;
     }
+
     private final String details;
 
     @Override
@@ -154,7 +159,9 @@ public class AbstractBucketLifecycleManagerTest {
     public Bucket decorateBucket(Bucket bucket) {
       return checkNotNull(this.bucket);
     }
-    @Nullable private final Bucket bucket;
+
+    @Nullable
+    private final Bucket bucket;
 
     /**
      * We need this because it is used to retrieve the module when
@@ -163,6 +170,7 @@ public class AbstractBucketLifecycleManagerTest {
     @Extension
     public static class DescriptorImpl
         extends AbstractBucketLifecycleManagerDescriptor {
+
       public DescriptorImpl() {
         super(FakeUpload.class);
       }
@@ -232,7 +240,8 @@ public class AbstractBucketLifecycleManagerTest {
     executor.passThruWhen(Storage.Buckets.Update.class,
         checkSameBucket(bucket));
 
-    underTest.perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
+    underTest
+        .perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test
@@ -247,7 +256,8 @@ public class AbstractBucketLifecycleManagerTest {
     // A get that passes our check should incur no further RPC
     executor.when(Storage.Buckets.Get.class, bucket);
 
-    underTest.perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
+    underTest
+        .perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test
@@ -267,7 +277,8 @@ public class AbstractBucketLifecycleManagerTest {
     executor.passThruWhen(Storage.Buckets.Update.class,
         checkSameBucket(bucket));
 
-    underTest.perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
+    underTest
+        .perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test(expected = UploadException.class)
@@ -279,7 +290,8 @@ public class AbstractBucketLifecycleManagerTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, conflictException);
 
-    underTest.perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
+    underTest
+        .perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test(expected = UploadException.class)
@@ -291,7 +303,8 @@ public class AbstractBucketLifecycleManagerTest {
 
     executor.throwWhen(Storage.Buckets.Get.class, new IOException("test"));
 
-    underTest.perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
+    underTest
+        .perform(credentials, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test

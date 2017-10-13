@@ -15,22 +15,25 @@
  */
 package com.google.jenkins.plugins.storage.util;
 
+import java.io.IOException;
+import java.util.LinkedList;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.jenkins.plugins.storage.Messages;
 import com.google.jenkins.plugins.storage.UploadException;
+
 import hudson.FilePath;
 import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import java.io.IOException;
-import java.util.LinkedList;
 
 /**
  * A class to contain common utility operations
  */
 public class StorageUtil {
+
   /**
    * Compute the relative path of the given file inclusion, relative to the
    * given workspace.  If the path is absolute, it returns the root-relative
@@ -72,13 +75,15 @@ public class StorageUtil {
    * Perform variable expansion for non-pipeline steps.
    *
    * @param name The name, potentially including with variables
-   * @param run The current run, used to determine pipeline status and to get environment.
+   * @param run The current run, used to determine pipeline status and to get
+   * environment.
    * @param listener Task listener, used to get environment
    * @return The updated name, with variables resolved
    */
-  public static String replaceMacro(String name, Run<?,?> run, TaskListener listener)
+  public static String replaceMacro(String name, Run<?, ?> run,
+      TaskListener listener)
       throws InterruptedException, IOException {
-    if(run instanceof AbstractBuild) {
+    if (run instanceof AbstractBuild) {
       name = Util.replaceMacro(name, run.getEnvironment(listener));
     }
     return name;

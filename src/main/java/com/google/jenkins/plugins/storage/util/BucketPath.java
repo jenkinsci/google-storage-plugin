@@ -15,26 +15,33 @@
  */
 package com.google.jenkins.plugins.storage.util;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor.GCS_SCHEME;
-
-import com.google.jenkins.plugins.storage.Messages;
 import java.io.IOException;
 import java.io.Serializable;
+
+import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor
+    .GCS_SCHEME;
+
+import com.google.jenkins.plugins.storage.Messages;
 
 /**
  * Handles cloud uris and their parsing.
  */
 public class BucketPath implements Serializable {
+
   /**
    * Prepares a new BucketPath.
-   * @param uri path to the bucket object, of the form "gs://bucket_name/path/to/object".
-   *            May contain other characters (i.e., *), no verification is done in this class.
+   *
+   * @param uri path to the bucket object, of the form
+   * "gs://bucket_name/path/to/object".
+   * May contain other characters (i.e., *), no verification is done in this
+   * class.
    */
-  public BucketPath(String uri) throws IOException, InterruptedException, IllegalArgumentException {
+  public BucketPath(String uri)
+      throws IOException, InterruptedException, IllegalArgumentException {
     // Ensure the uri starts with "gs://"
     if (!uri.startsWith(GCS_SCHEME)) {
-      throw new IllegalArgumentException(Messages.AbstractUploadDescriptor_BadPrefix(uri, GCS_SCHEME));
+      throw new IllegalArgumentException(
+          Messages.AbstractUploadDescriptor_BadPrefix(uri, GCS_SCHEME));
     }
 
     // Lop off the GCS_SCHEME prefix.
@@ -60,6 +67,7 @@ public class BucketPath implements Serializable {
     this.bucket = bucket;
     this.object = object;
   }
+
   public boolean error() {
     // The bucket cannot be empty under normal circumstances.
     return getBucket().length() <= 0;
