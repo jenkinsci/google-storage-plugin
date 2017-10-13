@@ -179,12 +179,10 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep,
     public Builder newInstance(StaplerRequest req, JSONObject formData)
         throws FormException {
       // Since the config form lists the optional parameter pathPrefix as
-      // inline, it will be
-      // passed through even if stripPathPrefix is false. This might cause
-      // problems if the user,
-      // for example, fills in the field and then unchecks the checkbox. So,
-      // explicitly remove
-      // pathPrefix whenever stripPathPrefix is false.
+      // inline, it will be passed through even if stripPathPrefix is false.
+      // This might cause problems if the user, for example, fills in the field
+      // and then unchecks the checkbox. So, explicitly remove pathPrefix
+      // whenever stripPathPrefix is false.
       if (Boolean.FALSE.equals(formData.remove("stripPathPrefix"))) {
         formData.remove("pathPrefix");
       }

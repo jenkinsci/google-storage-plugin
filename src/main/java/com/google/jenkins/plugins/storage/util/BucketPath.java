@@ -18,8 +18,7 @@ package com.google.jenkins.plugins.storage.util;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor
-    .GCS_SCHEME;
+import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor.GCS_SCHEME;
 
 import com.google.jenkins.plugins.storage.Messages;
 
@@ -32,9 +31,8 @@ public class BucketPath implements Serializable {
    * Prepares a new BucketPath.
    *
    * @param uri path to the bucket object, of the form
-   * "gs://bucket_name/path/to/object".
-   * May contain other characters (i.e., *), no verification is done in this
-   * class.
+   * "gs://bucket_name/path/to/object". May contain other characters (i.e., *),
+   * no verification is done in this class.
    */
   public BucketPath(String uri)
       throws IOException, InterruptedException, IllegalArgumentException {

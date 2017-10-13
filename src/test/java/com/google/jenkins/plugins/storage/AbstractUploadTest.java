@@ -40,8 +40,7 @@ import org.jvnet.hudson.test.WithoutJenkins;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static com.google.api.client.http.HttpStatusCodes
-    .STATUS_CODE_UNAUTHORIZED;
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_UNAUTHORIZED;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 
@@ -59,8 +58,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.jenkins.plugins.credentials.oauth
-    .GoogleOAuth2ScopeRequirement;
+import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.ClassicUpload.DescriptorImpl;
 import com.google.jenkins.plugins.storage.reports.BuildGcsUploadReport;

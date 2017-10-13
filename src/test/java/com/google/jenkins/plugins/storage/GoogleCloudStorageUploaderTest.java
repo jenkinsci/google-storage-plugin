@@ -41,8 +41,7 @@ import org.jvnet.hudson.test.WithoutJenkins;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor
-    .GCS_SCHEME;
+import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor.GCS_SCHEME;
 
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
@@ -51,11 +50,9 @@ import com.google.api.services.storage.model.StorageObject;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
-import com.google.jenkins.plugins.credentials.oauth
-    .GoogleOAuth2ScopeRequirement;
+import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
-import com.google.jenkins.plugins.storage.GoogleCloudStorageUploader
-    .DescriptorImpl;
+import com.google.jenkins.plugins.storage.GoogleCloudStorageUploader.DescriptorImpl;
 import com.google.jenkins.plugins.util.ConflictException;
 import com.google.jenkins.plugins.util.ForbiddenException;
 import com.google.jenkins.plugins.util.MockExecutor;

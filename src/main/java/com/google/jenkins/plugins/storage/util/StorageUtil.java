@@ -20,7 +20,6 @@ import java.util.LinkedList;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
-import com.google.jenkins.plugins.storage.Messages;
 import com.google.jenkins.plugins.storage.UploadException;
 
 import hudson.FilePath;

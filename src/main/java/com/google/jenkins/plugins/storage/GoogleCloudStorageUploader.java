@@ -26,8 +26,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor
-    .GCS_SCHEME;
+import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor.GCS_SCHEME;
 
 import com.google.common.collect.ImmutableList;
 import com.google.jenkins.plugins.credentials.domains.RequiresDomain;
@@ -56,8 +55,7 @@ public class GoogleCloudStorageUploader extends Recorder {
    * Construct the GCS uploader to use the provided credentials to
    * upload build artifacts.
    *
-   * @param credentialsId The credentials to utilize for authenticating with
-   * GCS
+   * @param credentialsId The credentials to utilize for authenticating with GCS
    * @param uploads The list of uploads the user has requested be done
    */
   @DataBoundConstructor
@@ -168,13 +166,12 @@ public class GoogleCloudStorageUploader extends Recorder {
     }
 
     /**
-     * @return the default uploads when the user configure {@link
-     * GoogleCloudStorageUploader} for the first time.
+     * @return the default uploads when the user configure
+     * {@link GoogleCloudStorageUploader} for the first time.
      */
     public List<AbstractUpload> getDefaultUploads() {
-      StdoutUpload upload = new StdoutUpload(GCS_SCHEME, null, "build-log"
-          + ".txt" /* log name */,
-          null /* legacy arg: bucketNameWithVars */);
+      StdoutUpload upload = new StdoutUpload(GCS_SCHEME, null,
+          "build-log.txt", null /* legacy arg: bucketNameWithVars */);
       upload.setForFailedJobs(true);
       return ImmutableList.<AbstractUpload>of(upload);
     }

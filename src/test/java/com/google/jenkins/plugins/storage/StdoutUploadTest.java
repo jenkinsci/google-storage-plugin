@@ -31,8 +31,7 @@ import org.mockito.MockitoAnnotations;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.storage.Storage;
-import com.google.jenkins.plugins.credentials.oauth
-    .GoogleOAuth2ScopeRequirement;
+import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.StdoutUpload.DescriptorImpl;
 import com.google.jenkins.plugins.util.MockExecutor;

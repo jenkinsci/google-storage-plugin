@@ -36,8 +36,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.jenkinsci.remoting.RoleChecker;
 import org.kohsuke.stapler.DataBoundSetter;
 
-import static com.google.api.client.http.HttpStatusCodes
-    .STATUS_CODE_UNAUTHORIZED;
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_UNAUTHORIZED;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.api.client.googleapis.media.MediaHttpUploader;
