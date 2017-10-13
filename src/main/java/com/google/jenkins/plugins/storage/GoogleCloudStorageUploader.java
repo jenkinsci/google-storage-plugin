@@ -50,6 +50,7 @@ import hudson.tasks.Recorder;
  */
 @RequiresDomain(value = StorageScopeRequirement.class)
 public class GoogleCloudStorageUploader extends Recorder {
+
   /**
    * Construct the GCS uploader to use the provided credentials to
    * upload build artifacts.
@@ -76,6 +77,7 @@ public class GoogleCloudStorageUploader extends Recorder {
   public String getCredentialsId() {
     return credentialsId;
   }
+
   private final String credentialsId;
 
   /**
@@ -92,6 +94,7 @@ public class GoogleCloudStorageUploader extends Recorder {
   public Collection<AbstractUpload> getUploads() {
     return Collections.unmodifiableCollection(uploads);
   }
+
   private final List<AbstractUpload> uploads;
 
   /**
@@ -143,6 +146,7 @@ public class GoogleCloudStorageUploader extends Recorder {
   @Extension
   public static final class DescriptorImpl
       extends BuildStepDescriptor<Publisher> {
+
     /**
      * {@inheritDoc}
      */
@@ -163,11 +167,11 @@ public class GoogleCloudStorageUploader extends Recorder {
 
     /**
      * @return the default uploads when the user configure
-     *         {@link GoogleCloudStorageUploader} for the first time.
+     * {@link GoogleCloudStorageUploader} for the first time.
      */
     public List<AbstractUpload> getDefaultUploads() {
-      StdoutUpload upload = new StdoutUpload(GCS_SCHEME, null, "build-log.txt" /* log name */,
-          null /* legacy arg: bucketNameWithVars */);
+      StdoutUpload upload = new StdoutUpload(GCS_SCHEME, null,
+          "build-log.txt", null /* legacy arg: bucketNameWithVars */);
       upload.setForFailedJobs(true);
       return ImmutableList.<AbstractUpload>of(upload);
     }

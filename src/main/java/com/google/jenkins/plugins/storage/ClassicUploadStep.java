@@ -15,8 +15,21 @@
  */
 package com.google.jenkins.plugins.storage;
 
+import java.io.IOException;
+import java.io.Serializable;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.jenkinsci.Symbol;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
+
 import com.google.jenkins.plugins.credentials.domains.RequiresDomain;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
+
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -27,17 +40,8 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
-import java.io.IOException;
-import java.io.Serializable;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
-import org.jenkinsci.Symbol;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * This upload extension implements the classical upload pattern
@@ -46,12 +50,15 @@ import org.kohsuke.stapler.StaplerRequest;
  * to the storage bucket.
  */
 @RequiresDomain(StorageScopeRequirement.class)
-public class ClassicUploadStep extends Builder implements SimpleBuildStep, Serializable {
+public class ClassicUploadStep extends Builder implements SimpleBuildStep,
+    Serializable {
+
   @Nonnull
   private ClassicUpload upload;
 
   @DataBoundConstructor
-  public ClassicUploadStep(String credentialsId, String bucket, String pattern) {
+  public ClassicUploadStep(String credentialsId, String bucket,
+      String pattern) {
     this(credentialsId, bucket, null, pattern);
   }
 
@@ -60,7 +67,8 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
    *
    * @see ClassicUpload#ClassicUpload
    */
-  public ClassicUploadStep(String credentialsId, String bucket, @Nullable UploadModule module,
+  public ClassicUploadStep(String credentialsId, String bucket,
+      @Nullable UploadModule module,
       String pattern) {
     this.credentialsId = credentialsId;
     upload = new ClassicUpload(bucket, module, pattern, null, null);
@@ -73,6 +81,7 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
   public void setSharedPublicly(boolean sharedPublicly) {
     upload.setSharedPublicly(sharedPublicly);
   }
+
   public boolean isSharedPublicly() {
     return upload.isSharedPublicly();
   }
@@ -85,22 +94,24 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
   public void setShowInline(boolean showInline) {
     upload.setShowInline(showInline);
   }
+
   public boolean isShowInline() {
     return upload.isShowInline();
   }
 
 
   /**
-   * The path prefix that will be stripped from uploaded files. May be null
-   * if no path prefix needs to be stripped.
+   * The path prefix that will be stripped from uploaded files. May be null if
+   * no path prefix needs to be stripped.
    *
-   * Filenames that do not start with this prefix will not be modified. Trailing slash is
-   * automatically added if it is missing.
+   * Filenames that do not start with this prefix will not be modified. Trailing
+   * slash is automatically added if it is missing.
    */
   @DataBoundSetter
   public void setPathPrefix(@Nullable String pathPrefix) {
     upload.setPathPrefix(pathPrefix);
   }
+
   @Nullable
   public String getPathPrefix() {
     return upload.getPathPrefix();
@@ -121,6 +132,7 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
   public String getCredentialsId() {
     return credentialsId;
   }
+
   private final String credentialsId;
 
   @Override
@@ -129,16 +141,22 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
   }
 
   @Override
-  public void perform(Run<?,?> run, FilePath workspace, Launcher launcher, TaskListener listener)
+  public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher,
+      TaskListener listener)
       throws IOException {
     try {
-      upload.perform(GoogleRobotCredentials.getById(getCredentialsId()), run, workspace, listener);
-    } catch(UploadException e) {
+      upload.perform(GoogleRobotCredentials.getById(getCredentialsId()), run,
+          workspace, listener);
+    } catch (UploadException e) {
       throw new IOException("Could not perform upload", e);
     }
   }
 
-  @Extension @Symbol("googleStorageUpload")
+  /**
+   * Descriptor for the class.
+   */
+  @Extension
+  @Symbol("googleStorageUpload")
   public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
     /**
@@ -160,10 +178,11 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
     @Override
     public Builder newInstance(StaplerRequest req, JSONObject formData)
         throws FormException {
-      // Since the config form lists the optional parameter pathPrefix as inline, it will be
-      // passed through even if stripPathPrefix is false. This might cause problems if the user,
-      // for example, fills in the field and then unchecks the checkbox. So, explicitly remove
-      // pathPrefix whenever stripPathPrefix is false.
+      // Since the config form lists the optional parameter pathPrefix as
+      // inline, it will be passed through even if stripPathPrefix is false.
+      // This might cause problems if the user, for example, fills in the field
+      // and then unchecks the checkbox. So, explicitly remove pathPrefix
+      // whenever stripPathPrefix is false.
       if (Boolean.FALSE.equals(formData.remove("stripPathPrefix"))) {
         formData.remove("pathPrefix");
       }

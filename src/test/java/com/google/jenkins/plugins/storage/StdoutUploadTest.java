@@ -18,8 +18,6 @@ package com.google.jenkins.plugins.storage;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -30,19 +28,18 @@ import org.jvnet.hudson.test.JenkinsRule;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
-import com.google.api.services.storage.Storage;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.services.storage.Storage;
+import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.StdoutUpload.DescriptorImpl;
 import com.google.jenkins.plugins.util.MockExecutor;
 import com.google.jenkins.plugins.util.NotFoundException;
 
-import hudson.model.TaskListener;
-
-import hudson.model.FreeStyleProject;
 import hudson.model.FreeStyleBuild;
+import hudson.model.FreeStyleProject;
+import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 
 /**
@@ -50,7 +47,8 @@ import hudson.util.FormValidation;
  */
 public class StdoutUploadTest {
 
-  @Rule public JenkinsRule jenkins = new JenkinsRule();
+  @Rule
+  public JenkinsRule jenkins = new JenkinsRule();
 
   @Mock
   private GoogleRobotCredentials credentials;
@@ -110,7 +108,8 @@ public class StdoutUploadTest {
 
   @Test
   public void doCheckLogNameExpansion() throws Exception {
-    StdoutUpload underTest = new StdoutUpload(BUCKET_URI, new MockUploadModule(executor),
+    StdoutUpload underTest = new StdoutUpload(BUCKET_URI,
+        new MockUploadModule(executor),
         "build.$BUILD_NUMBER.log", null);
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);

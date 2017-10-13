@@ -15,8 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import com.google.jenkins.plugins.storage.util.StorageUtil;
-import hudson.model.Run;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -26,10 +24,12 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
 import com.google.common.base.Objects;
+import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.Resolve;
 
 import hudson.Extension;
 import hudson.FilePath;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 
@@ -40,6 +40,7 @@ import hudson.util.FormValidation;
  * to the storage bucket.
  */
 public class ClassicUpload extends AbstractUpload {
+
   /**
    * Construct the classic upload implementation from the base properties
    * and the glob for matching files.
@@ -72,7 +73,8 @@ public class ClassicUpload extends AbstractUpload {
       FilePath workspace, TaskListener listener) throws UploadException {
     try {
 
-      String globResolvedVars = StorageUtil.replaceMacro(getPattern(), run, listener);
+      String globResolvedVars = StorageUtil
+          .replaceMacro(getPattern(), run, listener);
 
       // In order to support absolute globs (e.g. /gagent/metaOutput/std*.txt)
       // we must identify absolute paths and rebase the "workspace" to be the
@@ -111,7 +113,6 @@ public class ClassicUpload extends AbstractUpload {
   }
 
 
-
   /**
    * Iterate from the workspace through parent directories to its root.
    */
@@ -130,7 +131,10 @@ public class ClassicUpload extends AbstractUpload {
   public String getPattern() {
     return sourceGlobWithVars;
   }
-  /** NOTE: old name kept for deserialization */
+
+  /**
+   * NOTE: old name kept for deserialization
+   */
   private final String sourceGlobWithVars;
 
 
@@ -139,12 +143,13 @@ public class ClassicUpload extends AbstractUpload {
    */
   @Extension
   public static class DescriptorImpl extends AbstractUploadDescriptor {
+
     public DescriptorImpl() {
       this(ClassicUpload.class);
     }
 
     public DescriptorImpl(
-      Class<? extends ClassicUpload> clazz) {
+        Class<? extends ClassicUpload> clazz) {
       super(clazz);
     }
 

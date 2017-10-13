@@ -15,7 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import hudson.model.Run;
 import java.io.IOException;
 
 import javax.annotation.Nullable;
@@ -33,6 +32,7 @@ import com.google.jenkins.plugins.util.NotFoundException;
 
 import hudson.FilePath;
 import hudson.model.Hudson;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 
 /**
