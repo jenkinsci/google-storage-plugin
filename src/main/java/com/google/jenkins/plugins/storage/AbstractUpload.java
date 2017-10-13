@@ -17,6 +17,8 @@ package com.google.jenkins.plugins.storage;
 
 import static java.util.logging.Level.SEVERE;
 
+import com.google.jenkins.plugins.storage.util.StorageUtil;
+import com.google.jenkins.plugins.storage.util.BucketPath;
 import hudson.model.Run;
 import java.io.IOException;
 import java.io.Serializable;
@@ -38,7 +40,6 @@ import org.jenkinsci.remoting.RoleChecker;
 
 import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_UNAUTHORIZED;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor.GCS_SCHEME;
 
 import com.google.api.client.googleapis.media.MediaHttpUploader;
 import com.google.api.client.http.HttpResponseException;
@@ -47,10 +48,8 @@ import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Bucket;
 import com.google.api.services.storage.model.ObjectAccessControl;
 import com.google.api.services.storage.model.StorageObject;
-import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -68,7 +67,6 @@ import com.google.jenkins.plugins.util.NotFoundException;
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionPoint;
 import hudson.FilePath;
-import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.Describable;
 import hudson.model.Hudson;
@@ -154,32 +152,17 @@ public abstract class AbstractUpload
     try {
       // Turn paths containing things like $BUILD_NUMBER and $JOB_NAME into
       // their fully resolved forms.
-      String bucketNameResolvedVars = getBucket();
-
-      if (run instanceof AbstractBuild) {
-        // Do variable name expansion only for non-pipeline builds.
-        bucketNameResolvedVars = Util.replaceMacro(
-            getBucket(), run.getEnvironment(listener));
-      }
-
-      if (!bucketNameResolvedVars.startsWith(GCS_SCHEME)) {
-        listener.error(module.prefix(
-            Messages.AbstractUploadDescriptor_BadPrefix(
-                bucketNameResolvedVars, GCS_SCHEME)));
-        return;
-      }
-      // Lop off the GCS_SCHEME prefix.
-      bucketNameResolvedVars =
-          bucketNameResolvedVars.substring(GCS_SCHEME.length());
+      String resolvedBucket = StorageUtil.replaceMacro(getBucket(), run, listener);
+      BucketPath storagePrefix = new BucketPath(resolvedBucket);
 
       UploadSpec uploads = getInclusions(
           run, checkNotNull(workspace), listener);
 
       if (uploads != null) {
         BuildGcsUploadReport links = BuildGcsUploadReport.of(run);
-        links.addBucket(bucketNameResolvedVars);
+        links.addBucket(storagePrefix.getBucket());
 
-        initiateUploadsAtWorkspace(credentials, run, bucketNameResolvedVars,
+        initiateUploadsAtWorkspace(credentials, run, storagePrefix,
             uploads, listener);
       }
     } catch (InterruptedException e) {
@@ -368,22 +351,10 @@ public abstract class AbstractUpload
    */
   private void initiateUploadsAtWorkspace(
       final GoogleRobotCredentials credentials,
-      final Run run, String storagePrefix,
+      final Run run, final BucketPath storagePrefix,
       final UploadSpec uploads,
       final TaskListener listener) throws UploadException {
     try {
-      // Break things down to a compatible format:
-      //   foo  /  bar / baz / blah.log
-      //  ^---^   ^--------------------^
-      //  bucket      storage-object
-      //
-      // TODO(mattmoor): Test objectPrefix on Windows, where '\' != '/'
-      // Must we translate?  Can we require them to specify in unix-style
-      // and still have things work?
-      String[] halves = checkNotNull(storagePrefix).split("/", 2);
-      final String bucketName = halves[0];
-      final String objectPrefix = (halves.length == 1) ? "" : halves[1];
-
       // Within the workspace, upload all of the files.
       final Map<String, String> metadata = getMetadata(run);
 
@@ -397,7 +368,7 @@ public abstract class AbstractUpload
               new Callable<Void, UploadException>() {
                 @Override
                 public Void call() throws UploadException {
-                  performUploads(metadata, bucketName, objectPrefix,
+                  performUploads(metadata, storagePrefix.getBucket(), storagePrefix.getObject(),
                       remoteCredentials, uploads, listener);
                   return (Void) null;
                 }
@@ -414,12 +385,11 @@ public abstract class AbstractUpload
             Messages.AbstractUpload_RemoteCredentialError(), e);
       }
 
-
       // We can't do this over the wire, so do it in bulk here
       BuildGcsUploadReport report = BuildGcsUploadReport.of(run);
       for (FilePath include : uploads.inclusions) {
-        report.addUpload(getStrippedFilename(
-            getRelative(include, uploads.workspace)), storagePrefix);
+        report.addUpload(StorageUtil.getStrippedFilename(
+            StorageUtil.getRelative(include, uploads.workspace), pathPrefix), storagePrefix);
       }
 
     } catch (IOException e) {
@@ -455,8 +425,8 @@ public abstract class AbstractUpload
         
         while (!paths.isEmpty()) {
           FilePath include = paths.peek();
-          String relativePath = getRelative(include, uploads.workspace);
-          String uploadedFileName = getStrippedFilename(relativePath);
+          String relativePath = StorageUtil.getRelative(include, uploads.workspace);
+          String uploadedFileName = StorageUtil.getStrippedFilename(relativePath, pathPrefix);
           String finalName = FilenameUtils.separatorsToUnix(
               FilenameUtils.concat(objectPrefix, uploadedFileName));
    
@@ -656,42 +626,5 @@ public abstract class AbstractUpload
       throw new UploadException(
           Messages.AbstractUpload_ExceptionGetBucket(bucketName), e);
     }
-  }
-
-  /**
-   * If a path prefix to strip has been specified, and the input string
-   * starts with that prefix, returns the portion of the input after that
-   * prefix. Otherwise, returns the unmodified input.
-   */
-  protected String getStrippedFilename(String filename) {
-    if (pathPrefix != null && filename != null
-        && filename.startsWith(pathPrefix)) {
-      return filename.substring(pathPrefix.length());
-    }
-    return filename;
-  }
-
-  /**
-   * Compute the relative path of the given file inclusion, relative to the
-   * given workspace.  If the path is absolute, it returns the root-relative
-   * path instead.
-   *
-   * @param include The file whose relative path we are computing
-   * @param workspace The workspace containing the included file.
-   * @return The unix-style relative path of file.
-   * @throws UploadException when the input is malformed
-   */
-  public static String getRelative(FilePath include, FilePath workspace)
-      throws UploadException {
-    LinkedList<String> segments = new LinkedList<String>();
-    while (!include.equals(workspace)) {
-      segments.push(include.getName());
-      include = include.getParent();
-      if (Strings.isNullOrEmpty(include.getName())) {
-        // When we reach "/" we're done either way.
-        break;
-      }
-    }
-    return Joiner.on("/").join(segments);
   }
 }

@@ -798,30 +798,6 @@ public class AbstractUploadTest {
 
   @Test
   @WithoutJenkins
-  public void getRelativePositiveTest() throws Exception {
-    FilePath one = workspace.child(FIRST_NAME);
-
-    assertEquals(FIRST_NAME, AbstractUpload.getRelative(one, workspace));
-
-    FilePath second = one.child(SECOND_NAME);
-    assertEquals(SECOND_NAME, AbstractUpload.getRelative(second, one));
-    assertEquals(FIRST_NAME + '/' + SECOND_NAME,
-        AbstractUpload.getRelative(second, workspace));
-  }
-
-  @Test
-  @WithoutJenkins
-  public void getRelativeNegativeTest() throws Exception {
-    FilePath one = workspace.child(FIRST_NAME);
-
-    assertEquals(workspace.toString(),
-        "/" + AbstractUpload.getRelative(workspace, one));
-    assertEquals(nonWorkspace.toString(),
-        "/" + AbstractUpload.getRelative(nonWorkspace, workspace));
-  }
-
-  @Test
-  @WithoutJenkins
   public void doCheckBucketTest() throws IOException {
     DescriptorImpl descriptor = new DescriptorImpl();
 

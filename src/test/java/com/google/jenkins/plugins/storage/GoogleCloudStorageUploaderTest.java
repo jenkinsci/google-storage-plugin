@@ -246,12 +246,7 @@ public class GoogleCloudStorageUploaderTest {
 
     FreeStyleBuild build = project.scheduleBuild2(0).get();
 
-    assertEquals(Result.SUCCESS, build.getResult());
-
-    dumpLog(build);
-    assertThat(CharStreams.toString(new InputStreamReader(
-        build.getLogInputStream())), containsString(
-            Messages.AbstractUploadDescriptor_BadPrefix(bucket, GCS_SCHEME)));
+    assertEquals(Result.FAILURE, build.getResult());
   }
 
   @Test

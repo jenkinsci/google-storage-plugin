@@ -15,6 +15,7 @@
  */
 package com.google.jenkins.plugins.storage;
 
+import com.google.jenkins.plugins.storage.util.StorageUtil;
 import hudson.model.Run;
 import java.io.IOException;
 import java.util.Arrays;
@@ -29,8 +30,6 @@ import com.google.jenkins.plugins.util.Resolve;
 
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.Util;
-import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 
@@ -73,11 +72,7 @@ public class ClassicUpload extends AbstractUpload {
       FilePath workspace, TaskListener listener) throws UploadException {
     try {
 
-      String globResolvedVars = getPattern();
-      if(run instanceof AbstractBuild) {
-        globResolvedVars = Util.replaceMacro(
-            getPattern(), run.getEnvironment(listener));
-      }
+      String globResolvedVars = StorageUtil.replaceMacro(getPattern(), run, listener);
 
       // In order to support absolute globs (e.g. /gagent/metaOutput/std*.txt)
       // we must identify absolute paths and rebase the "workspace" to be the
