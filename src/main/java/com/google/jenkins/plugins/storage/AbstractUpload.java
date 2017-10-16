@@ -55,9 +55,10 @@ import com.google.jenkins.plugins.metadata.MetadataContainer;
 import com.google.jenkins.plugins.storage.reports.BuildGcsUploadReport;
 import com.google.jenkins.plugins.storage.util.BucketPath;
 import com.google.jenkins.plugins.storage.util.RetryStorageOperation;
+import com.google.jenkins.plugins.storage.util.RetryStorageOperation.Operation;
+import com.google.jenkins.plugins.storage.util.RetryStorageOperation
+    .RepeatOperation;
 import com.google.jenkins.plugins.storage.util.StorageUtil;
-import com.google.jenkins.plugins.storage.util.RetryStorageOperation.Action;
-import com.google.jenkins.plugins.storage.util.RetryStorageOperation.RepeatAction;
 import com.google.jenkins.plugins.util.ConflictException;
 import com.google.jenkins.plugins.util.Executor;
 import com.google.jenkins.plugins.util.ExecutorException;
@@ -423,16 +424,13 @@ public abstract class AbstractUpload
       final String objectPrefix, final GoogleRobotCredentials credentials,
       final UploadSpec uploads, final TaskListener listener)
       throws UploadException {
-    RepeatAction<UploadException> a = new RepeatAction<UploadException>() {
-      private Queue<FilePath> paths;
-      Storage service;
-      Executor executor;
-      Bucket bucket;
+    RepeatOperation<UploadException> a =
+        new RepeatOperation<UploadException>() {
+      private Queue<FilePath> paths = new LinkedList<>(uploads.inclusions);;
+      Executor executor = module.newExecutor();;
 
-      {
-        paths = new LinkedList<>(uploads.inclusions);
-        executor = module.newExecutor();
-      }
+      Storage service;
+      Bucket bucket;
 
       @Override
       public void initCredentials() throws UploadException {
@@ -527,7 +525,7 @@ public abstract class AbstractUpload
       final Storage service, final Bucket bucket, final StorageObject object,
       final FilePath include)
       throws ExecutorException, IOException, InterruptedException {
-    Action a = new Action() {
+    Operation a = new Operation() {
       public void act()
           throws IOException, InterruptedException, ExecutorException {
         // Create the insertion operation with the decorated object and

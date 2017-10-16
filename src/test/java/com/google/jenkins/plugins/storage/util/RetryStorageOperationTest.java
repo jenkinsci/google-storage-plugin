@@ -15,17 +15,12 @@
  */
 package com.google.jenkins.plugins.storage.util;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.WithoutJenkins;
 
 import static com.google.api.client.http.HttpStatusCodes
@@ -33,34 +28,32 @@ import static com.google.api.client.http.HttpStatusCodes
 
 import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.StubHttpResponseException;
-import com.google.jenkins.plugins.storage.util.RetryStorageOperation.Action;
-import com.google.jenkins.plugins.storage.util.RetryStorageOperation
-    .RepeatAction;
-import com.google.jenkins.plugins.util.ExecutorException;
+import com.google.jenkins.plugins.storage.util.RetryStorageOperation.Operation;
+import com.google.jenkins.plugins.storage.util.RetryStorageOperation.RepeatOperation;
 import com.google.jenkins.plugins.util.MockExecutor;
-
-import hudson.FilePath;
 
 /**
  * Tests for {@link StorageUtil}.
  */
 public class RetryStorageOperationTest {
+
   private final MockExecutor executor = new MockExecutor();
 
   // An action that fails the given number of times before succeeding
   // and then counts the number of successes
-  private class FailAction implements Action {
+  private class FailOperation implements Operation {
+
     public int fails;
     public int succeeded;
 
-    public FailAction(int fails) {
+    public FailOperation(int fails) {
       this.fails = fails;
       this.succeeded = 0;
     }
 
-    public void act() throws IOException{
+    public void act() throws IOException {
       fails--;
-      if(fails >= 0) {
+      if (fails >= 0) {
         throw new IOException("bad");
       }
       succeeded++;
@@ -70,7 +63,7 @@ public class RetryStorageOperationTest {
   @Test
   @WithoutJenkins
   public void retryNoBudgetTest() throws Exception {
-    FailAction action = new FailAction(1);
+    FailOperation action = new FailOperation(1);
     try {
       // Fail immediately if there is no retry budget
       RetryStorageOperation.performRequestWithRetry(executor, action, 1);
@@ -86,9 +79,9 @@ public class RetryStorageOperationTest {
   @WithoutJenkins
   public void retrySuccessTest() throws Exception {
     // Succeed if there is enough budget
-    FailAction action = new FailAction(1);
+    FailOperation action = new FailOperation(1);
     RetryStorageOperation.performRequestWithRetry(executor, action, 2);
-    assertEquals(-1,action.fails);
+    assertEquals(-1, action.fails);
     assertEquals(1, action.succeeded);
   }
 
@@ -96,22 +89,22 @@ public class RetryStorageOperationTest {
   @WithoutJenkins
   public void retryMoreTimesTest() throws Exception {
     // Correctly count retries for larger numbers
-    FailAction action = new FailAction(1);
+    FailOperation action = new FailOperation(1);
     RetryStorageOperation.performRequestWithRetry(executor, action, 10);
     assertEquals(-1, action.fails);
-    assertEquals( 1, action.succeeded);
+    assertEquals(1, action.succeeded);
   }
 
   @Test
   @WithoutJenkins
   public void retryMoreTimesFailTest() throws Exception {
-    FailAction action = new FailAction(9);
+    FailOperation action = new FailOperation(9);
     try {
       // Fail immediately if there is no retry budget
       RetryStorageOperation.performRequestWithRetry(executor, action, 5);
     } catch (IOException e) {
-      assertEquals( 4, action.fails);
-      assertEquals( 0, action.succeeded);
+      assertEquals(4, action.fails);
+      assertEquals(0, action.succeeded);
       return;
     }
     Assert.fail("Expected exception");
@@ -121,21 +114,22 @@ public class RetryStorageOperationTest {
   @WithoutJenkins
   public void retryLostOfBudgetTest() throws Exception {
     // Succeed only once even if there is lots of budget
-    FailAction action = new FailAction(1);
+    FailOperation action = new FailOperation(1);
     RetryStorageOperation.performRequestWithRetry(executor, action, 10);
     assertEquals(-1, action.fails);
-    assertEquals( 1, action.succeeded);
+    assertEquals(1, action.succeeded);
   }
 
   @Test
   @WithoutJenkins
   public void retryInterruptedException() throws Exception {
     // Interrupted exception is handled as well
-    class MixAction implements Action {
+    class MixOperation implements Operation {
+
       int tries;
       int succeeded = 0;
 
-      MixAction() {
+      MixOperation() {
         tries = 10;
       }
 
@@ -151,17 +145,20 @@ public class RetryStorageOperationTest {
         }
         throw new InterruptedException();
       }
-    };
+    }
+    ;
 
-    MixAction action = new MixAction();
+    MixOperation action = new MixOperation();
 
     RetryStorageOperation.performRequestWithRetry(executor, action, 200);
-    assertEquals( 0, action.tries);
-    assertEquals( 1, action.succeeded);
+    assertEquals(0, action.tries);
+    assertEquals(1, action.succeeded);
   }
 
 
-  private class FailingCredentials implements RepeatAction<NullPointerException>{
+  private class FailingCredentials implements
+      RepeatOperation<NullPointerException> {
+
     public int credLength;
     public int usesLeft;
     public int stepsLeft;
@@ -180,11 +177,12 @@ public class RetryStorageOperationTest {
 
     public void act()
         throws HttpResponseException {
-      assert(stepsLeft > 0);
+      assert (stepsLeft > 0);
 
       if (usesLeft <= 0) {
         failures++;
-        throw new StubHttpResponseException(STATUS_CODE_UNAUTHORIZED, "No more credentials!");
+        throw new StubHttpResponseException(STATUS_CODE_UNAUTHORIZED,
+            "No more credentials!");
       }
 
       usesLeft--;
@@ -226,7 +224,7 @@ public class RetryStorageOperationTest {
   @Test
   @WithoutJenkins
   public void testStuck() throws Exception {
-    // This Action gets stuck reloading credentials when 5 steps remaining.
+    // This Operation gets stuck reloading credentials when 5 steps remaining.
     class StuckCreds extends FailingCredentials {
 
       public StuckCreds(int credLength, int stepsLeft) {
