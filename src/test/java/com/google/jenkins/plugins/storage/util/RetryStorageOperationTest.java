@@ -58,7 +58,7 @@ public class RetryStorageOperationTest {
       }
       succeeded++;
     }
-  };
+  }
 
   @Test
   @WithoutJenkins
@@ -146,7 +146,6 @@ public class RetryStorageOperationTest {
         throw new InterruptedException();
       }
     }
-    ;
 
     MixOperation action = new MixOperation();
 
