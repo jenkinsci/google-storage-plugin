@@ -62,14 +62,14 @@ public class RetryStorageOperation {
    *
    * @param executor The executor to use for the operation
    * @param a The operation to execute.
-   * @param retries How many retries to attempt
+   * @param attempts How many attempts to make. Must be at least 1.
    */
   public static void performRequestWithRetry(Executor executor, Action a,
-      int retries)
+      int attempts)
       throws IOException, InterruptedException, ExecutorException {
     IOException lastIOException = null;
     InterruptedException lastInterruptedException = null;
-    for (int i = 0; i < retries; ++i) {
+    for (int i = 0; i < attempts; ++i) {
       try {
         a.act();
         return;
