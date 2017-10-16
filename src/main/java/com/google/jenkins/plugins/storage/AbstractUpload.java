@@ -15,8 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import static java.util.logging.Level.SEVERE;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
@@ -36,7 +34,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.jenkinsci.remoting.RoleChecker;
 import org.kohsuke.stapler.DataBoundSetter;
 
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_UNAUTHORIZED;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.api.client.googleapis.media.MediaHttpUploader;
@@ -57,6 +54,10 @@ import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.metadata.MetadataContainer;
 import com.google.jenkins.plugins.storage.reports.BuildGcsUploadReport;
 import com.google.jenkins.plugins.storage.util.BucketPath;
+import com.google.jenkins.plugins.storage.util.RetryStorageOperation;
+import com.google.jenkins.plugins.storage.util.RetryStorageOperation.Operation;
+import com.google.jenkins.plugins.storage.util.RetryStorageOperation
+    .RepeatOperation;
 import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.ConflictException;
 import com.google.jenkins.plugins.util.Executor;
@@ -418,83 +419,89 @@ public abstract class AbstractUpload
    * performed at the workspace, so that all of the {@link FilePath}s should
    * be local.
    */
-  private void performUploads(Map<String, String> metadata, String bucketName,
-      String objectPrefix, GoogleRobotCredentials credentials,
-      UploadSpec uploads, TaskListener listener) throws UploadException {
+  private void performUploads(Map<String, String> metadata,
+      final String bucketName,
+      final String objectPrefix, final GoogleRobotCredentials credentials,
+      final UploadSpec uploads, final TaskListener listener)
+      throws UploadException {
+    RepeatOperation<UploadException> a =
+        new RepeatOperation<UploadException>() {
+      private Queue<FilePath> paths = new LinkedList<>(uploads.inclusions);;
+      Executor executor = module.newExecutor();;
 
-    Queue<FilePath> paths = new LinkedList<>(uploads.inclusions);
-    int credRefreshesRemaining = MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES;
+      Storage service;
+      Bucket bucket;
 
-    do {
-      try {
-        Storage service = module.getStorageService(credentials);
-        Executor executor = module.newExecutor();
-
+      @Override
+      public void initCredentials() throws UploadException {
+        service = module.getStorageService(credentials);
         // Ensure the bucket exists, fetching it regardless so that we can
         // attach its default ACLs to the objects we upload.
-        Bucket bucket = getOrCreateBucket(service, credentials, executor,
+        bucket = getOrCreateBucket(service, credentials, executor,
             bucketName);
-
-        while (!paths.isEmpty()) {
-          FilePath include = paths.peek();
-          String relativePath = StorageUtil
-              .getRelative(include, uploads.workspace);
-          String uploadedFileName = StorageUtil
-              .getStrippedFilename(relativePath, pathPrefix);
-          String finalName = FilenameUtils.separatorsToUnix(
-              FilenameUtils.concat(objectPrefix, uploadedFileName));
-
-          StorageObject object = new StorageObject()
-              .setName(finalName)
-              .setContentDisposition(
-                  HttpHeaders.getContentDisposition(
-                      include.getName(), isShowInline()))
-              .setContentType(
-                  detectMIMEType(include.getName()))
-              .setSize(BigInteger.valueOf(include.length()));
-
-          if (isSharedPublicly()) {
-            object.setAcl(addPublicReadAccess(
-                getDefaultObjectAcl(bucket, listener)));
-          }
-
-          // Give clients an opportunity to decorate the storage
-          // object before we store it.
-          annotateObject(object, listener);
-
-          // Log that we are uploading the file and begin executing the upload.
-          listener.getLogger().println(module.prefix(
-              Messages.AbstractUpload_Uploading(relativePath)));
-
-          performUploadWithRetry(executor, service, bucket, object, include);
-          paths.remove();
-          credRefreshesRemaining = MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES;
-        }
-      } catch (ForbiddenException e) {
-        // If the user doesn't own a bucket then they will end up here.
-        throw new UploadException(
-            Messages.AbstractUpload_ForbiddenFileUpload(), e);
-      } catch (HttpResponseException e) {
-        // is this a retryable HTTP 401?
-        if (credRefreshesRemaining > 0
-            && e.getStatusCode() == STATUS_CODE_UNAUTHORIZED) {
-          logger.fine("Remote credentials expired, retrying.");
-          credRefreshesRemaining--;
-        } else {
-          throw new UploadException(
-              Messages.AbstractUpload_ExceptionFileUpload(), e);
-        }
-      } catch (ExecutorException e) {
-        throw new UploadException(
-            Messages.AbstractUpload_ExceptionFileUpload(), e);
-      } catch (IOException e) {
-        throw new UploadException(
-            Messages.AbstractUpload_ExceptionFileUpload(), e);
-      } catch (InterruptedException e) {
-        throw new UploadException(
-            Messages.AbstractUpload_ExceptionFileUpload(), e);
       }
-    } while (!paths.isEmpty());
+
+      @Override
+      public void act()
+          throws HttpResponseException, UploadException, IOException,
+          InterruptedException, ExecutorException {
+        FilePath include = paths.peek();
+        String relativePath = StorageUtil
+            .getRelative(include, uploads.workspace);
+        String uploadedFileName = StorageUtil
+            .getStrippedFilename(relativePath, pathPrefix);
+        String finalName = FilenameUtils.separatorsToUnix(
+            FilenameUtils.concat(objectPrefix, uploadedFileName));
+
+        StorageObject object = new StorageObject()
+            .setName(finalName)
+            .setContentDisposition(
+                HttpHeaders.getContentDisposition(
+                    include.getName(), isShowInline()))
+            .setContentType(
+                detectMIMEType(include.getName()))
+            .setSize(BigInteger.valueOf(include.length()));
+
+        if (isSharedPublicly()) {
+          object.setAcl(addPublicReadAccess(
+              getDefaultObjectAcl(bucket, listener)));
+        }
+
+        // Give clients an opportunity to decorate the storage
+        // object before we store it.
+        annotateObject(object, listener);
+
+        // Log that we are uploading the file and begin executing the upload.
+        listener.getLogger().println(module.prefix(
+            Messages.AbstractUpload_Uploading(relativePath)));
+
+        performUploadWithRetry(executor, service, bucket, object, include);
+        paths.remove();
+      }
+
+      @Override
+      public boolean moreWork() {
+        return !paths.isEmpty();
+      }
+    };
+
+    try {
+      RetryStorageOperation.performRequestWithReinitCredentials(a,
+          MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES);
+    } catch (ForbiddenException e) {
+      // If the user doesn't own a bucket then they will end up here.
+      throw new UploadException(
+          Messages.AbstractUpload_ForbiddenFileUpload(), e);
+    } catch (ExecutorException e) {
+      throw new UploadException(
+          Messages.AbstractUpload_ExceptionFileUpload(), e);
+    } catch (IOException e) {
+      throw new UploadException(
+          Messages.AbstractUpload_ExceptionFileUpload(), e);
+    } catch (InterruptedException e) {
+      throw new UploadException(
+          Messages.AbstractUpload_ExceptionFileUpload(), e);
+    }
   }
 
   /**
@@ -514,13 +521,13 @@ public abstract class AbstractUpload
    * We need our own storage retry logic because we must recreate the
    * input stream for the media uploader.
    */
-  private void performUploadWithRetry(Executor executor, Storage service,
-      Bucket bucket, StorageObject object, FilePath include)
+  private void performUploadWithRetry(final Executor executor,
+      final Storage service, final Bucket bucket, final StorageObject object,
+      final FilePath include)
       throws ExecutorException, IOException, InterruptedException {
-    IOException lastIOException = null;
-    InterruptedException lastInterruptedException = null;
-    for (int i = 0; i < module.getInsertRetryCount(); ++i) {
-      try {
+    Operation a = new Operation() {
+      public void act()
+          throws IOException, InterruptedException, ExecutorException {
         // Create the insertion operation with the decorated object and
         // an input stream of the file contents.
         Storage.Objects.Insert insertion =
@@ -536,25 +543,11 @@ public abstract class AbstractUpload
         }
 
         executor.execute(insertion);
-        return;
-      } catch (IOException e) {
-        logger.log(SEVERE, Messages.AbstractUpload_UploadError(i), e);
-        lastIOException = e;
-      } catch (InterruptedException e) {
-        logger.log(SEVERE, Messages.AbstractUpload_UploadError(i), e);
-        lastInterruptedException = e;
       }
+    };
 
-      // Pause before we retry
-      executor.sleep();
-    }
-
-    // NOTE: We only reach here along paths that encountered an exception.
-    // The "happy path" returns from the "try" statement above.
-    if (lastIOException != null) {
-      throw lastIOException;
-    }
-    throw checkNotNull(lastInterruptedException);
+    RetryStorageOperation
+        .performRequestWithRetry(executor, a, module.getInsertRetryCount());
   }
 
   // Fetch the default object ACL for this bucket. Return an empty list if
