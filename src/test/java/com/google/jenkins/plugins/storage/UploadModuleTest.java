@@ -94,6 +94,6 @@ public class UploadModuleTest {
     thrown.expect(UploadException.class);
     thrown.expectMessage(
         Messages.UploadModule_ExceptionStorageService());
-    underTest.getStorageService(mockGoogleRobotCredentials);
+    underTest.getStorageService(mockGoogleRobotCredentials, "");
   }
 }

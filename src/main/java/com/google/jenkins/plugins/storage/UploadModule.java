@@ -50,14 +50,13 @@ public class UploadModule implements Serializable {
         StorageScopeRequirement.class);
   }
 
-  public Storage getStorageService(GoogleRobotCredentials credentials)
-      throws UploadException {
+  public String getVersion() {
     String version = "";
     Plugin plugin = Jenkins.getInstance().getPlugin(PLUGIN_NAME);
     if (plugin != null) {
       version = plugin.getWrapper().getVersion();
     }
-    return getStorageService(credentials, version);
+    return version;
   }
 
   public Storage getStorageService(GoogleRobotCredentials credentials,

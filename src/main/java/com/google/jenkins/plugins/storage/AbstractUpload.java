@@ -374,6 +374,7 @@ public abstract class AbstractUpload
         // remote machine.
         final GoogleRobotCredentials remoteCredentials =
             checkNotNull(credentials).forRemote(module.getRequirement());
+        final String version = module.getVersion();
 
         uploads.workspace.act(
             new Callable<Void, UploadException>() {
@@ -381,7 +382,7 @@ public abstract class AbstractUpload
               public Void call() throws UploadException {
                 performUploads(metadata, storagePrefix.getBucket(),
                     storagePrefix.getObject(),
-                    remoteCredentials, uploads, listener);
+                    remoteCredentials, uploads, listener, version);
                 return (Void) null;
               }
 
@@ -422,7 +423,7 @@ public abstract class AbstractUpload
   private void performUploads(Map<String, String> metadata,
       final String bucketName,
       final String objectPrefix, final GoogleRobotCredentials credentials,
-      final UploadSpec uploads, final TaskListener listener)
+      final UploadSpec uploads, final TaskListener listener, final String version)
       throws UploadException {
     RepeatOperation<UploadException> a =
         new RepeatOperation<UploadException>() {
@@ -434,7 +435,7 @@ public abstract class AbstractUpload
 
       @Override
       public void initCredentials() throws UploadException {
-        service = module.getStorageService(credentials);
+        service = module.getStorageService(credentials, version);
         // Ensure the bucket exists, fetching it regardless so that we can
         // attach its default ACLs to the objects we upload.
         bucket = getOrCreateBucket(service, credentials, executor,
