@@ -57,6 +57,14 @@
       <id>astroilov</id>
       <name>Andrey Stroilov</name>
     </developer>
+    <developer>
+      <id>agoulti</id>
+      <name>Alexandra Goultiaeva</name>
+    </developer>
+    <developer>
+      <id>bwkimmel</id>
+      <name>Brad Kimmel</name>
+    </developer>
   </developers>
 
   <scm>
