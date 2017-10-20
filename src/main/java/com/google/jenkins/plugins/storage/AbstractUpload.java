@@ -421,9 +421,9 @@ public abstract class AbstractUpload
    * be local.
    */
   private void performUploads(Map<String, String> metadata,
-      final String bucketName,
-      final String objectPrefix, final GoogleRobotCredentials credentials,
-      final UploadSpec uploads, final TaskListener listener, final String version)
+      final String bucketName, final String objectPrefix,
+      final GoogleRobotCredentials credentials, final UploadSpec uploads,
+      final TaskListener listener, final String version)
       throws UploadException {
     RepeatOperation<UploadException> a =
         new RepeatOperation<UploadException>() {
