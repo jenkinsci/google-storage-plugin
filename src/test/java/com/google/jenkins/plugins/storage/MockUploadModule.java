@@ -16,9 +16,14 @@
 
 package com.google.jenkins.plugins.storage;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.LinkedList;
+
 import static org.junit.Assert.assertEquals;
 
 import com.google.api.services.storage.Storage;
+import com.google.api.services.storage.Storage.Objects.Get;
 import com.google.api.services.storage.model.Bucket;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.common.base.Predicate;
@@ -61,6 +66,17 @@ public class MockUploadModule extends UploadModule {
     };
   }
 
+  public static Predicate<Storage.Objects.Get> checkGetObject(
+      final String objectName) {
+    return new Predicate<Storage.Objects.Get>() {
+      @Override
+      public boolean apply(Storage.Objects.Get operation) {
+        assertEquals(objectName, operation.getObject());
+        return true;
+      }
+    };
+  }
+
   public static Predicate<Storage.Buckets.Insert> checkBucketName(
       final String bucketName) {
     return new Predicate<Storage.Buckets.Insert>() {
@@ -71,5 +87,17 @@ public class MockUploadModule extends UploadModule {
         return true;
       }
     };
+  }
+
+  LinkedList<InputStream> mediaStreams = new LinkedList();
+  public void addNextMedia(InputStream stream) {
+    mediaStreams.add(stream);
+  }
+  public InputStream executeMediaAsInputStream(Get getObject)
+      throws IOException {
+    if (mediaStreams.isEmpty()) {
+      return null;
+    }
+    return mediaStreams.remove(0);
   }
 };

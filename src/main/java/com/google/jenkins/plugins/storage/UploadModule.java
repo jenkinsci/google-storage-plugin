@@ -15,6 +15,8 @@
  */
 package com.google.jenkins.plugins.storage;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 
@@ -61,7 +63,7 @@ public class UploadModule implements Serializable {
 
   public Storage getStorageService(GoogleRobotCredentials credentials,
       String version)
-      throws UploadException {
+      throws IOException {
     try {
       String appName = Messages.UploadModule_AppName();
       if (version.length() > 0) {
@@ -73,7 +75,7 @@ public class UploadModule implements Serializable {
           .setApplicationName(appName)
           .build();
     } catch (GeneralSecurityException e) {
-      throw new UploadException(
+      throw new IOException(
           Messages.UploadModule_ExceptionStorageService(), e);
     }
   }
@@ -91,6 +93,11 @@ public class UploadModule implements Serializable {
   public String prefix(String x) {
     return Messages.StorageUtil_PrefixFormat(
         Messages.GoogleCloudStorageUploader_DisplayName(), x);
+  }
+
+  public InputStream executeMediaAsInputStream(Storage.Objects.Get getObject)
+      throws IOException {
+    return getObject.executeMediaAsInputStream();
   }
 
   private static final String PLUGIN_NAME = "google-storage-plugin";

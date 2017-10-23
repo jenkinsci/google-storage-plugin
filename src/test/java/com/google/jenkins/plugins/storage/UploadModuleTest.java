@@ -15,6 +15,7 @@
  */
 package com.google.jenkins.plugins.storage;
 
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 import static org.junit.Assert.assertEquals;
@@ -31,7 +32,8 @@ import org.mockito.MockitoAnnotations;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.storage.Storage;
-import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
+import com.google.jenkins.plugins.credentials.oauth
+    .GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 
 /**
@@ -86,12 +88,12 @@ public class UploadModuleTest {
 
   @Test
   public void newUploader_notRightScope()
-      throws GeneralSecurityException, UploadException {
+      throws GeneralSecurityException, IOException, UploadException {
     GeneralSecurityException ex = new GeneralSecurityException();
     when(mockGoogleRobotCredentials.getGoogleCredential(isA(
         GoogleOAuth2ScopeRequirement.class)))
         .thenThrow(ex);
-    thrown.expect(UploadException.class);
+    thrown.expect(IOException.class);
     thrown.expectMessage(
         Messages.UploadModule_ExceptionStorageService());
     underTest.getStorageService(mockGoogleRobotCredentials, "");
