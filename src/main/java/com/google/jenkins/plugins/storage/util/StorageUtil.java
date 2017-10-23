@@ -20,8 +20,10 @@ import java.util.LinkedList;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
+import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.UploadException;
 
+import hudson.AbortException;
 import hudson.FilePath;
 import hudson.Util;
 import hudson.model.AbstractBuild;
@@ -86,5 +88,21 @@ public class StorageUtil {
       name = Util.replaceMacro(name, run.getEnvironment(listener));
     }
     return name;
+  }
+
+  /**
+   * Look up credentials by name.
+   *
+   * @param credentials The name of the credentials to look up.
+   * @return The corresponding {@link GoogleRobotCredentials}
+   * @throws AbortException If credentials not found
+   */
+  public static GoogleRobotCredentials lookupCredentials(String credentials)
+      throws AbortException {
+    GoogleRobotCredentials result = GoogleRobotCredentials.getById(credentials);
+    if (result == null) {
+      throw new AbortException("Unknown credentials: " + credentials);
+    }
+    return result;
   }
 }

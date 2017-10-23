@@ -28,7 +28,6 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 import com.google.jenkins.plugins.credentials.domains.RequiresDomain;
-import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 
 import hudson.Extension;
 import hudson.FilePath;
@@ -145,7 +144,7 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep,
       TaskListener listener)
       throws IOException {
     try {
-      upload.perform(GoogleRobotCredentials.getById(getCredentialsId()), run,
+      upload.perform(getCredentialsId(), run,
           workspace, listener);
     } catch (UploadException e) {
       throw new IOException("Could not perform upload", e);

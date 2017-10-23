@@ -129,9 +129,10 @@ public abstract class AbstractUpload
   /**
    * Allow old signature for compatibility.
    */
-  public final void perform(GoogleRobotCredentials credentials,
-      AbstractBuild<?, ?> build, TaskListener listener) throws UploadException {
-    perform(credentials, build, build.getWorkspace(), listener);
+  public final void perform(String credentialsId,
+      AbstractBuild<?, ?> build, TaskListener listener)
+      throws UploadException, IOException {
+    perform(credentialsId, build, build.getWorkspace(), listener);
   }
 
   /**
@@ -139,9 +140,12 @@ public abstract class AbstractUpload
    * contents included by the implementation to our resolved storage
    * bucket.
    */
-  public final void perform(GoogleRobotCredentials credentials,
+  public final void perform(String credentialsId,
       Run<?, ?> run, FilePath workspace, TaskListener listener)
-      throws UploadException {
+      throws UploadException, IOException {
+    GoogleRobotCredentials credentials =
+        StorageUtil.lookupCredentials(credentialsId);
+
     if (!forResult(run.getResult())) {
       // Don't upload for the given build state.
       return;

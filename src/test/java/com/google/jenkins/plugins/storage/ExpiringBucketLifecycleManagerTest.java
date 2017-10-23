@@ -167,7 +167,7 @@ public class ExpiringBucketLifecycleManagerTest {
     executor.passThruWhen(Storage.Buckets.Update.class,
         checkHasOneRuleLifecycle());
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -184,7 +184,7 @@ public class ExpiringBucketLifecycleManagerTest {
     executor.passThruWhen(Storage.Buckets.Update.class,
         checkHasOneRuleLifecycle());
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -204,7 +204,7 @@ public class ExpiringBucketLifecycleManagerTest {
     executor.passThruWhen(Storage.Buckets.Update.class,
         checkHasOneRuleLifecycle());
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -221,7 +221,7 @@ public class ExpiringBucketLifecycleManagerTest {
     executor.passThruWhen(Storage.Buckets.Update.class,
         checkHasOneRuleLifecycle());
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -238,7 +238,7 @@ public class ExpiringBucketLifecycleManagerTest {
     executor.passThruWhen(Storage.Buckets.Update.class,
         checkHasOneRuleLifecycle());
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -257,7 +257,7 @@ public class ExpiringBucketLifecycleManagerTest {
     executor.passThruWhen(Storage.Buckets.Update.class,
         checkHasOneRuleLifecycle());
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -272,7 +272,7 @@ public class ExpiringBucketLifecycleManagerTest {
     // A get that returns a bucket should trigger a check/decorate/update
     executor.when(Storage.Buckets.Get.class, bucket);
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   private static final String PROJECT_ID = "foo.com:bar-baz";

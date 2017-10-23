@@ -279,7 +279,7 @@ public class AbstractUploadTest {
     executor.passThruWhen(Storage.Objects.Insert.class,
         MockUploadModule.checkObjectName(SUBDIR_FILENAME));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -305,7 +305,7 @@ public class AbstractUploadTest {
     executor.passThruWhen(Storage.Objects.Insert.class,
         MockUploadModule.checkObjectName(PREFIX_STRIPPED_FILENAME));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
 
     BuildGcsUploadReport buildReport = BuildGcsUploadReport.of(build);
     assertNotNull(buildReport);
@@ -338,7 +338,7 @@ public class AbstractUploadTest {
         MockUploadModule
             .checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -364,7 +364,7 @@ public class AbstractUploadTest {
     executor.passThruWhen(Storage.Objects.Insert.class,
         MockUploadModule.checkObjectName(PREFIX_STRIPPED_FILENAME));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -393,7 +393,7 @@ public class AbstractUploadTest {
         MockUploadModule
             .checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -419,7 +419,7 @@ public class AbstractUploadTest {
     executor.passThruWhen(Storage.Objects.Insert.class,
         MockUploadModule.checkObjectName(FILENAME));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -445,7 +445,7 @@ public class AbstractUploadTest {
     executor.passThruWhen(Storage.Objects.Insert.class,
         MockUploadModule.checkObjectName(STORAGE_PREFIX + "/" + FILENAME));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -473,7 +473,7 @@ public class AbstractUploadTest {
     executor.passThruWhen(Storage.Objects.Insert.class,
         MockUploadModule.checkObjectName(FILENAME));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test(expected = UploadException.class)
@@ -501,7 +501,7 @@ public class AbstractUploadTest {
     executor.throwWhen(Storage.Objects.Insert.class,
         new IOException("should trigger failure"));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -537,7 +537,7 @@ public class AbstractUploadTest {
     executor.passThruWhen(Storage.Objects.Insert.class,
         MockUploadModule.checkObjectName(FILENAME2));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test(expected = UploadException.class)
@@ -571,7 +571,7 @@ public class AbstractUploadTest {
           MockUploadModule.checkObjectName(FILENAME));
     }
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -588,7 +588,7 @@ public class AbstractUploadTest {
         null /* uploads */);
 
     // Verify that we see no RPCs by pushing nothing into the MockExecutor
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -612,7 +612,7 @@ public class AbstractUploadTest {
         MockUploadModule.checkBucketName(BUCKET_NAME));
     // No object insertions
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -640,7 +640,7 @@ public class AbstractUploadTest {
         MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.when(Storage.Buckets.Get.class, bucket);
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test(expected = UploadException.class)
@@ -662,7 +662,7 @@ public class AbstractUploadTest {
     executor.throwWhen(Storage.Buckets.Get.class,
         new IOException("test"));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -690,7 +690,7 @@ public class AbstractUploadTest {
         // Verify there isn't a double-'/'
         MockUploadModule.checkObjectName(STORAGE_PREFIX + "/" + FILENAME));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -737,7 +737,7 @@ public class AbstractUploadTest {
           }
         });
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
@@ -773,7 +773,7 @@ public class AbstractUploadTest {
           }
         });
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test(expected = UploadException.class)
@@ -798,7 +798,7 @@ public class AbstractUploadTest {
     executor.passThruWhen(Storage.Buckets.Insert.class,
         MockUploadModule.checkBucketName(BUCKET_NAME));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test

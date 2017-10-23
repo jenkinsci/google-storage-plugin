@@ -15,6 +15,7 @@
  */
 package com.google.jenkins.plugins.storage;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +35,7 @@ import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.util.MockExecutor;
 import com.google.jenkins.plugins.util.NotFoundException;
 
+import hudson.AbortException;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.TaskListener;
@@ -128,6 +130,32 @@ public class ClassicUploadStepTest {
         TaskListener.NULL);
   }
 
+  @Test
+  public void testInvalidCredentials() throws Exception {
+    ClassicUploadStep step = new ClassicUploadStep("bad-credentials",
+        BUCKET_URI, new MockUploadModule(executor), "*.$BUILD_ID.txt");
+    FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
+
+    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+    executor.passThruWhen(Storage.Buckets.Insert.class,
+        MockUploadModule.checkBucketName(BUCKET_NAME));
+    executor.passThruWhen(Storage.Objects.Insert.class,
+        MockUploadModule.checkObjectName("abc.1.txt"));
+
+    project.getBuildersList().add(step);
+    FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+    try {
+      step.perform(build, build.getWorkspace(),
+          build.getWorkspace().createLauncher(TaskListener.NULL),
+          TaskListener.NULL);
+    } catch (AbortException e) {
+      assertTrue(e.getMessage().contains("bad-credentials"));
+      return;
+    }
+    // Expected exception to happen.
+    assertTrue(false);
+  }
 
   private static final String PROJECT_ID = "foo.com:project-build";
   private static final String CREDENTIALS_ID = "creds";

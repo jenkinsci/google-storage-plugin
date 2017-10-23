@@ -118,7 +118,7 @@ public class StdoutUploadTest {
     executor.passThruWhen(Storage.Objects.Insert.class,
         MockUploadModule.checkObjectName("build.1.log"));
 
-    underTest.perform(credentials, build, TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   private static final String PROJECT_ID = "foo.com:bar-baz";
