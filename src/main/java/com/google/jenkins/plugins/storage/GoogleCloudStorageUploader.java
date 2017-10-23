@@ -103,13 +103,11 @@ public class GoogleCloudStorageUploader extends Recorder {
   @Override
   public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
       BuildListener listener) throws IOException, InterruptedException {
-    GoogleRobotCredentials credentials = getCredentials();
-
     // TODO(mattmoor): threadpool?
     boolean result = true;
     for (AbstractUpload upload : uploads) {
       try {
-        upload.perform(credentials, build, listener);
+        upload.perform(getCredentialsId(), build, listener);
       } catch (UploadException e) {
         e.printStackTrace(listener.error(
             Messages.StorageUtil_PrefixFormat(
