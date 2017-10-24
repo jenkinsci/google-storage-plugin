@@ -92,7 +92,7 @@ public class DownloadStepTest {
     DownloadStep after = jenkins.configRoundtrip(s);
     jenkins
         .assertEqualBeans(s, after,
-            "bucket,localDirectory,pathPrefix,credentialsId");
+            "bucketUri,localDirectory,pathPrefix,credentialsId");
   }
 
   @Test
@@ -104,7 +104,6 @@ public class DownloadStepTest {
     step.setPathPrefix("prefix");
     ConfigurationRoundTripTest(step);
   }
-
 
   @Test
   public void testBuild() throws Exception {

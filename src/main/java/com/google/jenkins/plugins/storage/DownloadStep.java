@@ -51,7 +51,6 @@ import com.google.jenkins.plugins.storage.util.RetryStorageOperation.RepeatOpera
 import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.Executor;
 import com.google.jenkins.plugins.util.ExecutorException;
-import com.google.jenkins.plugins.util.Resolve;
 
 import hudson.Extension;
 import hudson.FilePath;
@@ -83,12 +82,12 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
    * Construct the download step.
    */
   @DataBoundConstructor
-  public DownloadStep(String credentialsId, String bucket,
+  public DownloadStep(String credentialsId, String bucketUri,
       String localDirectory) {
-    this(credentialsId, bucket, localDirectory, null);
+    this(credentialsId, bucketUri, localDirectory, null);
   }
 
-  public DownloadStep(String credentialsId, String bucket,
+  public DownloadStep(String credentialsId, String bucketUri,
       String localDirectory, @Nullable UploadModule module) {
     if (module != null) {
       this.module = module;
@@ -96,20 +95,20 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
       this.module = getDescriptor().getModule();
     }
 
-    this.bucket = bucket;
+    this.bucketUri = bucketUri;
     this.credentialsId = credentialsId;
     this.localDirectory = localDirectory;
   }
 
   /**
-   * The bucket name specified by the user, which potentially contains
+   * The bucket uri specified by the user, which potentially contains
    * unresolved symbols, such as $JOB_NAME and $BUILD_NUMBER.
    */
-  public String getBucket() {
-    return bucket;
+  public String getBucketUri() {
+    return bucketUri;
   }
 
-  private final String bucket;
+  private final String bucketUri;
 
   /**
    * The local directory in the Jenkins workspace that will receive the files.
@@ -177,10 +176,10 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
       throws IOException, InterruptedException {
     try {
       String version = module.getVersion();
-      String path = StorageUtil.replaceMacro(getBucket(), run, listener);
+      String path = StorageUtil.replaceMacro(getBucketUri(), run, listener);
       BucketPath bucketPath = new BucketPath(path);
       if (bucketPath.error()) {
-        throw new IOException("Invalid bucket path: " + getBucket());
+        throw new IOException("Invalid bucket path: " + getBucketUri());
       }
 
       String dirName = StorageUtil
@@ -237,7 +236,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
       private Queue<StorageObject> objects = new LinkedList<StorageObject>(
           spec.objects);
       Executor executor = module.newExecutor();
-      ;
+
       Storage service;
 
       public void initCredentials() throws IOException {
@@ -301,16 +300,6 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
       throw new IOException(
           Messages.AbstractUpload_RemoteCredentialError(), e);
     }
-
-      /*
-      // We can't do this over the wire, so do it in bulk here
-      BuildGcsUploadReport report = BuildGcsUploadReport.of(run);
-      for (FilePath include : uploads.inclusions) {
-        report.addUpload(StorageUtil.getStrippedFilename(
-            StorageUtil.getRelative(include, uploads.workspace), pathPrefix),
-             storagePrefix);
-      }
-      */
   }
 
   /**
@@ -408,21 +397,10 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
      * This callback validates the {@code bucketNameWithVars} input field's
      * values.
      */
-    public FormValidation doCheckBucket(
-        @QueryParameter final String bucket)
+    public FormValidation doCheckBucketUri(
+        @QueryParameter final String bucketUri)
         throws IOException {
-      return ClassicUpload.DescriptorImpl.staticDoCheckBucket(bucket);
-    }
-
-    public static FormValidation doCheckLocalDirectory(
-        @QueryParameter final String localDirectory)
-        throws IOException {
-      String resolvedDir = Resolve.resolveBuiltin(localDirectory);
-      if (resolvedDir.isEmpty()) {
-        return FormValidation.error(Messages.Download_EmptyDir());
-      }
-
-      return FormValidation.ok();
+      return ClassicUpload.DescriptorImpl.staticDoCheckBucket(bucketUri);
     }
   }
 }

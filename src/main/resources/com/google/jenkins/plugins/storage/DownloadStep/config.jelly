@@ -15,11 +15,11 @@
 -->
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
          xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
-	 xmlns:a="/lib/auth">
+   xmlns:a="/lib/auth">
 
-	<a:credentials title="${%Google Credentials}" field="credentialsId" />
+  <a:credentials title="${%Google Credentials}" field="credentialsId" />
 
-  <f:entry title="${%Object to download}" field="bucket">
+  <f:entry title="${%Object to download}" field="bucketUri">
     <f:textbox />
   </f:entry>
 
