@@ -98,8 +98,6 @@ import hudson.remoting.Callable;
 public abstract class AbstractUpload
     implements Describable<AbstractUpload>, ExtensionPoint, Serializable {
 
-  // Only attempt to refresh the remote credentials once per 401 received.
-  protected static final int MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES = 1;
   private static final Logger logger =
       Logger.getLogger(AbstractUpload.class.getName());
   private static final ImmutableMap<String, String> CONTENT_TYPES =
@@ -370,9 +368,6 @@ public abstract class AbstractUpload
       final UploadSpec uploads,
       final TaskListener listener) throws UploadException {
     try {
-      // Within the workspace, upload all of the files.
-      final Map<String, String> metadata = getMetadata(run);
-
       try {
         // Use remotable credential to access the storage service from the
         // remote machine.
@@ -384,7 +379,7 @@ public abstract class AbstractUpload
             new Callable<Void, UploadException>() {
               @Override
               public Void call() throws UploadException {
-                performUploads(metadata, storagePrefix.getBucket(),
+                performUploads(storagePrefix.getBucket(),
                     storagePrefix.getObject(),
                     remoteCredentials, uploads, listener, version);
                 return (Void) null;
@@ -424,10 +419,10 @@ public abstract class AbstractUpload
    * performed at the workspace, so that all of the {@link FilePath}s should
    * be local.
    */
-  private void performUploads(Map<String, String> metadata,
-      final String bucketName, final String objectPrefix,
-      final GoogleRobotCredentials credentials, final UploadSpec uploads,
-      final TaskListener listener, final String version)
+  private void performUploads(final String bucketName,
+      final String objectPrefix, final GoogleRobotCredentials credentials,
+      final UploadSpec uploads, final TaskListener listener,
+      final String version)
       throws UploadException {
     RepeatOperation<UploadException> a =
         new RepeatOperation<UploadException>() {
@@ -438,7 +433,7 @@ public abstract class AbstractUpload
       Bucket bucket;
 
       @Override
-      public void initCredentials() throws UploadException {
+      public void initCredentials() throws UploadException, IOException {
         service = module.getStorageService(credentials, version);
         // Ensure the bucket exists, fetching it regardless so that we can
         // attach its default ACLs to the objects we upload.
@@ -491,8 +486,7 @@ public abstract class AbstractUpload
     };
 
     try {
-      RetryStorageOperation.performRequestWithReinitCredentials(a,
-          MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES);
+      RetryStorageOperation.performRequestWithReinitCredentials(a);
     } catch (ForbiddenException e) {
       // If the user doesn't own a bucket then they will end up here.
       throw new UploadException(

@@ -62,6 +62,7 @@ import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.ClassicUpload.DescriptorImpl;
 import com.google.jenkins.plugins.storage.reports.BuildGcsUploadReport;
+import com.google.jenkins.plugins.storage.util.RetryStorageOperation;
 import com.google.jenkins.plugins.util.ConflictException;
 import com.google.jenkins.plugins.util.ForbiddenException;
 import com.google.jenkins.plugins.util.MockExecutor;
@@ -562,7 +563,7 @@ public class AbstractUploadTest {
         uploads);
 
     int maxRetriesPlus1 =
-        AbstractUpload.MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES + 1;
+        RetryStorageOperation.MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES + 1;
 
     for (int i = 0; i < maxRetriesPlus1; i++) {
       executor.when(Storage.Buckets.Get.class, bucket);

@@ -89,7 +89,7 @@ public class RetryStorageOperation {
    */
   public interface RepeatOperation<Ex extends Throwable> {
 
-    public void initCredentials() throws Ex;
+    public void initCredentials() throws IOException, Ex;
 
     public void act()
         throws HttpResponseException, IOException, InterruptedException,
@@ -134,5 +134,15 @@ public class RetryStorageOperation {
       }
       // Other exceptions are raised further for the client to deal with
     } while (a.moreWork());
+  }
+
+  // Only attempt to refresh the remote credentials once per 401 received.
+  public static final int MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES = 1;
+
+  public static <Ex extends Throwable> void
+  performRequestWithReinitCredentials(RepeatOperation<Ex> a)
+      throws IOException, InterruptedException, ExecutorException, Ex {
+    performRequestWithReinitCredentials(a,
+        MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES);
   }
 }
