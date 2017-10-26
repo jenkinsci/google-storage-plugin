@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.remoting.RoleChecker;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -41,6 +42,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.api.client.googleapis.media.MediaHttpDownloader;
 import com.google.api.services.storage.Storage;
+import com.google.api.services.storage.model.Objects;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.jenkins.plugins.credentials.domains.RequiresDomain;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
@@ -52,6 +54,7 @@ import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.Executor;
 import com.google.jenkins.plugins.util.ExecutorException;
 
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -319,6 +322,44 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
   }
 
   /**
+   * Split the string on wildcards.
+   *
+   * String.split removes trailing empty strings, for example, "a", "a*" and
+   * "a**" and would procude the same result, so that method is not suitable.
+   */
+  public static String[] split(String uri) throws AbortException {
+    int occurs = StringUtils.countMatches(uri, "*");
+
+    if (occurs == 0) {
+      return new String[]{uri};
+    }
+
+    if (occurs > 1) {
+      throw new AbortException(
+          Messages.Download_UnsupportedMultipleAsterisks(uri));
+    }
+
+    int index = uri.indexOf('*');
+    return new String[]{uri.substring(0, index), uri.substring(index + 1)};
+  }
+  /**
+   * Verifies that the given path is supported within current limitations
+   */
+  private static void verifySupported(BucketPath path) throws AbortException {
+    if (path.getBucket().contains("*")) {
+      throw new AbortException(
+          Messages.Download_UnsupportedAsteriskInBucket(path.getBucket()));
+    }
+    String[] pieces = split(path.getObject());
+    if (pieces.length == 2) {
+      if (pieces[1].contains("/")) {
+        throw new AbortException(
+            Messages.Download_UnsupportedDirSuffix(path.getObject()));
+      }
+    }
+  }
+
+  /**
    * Take the bucket path and return a list of objects in the cloud that match
    * it.
    *
@@ -333,11 +374,49 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
 
     List<StorageObject> result = new ArrayList<StorageObject>();
 
-    // TODO(agoulti): add handling of wildcards.
-    Storage.Objects.Get obj = service.objects()
-        .get(bucketPath.getBucket(), bucketPath.getObject());
+    verifySupported(bucketPath);
 
-    result.add(executor.execute(obj));
+    // Allow a single asterisk in the object name for now.
+    // Let the behavior be consistent with
+    // https://cloud.google.com/storage/docs/gsutil/addlhelp/WildcardNames
+    //
+    // Support for richer constructs will be added as needed.
+
+    String[] pieces = split(bucketPath.getObject());
+
+    if (pieces.length == 1) {
+      // No wildcards. Do simple lookup
+      Storage.Objects.Get obj = service.objects()
+          .get(bucketPath.getBucket(), bucketPath.getObject());
+
+      result.add(executor.execute(obj));
+
+      return result;
+    }
+
+    // Single wildcard, of the form pre/fix/log_*_some.txt
+
+    String bucketPathPrefix = pieces[0];
+    String bucketPathSuffix = pieces[1];
+
+    String pageToken = "";
+    do {
+      Storage.Objects.List list = service.objects().list(bucketPath.getBucket())
+          .setPrefix(bucketPathPrefix).setDelimiter("/");
+      if (pageToken.length() > 0) {
+        list.setPageToken(pageToken);
+      }
+
+      Objects objects = executor.execute(list);
+      pageToken = objects.getNextPageToken();
+
+      // Collect the items that match the suffix
+      for (StorageObject o : objects.getItems()) {
+        if (o.getName().endsWith(bucketPathSuffix)) {
+          result.add(o);
+        }
+      }
+    } while (pageToken != null && pageToken.length() > 0);
 
     return result;
   }
@@ -400,6 +479,15 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
     public FormValidation doCheckBucketUri(
         @QueryParameter final String bucketUri)
         throws IOException {
+      try {
+        BucketPath path = new BucketPath(bucketUri);
+        verifySupported(path);
+      } catch (AbortException e) {
+        return FormValidation.error(e.getMessage());
+      } catch (IllegalArgumentException e) {
+        return FormValidation.error(e.getMessage());
+      }
+
       return ClassicUpload.DescriptorImpl.staticDoCheckBucket(bucketUri);
     }
   }
