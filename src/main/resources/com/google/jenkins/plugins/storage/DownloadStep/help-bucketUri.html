@@ -1,11 +1,7 @@
 <div>
   <p>
     This specifies the cloud object to download from Cloud Storage.
-You can view these by visiting the "Cloud Storage" section of the <a href="https://cloud.google.com/console">Cloud Console</a> for your project.  Acceptable values include things like:
-    <ul>
-      <li>gs://my-bucket-name/object.txt</li>
-      <li>gs://my-bucket-name/logs/log.txt</li>
-      <li>gs://my-bucket-name/$JOB_NAME/log_$BUILD_NUMBER.txt</li>
-    </ul>
+    You can view these by visiting the "Cloud Storage" section of the <a href="https://cloud.google.com/console">Cloud Console</a> for your project.<br>
+    A single asterisk can be specified in the object path (not the bucket name), past the last "/". The asterisk behaves consistently with <a href="https://cloud.google.com/storage/docs/gsutil/addlhelp/WildcardNames">gsutil</a>. For example, <code>gs://my-bucket-name/pre/a_*.txt</code> would match the objects in cloud bucket <code>my-bucket-name</code> that are named <code>pre/a_2.txt</code> or <code>pre/a_abc23-4.txt</code>, but not <code>pre/a_2/log.txt</code>.
   </p>
 </div>

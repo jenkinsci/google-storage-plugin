@@ -89,7 +89,8 @@ public class MockUploadModule extends UploadModule {
     };
   }
 
-  private final LinkedList<InputStream> mediaStreams = new LinkedList();
+  private final LinkedList<InputStream> mediaStreams =
+      new LinkedList<InputStream>();
   public void addNextMedia(InputStream stream) {
     mediaStreams.add(stream);
   }

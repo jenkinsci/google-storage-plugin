@@ -15,7 +15,6 @@
  */
 package com.google.jenkins.plugins.storage.util;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor.GCS_SCHEME;
@@ -35,7 +34,7 @@ public class BucketPath implements Serializable {
    * no verification is done in this class.
    */
   public BucketPath(String uri)
-      throws IOException, InterruptedException, IllegalArgumentException {
+      throws IllegalArgumentException {
     // Ensure the uri starts with "gs://"
     if (!uri.startsWith(GCS_SCHEME)) {
       throw new IllegalArgumentException(
