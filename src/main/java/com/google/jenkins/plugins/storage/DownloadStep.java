@@ -189,18 +189,20 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
           .replaceMacro(getLocalDirectory(), run, listener);
       FilePath dirPath = workspace.child(dirName);
 
-      List<StorageObject> objects = resolveBucketPath(bucketPath,
+      List<StorageObjectId> objects = resolveBucketPath(bucketPath,
           getCredentials(), version);
 
-      logger.info("Downloading " + objects.size() + " objects.");
+      listener.getLogger()
+          .println(module.prefix(
+              Messages.Download_FoundForPattern(objects.size(), path)));
 
-      DownloadSpec spec = new DownloadSpec(dirPath, objects);
+      DownloadSpec spec = new DownloadSpec(objects);
       // TODO(agoulti): add a download report.
 
       String resolvedPrefix = StorageUtil
           .replaceMacro(pathPrefix, run, listener);
 
-      initiateDownloadsAtWorkspace(getCredentials(), run, spec, dirPath,
+      initiateDownloadsAtWorkspace(getCredentials(), run, spec, dirPath, listener,
           version, resolvedPrefix);
     } catch (ExecutorException e) {
       throw new IOException(Messages.Download_DownloadException(), e);
@@ -209,13 +211,14 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
 
   private void performDownloadWithRetry(final Executor executor,
       final Storage service,
-      final StorageObject obj, final FilePath localName,
-      final UploadModule module)
+      final StorageObjectId obj, final FilePath localName,
+      final UploadModule module, final TaskListener listener)
       throws IOException, InterruptedException, ExecutorException {
     Operation a = new Operation() {
       public void act()
           throws IOException, InterruptedException, ExecutorException {
-        logger.info("Downloading " + obj.getName() + " to " + localName);
+        listener.getLogger().println(module.prefix(Messages.Download_Downloading(obj.getName(),
+            localName)));
         Storage.Objects.Get getObject = service.objects()
             .get(obj.getBucket(), obj.getName());
         MediaHttpDownloader downloader = getObject.getMediaHttpDownloader();
@@ -233,10 +236,10 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
   }
 
   private void performDownloads(final GoogleRobotCredentials credentials,
-      final FilePath localDir, final DownloadSpec spec, final String version,
+      final FilePath localDir, final DownloadSpec spec, final TaskListener listener, final String version,
       final String resolvedPrefix) throws IOException {
     RepeatOperation<IOException> a = new RepeatOperation<IOException>() {
-      private Queue<StorageObject> objects = new LinkedList<StorageObject>(
+      private Queue<StorageObjectId> objects = new LinkedList<StorageObjectId>(
           spec.objects);
       Executor executor = module.newExecutor();
 
@@ -252,13 +255,13 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
 
       public void act()
           throws IOException, InterruptedException, ExecutorException {
-        StorageObject obj = objects.peek();
+        StorageObjectId obj = objects.peek();
 
         String addPath = StorageUtil
             .getStrippedFilename(obj.getName(), resolvedPrefix);
         FilePath localName = localDir.withSuffix("/" + addPath);
 
-        performDownloadWithRetry(executor, service, obj, localName, module);
+        performDownloadWithRetry(executor, service, obj, localName, module, listener);
         objects.remove();
       }
     };
@@ -275,7 +278,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
   private void initiateDownloadsAtWorkspace(
       final GoogleRobotCredentials credentials,
       final Run run, final DownloadSpec spec, final FilePath localDir,
-      final String version, final String resolvedPrefix)
+      final TaskListener listener, final String version, final String resolvedPrefix)
       throws IOException, InterruptedException {
     try {
       // Use remotable credential to access the storage service from the
@@ -287,7 +290,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
           new Callable<Void, IOException>() {
             @Override
             public Void call() throws IOException {
-              performDownloads(remoteCredentials, localDir, spec, version,
+              performDownloads(remoteCredentials, localDir, spec, listener, version,
                   resolvedPrefix);
               return (Void) null;
             }
@@ -306,19 +309,38 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
   }
 
   /**
+   * A class to store StorageObject information in a serializable manner.
+   *
+   */
+  protected static class StorageObjectId implements Serializable {
+    public StorageObjectId(StorageObject obj) {
+      this.bucket = obj.getBucket();
+      this.name = obj.getName();
+    }
+
+    public String getBucket() {
+      return bucket;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    private final String bucket;
+    private final String name;
+  }
+
+  /**
    * DownloadSpec is a way to encode what needs to be downloaded.
    */
   protected static class DownloadSpec implements Serializable {
 
-    public DownloadSpec(FilePath localDir, List<StorageObject> objects) {
-      this.localDir = checkNotNull(localDir);
+    public DownloadSpec(List<StorageObjectId> objects) {
       this.objects = Collections.unmodifiableCollection(objects);
     }
 
-    // The Jenkins directory that will receive the objects
-    public final FilePath localDir;
     // Objects in the cloud that need to be downloaded
-    public final Collection<StorageObject> objects;
+    public final Collection<StorageObjectId> objects;
   }
 
   /**
@@ -366,13 +388,13 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
    * This will eventually handle wildcards, but for now is limited to directly
    * specifying the object.
    */
-  private List<StorageObject> resolveBucketPath(BucketPath bucketPath,
+  private List<StorageObjectId> resolveBucketPath(BucketPath bucketPath,
       GoogleRobotCredentials credentials, String version)
       throws IOException, ExecutorException {
     Storage service = module.getStorageService(credentials, version);
     Executor executor = module.newExecutor();
 
-    List<StorageObject> result = new ArrayList<StorageObject>();
+    List<StorageObjectId> result = new ArrayList<StorageObjectId>();
 
     verifySupported(bucketPath);
 
@@ -389,7 +411,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
       Storage.Objects.Get obj = service.objects()
           .get(bucketPath.getBucket(), bucketPath.getObject());
 
-      result.add(executor.execute(obj));
+      result.add(new StorageObjectId(executor.execute(obj)));
 
       return result;
     }
@@ -413,7 +435,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
       // Collect the items that match the suffix
       for (StorageObject o : objects.getItems()) {
         if (o.getName().endsWith(bucketPathSuffix)) {
-          result.add(o);
+          result.add(new StorageObjectId(o));
         }
       }
     } while (pageToken != null && pageToken.length() > 0);
