@@ -20,8 +20,6 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -196,14 +194,13 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
           .println(module.prefix(
               Messages.Download_FoundForPattern(objects.size(), path)));
 
-      DownloadSpec spec = new DownloadSpec(objects);
       // TODO(agoulti): add a download report.
 
       String resolvedPrefix = StorageUtil
           .replaceMacro(pathPrefix, run, listener);
 
-      initiateDownloadsAtWorkspace(getCredentials(), run, spec, dirPath, listener,
-          version, resolvedPrefix);
+      initiateDownloadsAtWorkspace(getCredentials(), run, objects, dirPath,
+          listener, version, resolvedPrefix);
     } catch (ExecutorException e) {
       throw new IOException(Messages.Download_DownloadException(), e);
     }
@@ -217,8 +214,8 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
     Operation a = new Operation() {
       public void act()
           throws IOException, InterruptedException, ExecutorException {
-        listener.getLogger().println(module.prefix(Messages.Download_Downloading(obj.getName(),
-            localName)));
+        listener.getLogger().println(module.prefix(
+            Messages.Download_Downloading(obj.getName(), localName)));
         Storage.Objects.Get getObject = service.objects()
             .get(obj.getBucket(), obj.getName());
         MediaHttpDownloader downloader = getObject.getMediaHttpDownloader();
@@ -236,11 +233,12 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
   }
 
   private void performDownloads(final GoogleRobotCredentials credentials,
-      final FilePath localDir, final DownloadSpec spec, final TaskListener listener, final String version,
+      final FilePath localDir, final List<StorageObjectId> objs,
+      final TaskListener listener, final String version,
       final String resolvedPrefix) throws IOException {
     RepeatOperation<IOException> a = new RepeatOperation<IOException>() {
-      private Queue<StorageObjectId> objects = new LinkedList<StorageObjectId>(
-          spec.objects);
+      private Queue<StorageObjectId> objects =
+          new LinkedList<StorageObjectId>(objs);
       Executor executor = module.newExecutor();
 
       Storage service;
@@ -261,7 +259,8 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
             .getStrippedFilename(obj.getName(), resolvedPrefix);
         FilePath localName = localDir.withSuffix("/" + addPath);
 
-        performDownloadWithRetry(executor, service, obj, localName, module, listener);
+        performDownloadWithRetry(executor, service, obj, localName, module,
+            listener);
         objects.remove();
       }
     };
@@ -277,8 +276,9 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
 
   private void initiateDownloadsAtWorkspace(
       final GoogleRobotCredentials credentials,
-      final Run run, final DownloadSpec spec, final FilePath localDir,
-      final TaskListener listener, final String version, final String resolvedPrefix)
+      final Run run, final List<StorageObjectId> objects,
+      final FilePath localDir, final TaskListener listener,
+      final String version, final String resolvedPrefix)
       throws IOException, InterruptedException {
     try {
       // Use remotable credential to access the storage service from the
@@ -290,8 +290,8 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
           new Callable<Void, IOException>() {
             @Override
             public Void call() throws IOException {
-              performDownloads(remoteCredentials, localDir, spec, listener, version,
-                  resolvedPrefix);
+              performDownloads(remoteCredentials, localDir, objects, listener,
+                  version, resolvedPrefix);
               return (Void) null;
             }
 
@@ -328,19 +328,6 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
 
     private final String bucket;
     private final String name;
-  }
-
-  /**
-   * DownloadSpec is a way to encode what needs to be downloaded.
-   */
-  protected static class DownloadSpec implements Serializable {
-
-    public DownloadSpec(List<StorageObjectId> objects) {
-      this.objects = Collections.unmodifiableCollection(objects);
-    }
-
-    // Objects in the cloud that need to be downloaded
-    public final Collection<StorageObjectId> objects;
   }
 
   /**
