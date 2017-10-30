@@ -257,7 +257,7 @@ public class DownloadStepTest {
     return o;
   }
 
-  public void tryWhildcards(String uriPostfix, String[] matches,
+  public void tryWildcards(String uriPostfix, String[] matches,
       String[] notMatches)
       throws Exception {
     MockUploadModule module = new MockUploadModule(executor);
@@ -310,7 +310,7 @@ public class DownloadStepTest {
 
   @Test
   public void testBuildWildcards() throws Exception {
-    tryWhildcards("download/log_*.txt",
+    tryWildcards("download/log_*.txt",
         new String[]{
             "download/log_1.txt",
             "download/log_1_.txt",
@@ -327,7 +327,7 @@ public class DownloadStepTest {
 
   @Test
   public void testBuildWildcardsOnly() throws Exception {
-    tryWhildcards("*",
+    tryWildcards("*",
         new String[]{
             "a",
             "b.txt",
@@ -339,7 +339,7 @@ public class DownloadStepTest {
 
   @Test
   public void testBuildWildcardEnd() throws Exception {
-    tryWhildcards("a/*",
+    tryWildcards("a/*",
         new String[]{
             "a/a.txt",
             "a/b.txt",
