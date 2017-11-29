@@ -70,6 +70,7 @@ public class ClassicUploadTest {
   private boolean showInline;
   private boolean stripPathPrefix;
   private String pathPrefix;
+  private String metadata;
 
   private final MockExecutor executor = new MockExecutor();
   private ConflictException conflictException;
@@ -127,7 +128,8 @@ public class ClassicUploadTest {
     bucket = "gs://bucket";
     glob = "bar.txt";
     underTest = new ClassicUpload(bucket, new MockUploadModule(executor),
-        glob, null /* legacy arg */, null /* legacy arg */);
+        glob, null /* legacy arg */, null /* legacy arg */, 
+            null /* legacy arg */);
   }
 
   @Test
@@ -140,10 +142,11 @@ public class ClassicUploadTest {
   @WithoutJenkins
   public void testLegacyArgs() {
     ClassicUpload legacyVersion = new ClassicUpload(null /* bucket */,
-        new MockUploadModule(executor), null /* glob */, bucket, glob);
+        new MockUploadModule(executor), null /* glob */, bucket, glob, "gzip");
     legacyVersion.setSharedPublicly(sharedPublicly);
     legacyVersion.setForFailedJobs(forFailedJobs);
     legacyVersion.setShowInline(showInline);
+    legacyVersion.setMetadata(metadata);
     legacyVersion.setPathPrefix(pathPrefix);
 
     assertEquals(underTest.getBucket(), legacyVersion.getBucket());
@@ -157,14 +160,15 @@ public class ClassicUploadTest {
   @WithoutJenkins
   public void testCheckNullGlob() throws Exception {
     new ClassicUpload(bucket, new MockUploadModule(executor), null,
-        null /* legacy arg */, null /* legacy arg */);
+        null /* legacy arg */, null /* legacy arg */, null /* legacy arg */);
   }
 
   @Test
   public void testCheckNullOnNullables() throws Exception {
     // The upload should handle null for the other fields.
     new ClassicUpload(bucket,
-        null /* module */, glob, null /* legacy arg */, null /* legacy arg */);
+        null /* module */, glob, null /* legacy arg */, null /* legacy arg */, 
+            null /* legacy arg */);
   }
 
   @Test

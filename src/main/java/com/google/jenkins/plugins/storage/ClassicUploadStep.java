@@ -56,21 +56,25 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep,
   private ClassicUpload upload;
 
   @DataBoundConstructor
-  public ClassicUploadStep(String credentialsId, String bucket,
-      String pattern) {
-    this(credentialsId, bucket, null, pattern);
+  public ClassicUploadStep(String credentialsId, 
+          String bucket, 
+          String pattern, 
+          String metadata) {
+    this(credentialsId, bucket, null, pattern, metadata);
   }
-
   /**
    * Construct the classic upload step.
    *
    * @see ClassicUpload#ClassicUpload
    */
-  public ClassicUploadStep(String credentialsId, String bucket,
-      @Nullable UploadModule module,
-      String pattern) {
+  public ClassicUploadStep(String credentialsId, 
+          String bucket, 
+          @Nullable UploadModule module, 
+          String pattern, 
+          String metadata) {
     this.credentialsId = credentialsId;
-    upload = new ClassicUpload(bucket, module, pattern, null, null);
+    this.metadata = metadata;
+    upload = new ClassicUpload(bucket, module, pattern, metadata, null, null);
   }
 
   /**
@@ -115,6 +119,10 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep,
   public String getPathPrefix() {
     return upload.getPathPrefix();
   }
+  
+  public String getMetadata() {
+    return upload.getMetadata();
+  }
 
   public String getPattern() {
     return upload.getPattern();
@@ -133,6 +141,7 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep,
   }
 
   private final String credentialsId;
+  private final String metadata;
 
   @Override
   public BuildStepMonitor getRequiredMonitorService() {

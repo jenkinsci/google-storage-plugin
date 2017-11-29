@@ -323,13 +323,26 @@ public abstract class AbstractUpload
     }
     this.pathPrefix = pathPrefix;
   }
+  
+  @DataBoundSetter
+  public void setMetadata(@Nullable String metadata) {
+    if (metadata != null) {
+     this.metadata = metadata;
+    }
+  }
 
   @Nullable
   public String getPathPrefix() {
     return pathPrefix;
   }
+  
+  @Nullable
+  public String getMetadata() {
+    return metadata;
+  }
 
   private String pathPrefix;
+  private String metadata;
 
   /**
    * The module to use for providing dependencies.
@@ -458,6 +471,7 @@ public abstract class AbstractUpload
             .setContentDisposition(
                 HttpHeaders.getContentDisposition(
                     include.getName(), isShowInline()))
+            .setContentEncoding(getMetadata())
             .setContentType(
                 detectMIMEType(include.getName()))
             .setSize(BigInteger.valueOf(include.length()));

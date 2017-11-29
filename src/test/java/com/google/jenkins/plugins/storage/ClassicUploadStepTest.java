@@ -90,8 +90,9 @@ public class ClassicUploadStepTest {
 
   @Test
   public void testRoundtrip() throws Exception {
-    ClassicUploadStep step = new ClassicUploadStep(CREDENTIALS_ID, "bucket",
-        "pattern");
+    ClassicUploadStep step = new ClassicUploadStep(CREDENTIALS_ID, "bucket", 
+            "pattern", 
+            "metadata");
     ConfigurationRoundTripTest(step);
 
     step.setPathPrefix("prefix");
@@ -107,7 +108,7 @@ public class ClassicUploadStepTest {
   @Test
   public void testBuild() throws Exception {
     ClassicUploadStep step = new ClassicUploadStep(CREDENTIALS_ID, BUCKET_URI,
-        new MockUploadModule(executor), "*.$BUILD_ID.txt");
+        new MockUploadModule(executor), "*.$BUILD_ID.txt", "gzip");
     FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
@@ -133,7 +134,7 @@ public class ClassicUploadStepTest {
   @Test
   public void testInvalidCredentials() throws Exception {
     ClassicUploadStep step = new ClassicUploadStep("bad-credentials",
-        BUCKET_URI, new MockUploadModule(executor), "*.$BUILD_ID.txt");
+        BUCKET_URI, new MockUploadModule(executor), "*.$BUILD_ID.txt", "gzip");
     FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
