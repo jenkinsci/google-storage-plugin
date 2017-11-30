@@ -26,7 +26,6 @@ import org.kohsuke.stapler.QueryParameter;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.io.ByteStreams.copy;
 
-import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Closeables;
 import com.google.jenkins.plugins.storage.util.StorageUtil;
@@ -41,128 +40,139 @@ import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 
 /**
- * This upload extension allow the user to upload the build log
- * for the Jenkins build to a given bucket, with a specified file
- * name.  By default, the file is named "build-log.txt".
+ * This upload extension allow the user to upload the build log for the Jenkins
+ * build to a given bucket, with a specified file name. By default, the file is
+ * named "build-log.txt".
  */
 public class StdoutUpload extends AbstractUpload {
 
-  /**
-   * Construct the Upload with the stock properties, and the additional
-   * information about how to name the build log file.
-   */
-  @DataBoundConstructor
-  public StdoutUpload(@Nullable String bucket,
-      @Nullable UploadModule module, String logName,
-      // Legacy arguments for backwards compatibility
-      @Deprecated @Nullable String bucketNameWithVars) {
-    super(Objects.firstNonNull(bucket, bucketNameWithVars), module);
-    this.logName = checkNotNull(logName);
-  }
-
-  /**
-   * The name to give the file we upload for the build log.
-   */
-  public String getLogName() {
-    return logName;
-  }
-
-  private final String logName;
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public String getDetails() {
-    return Messages.StdoutUpload_DetailsMessage(getLogName());
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public boolean forResult(Result result) {
-    if (result == null) {
-      return true;
-    }
-    if (result == Result.NOT_BUILT) {
-      return true;
-    }
-    return super.forResult(result);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  @Nullable
-  protected UploadSpec getInclusions(Run<?, ?> run,
-      FilePath workspace, TaskListener listener) throws UploadException {
-    try {
-      OutputStream outputStream = null;
-      try {
-        FilePath logDir = new FilePath(run.getLogFile()).getParent();
-
-        String resolvedLogName = StorageUtil
-            .replaceMacro(getLogName(), run, listener);
-        FilePath logFile = new FilePath(logDir, resolvedLogName);
-
-        outputStream = new PlainTextConsoleOutputStream(logFile.write());
-        copy(run.getLogInputStream(), outputStream);
-
-        return new UploadSpec(logDir, ImmutableList.of(logFile));
-      } finally {
-        Closeables.close(outputStream, true /* swallowIOException */);
-      }
-    } catch (InterruptedException e) {
-      throw new UploadException(Messages.AbstractUpload_IncludeException(), e);
-    } catch (IOException e) {
-      throw new UploadException(Messages.AbstractUpload_IncludeException(), e);
-    }
-  }
-
-  /**
-   * Denotes this is an {@link AbstractUpload} plugin
-   */
-  @Extension
-  public static class DescriptorImpl extends AbstractUploadDescriptor {
-
-    public DescriptorImpl() {
-      this(StdoutUpload.class);
+    public static <T> T firstNonNull(T... objs) {
+        for (T obj : objs) {
+            if (obj != null) {
+                return obj;
+            }
+        }
+        throw new NullPointerException();
     }
 
-    public DescriptorImpl(
-        Class<? extends StdoutUpload> clazz) {
-      super(clazz);
+    /**
+     * Construct the Upload with the stock properties, and the additional
+     * information about how to name the build log file.
+     */
+    @DataBoundConstructor
+    public StdoutUpload(@Nullable String bucket,
+            @Nullable UploadModule module, String logName,
+            // Legacy arguments for backwards compatibility
+            @Deprecated @Nullable String bucketNameWithVars) {
+        super(firstNonNull(bucket, bucketNameWithVars), module);
+        this.logName = checkNotNull(logName);
+    }
+
+    /**
+     * The name to give the file we upload for the build log.
+     */
+    public String getLogName() {
+        return logName;
+    }
+
+    private final String logName;
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getDetails() {
+        return Messages.StdoutUpload_DetailsMessage(getLogName());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getDisplayName() {
-      return Messages.StdoutUpload_DisplayName();
+    public boolean forResult(Result result) {
+        if (result == null) {
+            return true;
+        }
+        if (result == Result.NOT_BUILT) {
+            return true;
+        }
+        return super.forResult(result);
     }
 
     /**
-     * This callback validates the {@code logName} input field's values.
+     * {@inheritDoc}
      */
-    public FormValidation doCheckLogName(
-        @QueryParameter final String logName) throws IOException {
-      String resolvedInput = Resolve.resolveBuiltin(logName);
-      if (resolvedInput.isEmpty()) {
-        return FormValidation.error(
-            Messages.StdoutUpload_LogNameRequired());
-      }
+    @Override
+    @Nullable
+    protected UploadSpec getInclusions(Run<?, ?> run,
+            FilePath workspace, TaskListener listener) throws UploadException {
+        try {
+            OutputStream outputStream = null;
+            try {
+                FilePath logDir = new FilePath(run.getLogFile()).getParent();
 
-      if (resolvedInput.contains("$")) {
-        // resolved file name still contains variable marker
-        return FormValidation.error(
-            Messages.StdoutUpload_BadChar("$",
-                Messages.AbstractUploadDescriptor_DollarSuggest()));
-      }
-      // TODO(mattmoor): Proper filename validation
-      return FormValidation.ok();
+                String resolvedLogName = StorageUtil
+                        .replaceMacro(getLogName(), run, listener);
+                FilePath logFile = new FilePath(logDir, resolvedLogName);
+
+               outputStream = new PlainTextConsoleOutputStream(logFile.write());
+               copy(run.getLogInputStream(), outputStream);
+
+                return new UploadSpec(logDir, ImmutableList.of(logFile));
+            } finally {
+                Closeables.close(outputStream, true /* swallowIOException */);
+            }
+        } catch (InterruptedException e) {
+            throw new UploadException(
+                    Messages.AbstractUpload_IncludeException(), e);
+        } catch (IOException e) {
+            throw new UploadException(
+                    Messages.AbstractUpload_IncludeException(), e);
+        }
     }
-  }
+
+    /**
+     * Denotes this is an {@link AbstractUpload} plugin
+     */
+    @Extension
+    public static class DescriptorImpl extends AbstractUploadDescriptor {
+
+        public DescriptorImpl() {
+            this(StdoutUpload.class);
+        }
+
+        public DescriptorImpl(
+                Class<? extends StdoutUpload> clazz) {
+            super(clazz);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getDisplayName() {
+            return Messages.StdoutUpload_DisplayName();
+        }
+
+        /**
+         * This callback validates the {@code logName} input field's values.
+         */
+        public FormValidation doCheckLogName(
+                @QueryParameter final String logName) throws IOException {
+            String resolvedInput = Resolve.resolveBuiltin(logName);
+            if (resolvedInput.isEmpty()) {
+                return FormValidation.error(
+                        Messages.StdoutUpload_LogNameRequired());
+            }
+
+            if (resolvedInput.contains("$")) {
+                // resolved file name still contains variable marker
+             return FormValidation.error(
+                    Messages.StdoutUpload_BadChar("$",
+                            Messages.AbstractUploadDescriptor_DollarSuggest()));
+            }
+            // TODO(mattmoor): Proper filename validation
+            return FormValidation.ok();
+        }
+    }
 }

@@ -114,6 +114,11 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep,
   public void setPathPrefix(@Nullable String pathPrefix) {
     upload.setPathPrefix(pathPrefix);
   }
+  
+  @DataBoundSetter
+  public void setMetadata(@Nullable String metadata) {
+    upload.setMetadata(metadata);
+  }
 
   @Nullable
   public String getPathPrefix() {

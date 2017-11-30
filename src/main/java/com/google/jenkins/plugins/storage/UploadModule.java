@@ -32,73 +32,74 @@ import hudson.Plugin;
 import jenkins.model.Jenkins;
 
 /**
- * This module abstracts how the Upload implementations instantiate
- * their connection to the Storage service.
+ * This module abstracts how the Upload implementations instantiate their
+ * connection to the Storage service.
  */
 @RequiresDomain(value = StorageScopeRequirement.class)
 public class UploadModule implements Serializable {
 
-  /**
-   * Interface for requesting the {@link Executor} for executing requests.
-   *
-   * @return a new {@link Executor} instance for issuing requests
-   */
-  public Executor newExecutor() {
-    return new Executor.Default();
-  }
-
-  public StorageScopeRequirement getRequirement() {
-    return DomainRequirementProvider.of(getClass(),
-        StorageScopeRequirement.class);
-  }
-
-  public String getVersion() {
-    String version = "";
-    Plugin plugin = Jenkins.getInstance().getPlugin(PLUGIN_NAME);
-    if (plugin != null) {
-      version = plugin.getWrapper().getVersion();
+    /**
+     * Interface for requesting the {@link Executor} for executing requests.
+     *
+     * @return a new {@link Executor} instance for issuing requests
+     */
+    public Executor newExecutor() {
+        return new Executor.Default();
     }
-    return version;
-  }
 
-  public Storage getStorageService(GoogleRobotCredentials credentials,
-      String version)
-      throws IOException {
-    try {
-      String appName = Messages.UploadModule_AppName();
-      if (version.length() > 0) {
-        version = version.split(" ")[0];
-        appName = appName.concat("/").concat(version);
-      }
-      return new Storage.Builder(new NetHttpTransport(), new JacksonFactory(),
-          credentials.getGoogleCredential(getRequirement()))
-          .setApplicationName(appName)
-          .build();
-    } catch (GeneralSecurityException e) {
-      throw new IOException(
-          Messages.UploadModule_ExceptionStorageService(), e);
+    public StorageScopeRequirement getRequirement() {
+        return DomainRequirementProvider.of(getClass(),
+                StorageScopeRequirement.class);
     }
-  }
 
-  /**
-   * Controls the number of object insertion retries.
-   */
-  public int getInsertRetryCount() {
-    return 5;
-  }
+    public String getVersion() {
+        String version = "";
+        Plugin plugin = Jenkins.getInstance().getPlugin(PLUGIN_NAME);
+        if (plugin != null) {
+            version = plugin.getWrapper().getVersion();
+        }
+        return version;
+    }
 
-  /**
-   * Prefix the given log message with our module.
-   */
-  public String prefix(String x) {
-    return Messages.StorageUtil_PrefixFormat(
-        Messages.GoogleCloudStorageUploader_DisplayName(), x);
-  }
+    public Storage getStorageService(GoogleRobotCredentials credentials,
+            String version)
+            throws IOException {
+        try {
+            String appName = Messages.UploadModule_AppName();
+            if (version.length() > 0) {
+                version = version.split(" ")[0];
+                appName = appName.concat("/").concat(version);
+            }
+            return new Storage.Builder(
+                    new NetHttpTransport(), new JacksonFactory(),
+                    credentials.getGoogleCredential(getRequirement()))
+                    .setApplicationName(appName)
+                    .build();
+        } catch (GeneralSecurityException e) {
+            throw new IOException(
+                    Messages.UploadModule_ExceptionStorageService(), e);
+        }
+    }
 
-  public InputStream executeMediaAsInputStream(Storage.Objects.Get getObject)
-      throws IOException {
-    return getObject.executeMediaAsInputStream();
-  }
+    /**
+     * Controls the number of object insertion retries.
+     */
+    public int getInsertRetryCount() {
+        return 5;
+    }
 
-  private static final String PLUGIN_NAME = "google-storage-plugin";
+    /**
+     * Prefix the given log message with our module.
+     */
+    public String prefix(String x) {
+        return Messages.StorageUtil_PrefixFormat(
+                Messages.GoogleCloudStorageUploader_DisplayName(), x);
+    }
+
+    public InputStream executeMediaAsInputStream(Storage.Objects.Get getObject)
+            throws IOException {
+        return getObject.executeMediaAsInputStream();
+    }
+
+    private static final String PLUGIN_NAME = "google-storage-plugin";
 }
