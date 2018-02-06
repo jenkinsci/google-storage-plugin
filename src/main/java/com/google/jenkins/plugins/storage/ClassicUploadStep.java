@@ -71,6 +71,14 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep,
       String pattern) {
     this.credentialsId = credentialsId;
     upload = new ClassicUpload(bucket, module, pattern, null, null);
+
+    // Build steps will not be executed following a failed build.
+    // Pipeline steps performed sequentually will not be executed
+    //   following a failed step
+    // If we ever get to execute this on a failed build, that must
+    // have been done intentionally, e.g., using "post" with appropriate
+    // flags. This should be allowed.
+    upload.setForFailedJobs(true);
   }
 
   /**
@@ -143,6 +151,11 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep,
   public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher,
       TaskListener listener)
       throws IOException {
+    // setForFailedJobs was set to true in the constructor. However,
+    // some jobs might have been created before that bug fix.
+    // For those, set this here as well.
+    upload.setForFailedJobs(true);
+
     try {
       upload.perform(getCredentialsId(), run,
           workspace, listener);
