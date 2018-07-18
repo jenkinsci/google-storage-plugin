@@ -15,27 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigInteger;
-import java.net.URLConnection;
-import java.security.GeneralSecurityException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.logging.Logger;
-
-import javax.annotation.Nullable;
-
-import org.apache.commons.io.FilenameUtils;
-import org.jenkinsci.remoting.RoleChecker;
-import org.kohsuke.stapler.DataBoundSetter;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.api.client.googleapis.media.MediaHttpUploader;
 import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.InputStreamContent;
@@ -56,25 +35,30 @@ import com.google.jenkins.plugins.storage.reports.BuildGcsUploadReport;
 import com.google.jenkins.plugins.storage.util.BucketPath;
 import com.google.jenkins.plugins.storage.util.RetryStorageOperation;
 import com.google.jenkins.plugins.storage.util.RetryStorageOperation.Operation;
-import com.google.jenkins.plugins.storage.util.RetryStorageOperation
-    .RepeatOperation;
+import com.google.jenkins.plugins.storage.util.RetryStorageOperation.RepeatOperation;
 import com.google.jenkins.plugins.storage.util.StorageUtil;
-import com.google.jenkins.plugins.util.ConflictException;
+import com.google.jenkins.plugins.util.*;
 import com.google.jenkins.plugins.util.Executor;
-import com.google.jenkins.plugins.util.ExecutorException;
-import com.google.jenkins.plugins.util.ForbiddenException;
-import com.google.jenkins.plugins.util.NotFoundException;
-
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionPoint;
 import hudson.FilePath;
-import hudson.model.AbstractBuild;
-import hudson.model.Describable;
-import hudson.model.Hudson;
-import hudson.model.Result;
-import hudson.model.Run;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.remoting.Callable;
+import org.apache.commons.io.FilenameUtils;
+import org.jenkinsci.remoting.RoleChecker;
+import org.kohsuke.stapler.DataBoundSetter;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.Serializable;
+import java.math.BigInteger;
+import java.net.URLConnection;
+import java.security.GeneralSecurityException;
+import java.util.*;
+import java.util.Queue;
+import java.util.logging.Logger;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This new extension point is used for surfacing different kinds of
@@ -474,6 +458,7 @@ public abstract class AbstractUpload
             .setContentEncoding(getMetadata())
             .setContentType(
                 detectMIMEType(include.getName()))
+            .setCacheControl("public, max-age=2592000")
             .setSize(BigInteger.valueOf(include.length()));
 
         if (isSharedPublicly()) {
