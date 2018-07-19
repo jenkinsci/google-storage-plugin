@@ -17,6 +17,7 @@ package com.google.jenkins.plugins.storage;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.InputStream;
 
 import javax.annotation.Nullable;
 
@@ -100,6 +101,7 @@ public class StdoutUpload extends AbstractUpload {
       FilePath workspace, TaskListener listener) throws UploadException {
     try {
       OutputStream outputStream = null;
+      InputStream inputStream = null;
       try {
         FilePath logDir = new FilePath(run.getLogFile()).getParent();
 
@@ -108,11 +110,14 @@ public class StdoutUpload extends AbstractUpload {
         FilePath logFile = new FilePath(logDir, resolvedLogName);
 
         outputStream = new PlainTextConsoleOutputStream(logFile.write());
-        copy(run.getLogInputStream(), outputStream);
+
+        inputStream = run.getLogInputStream();
+        copy(inputStream, outputStream);
 
         return new UploadSpec(logDir, ImmutableList.of(logFile));
       } finally {
         Closeables.close(outputStream, true /* swallowIOException */);
+        Closeables.close(inputStream, true /* swallowIOException */);
       }
     } catch (InterruptedException e) {
       throw new UploadException(Messages.AbstractUpload_IncludeException(), e);
