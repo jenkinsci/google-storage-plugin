@@ -1,7 +1,7 @@
-Jenkins Google Storage Credentials Plugin
-=====================
+Jenkins Google Cloud Storage Plugin
+===================================
 
-This plugin provides the “Google Cloud Storage Uploader” post-build step for publishing build artifacts to Google Cloud Storage.
+This plugin provides functionality to communicate with Google Cloud Storage, as build steps, post-build steps, or pipeline steps.
 
 [![Build Status](https://jenkins.ci.cloudbees.com/buildStatus/icon?job=plugins/google-storage-plugin)](https://jenkins.ci.cloudbees.com/job/plugins/job/google-storage-plugin/)
 
@@ -11,7 +11,7 @@ Development
 ===========
 
 How to build
---------------
+------------
 
 	mvn clean package
 
