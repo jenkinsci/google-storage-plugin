@@ -16,8 +16,8 @@
 package com.google.jenkins.plugins.storage;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import javax.annotation.Nullable;
 
