@@ -3,36 +3,24 @@ Jenkins Google Cloud Storage Plugin
 
 This plugin provides functionality to communicate with Google Cloud Storage, as build steps, post-build steps, or pipeline steps.
 
-[![Build Status](https://jenkins.ci.cloudbees.com/buildStatus/icon?job=plugins/google-storage-plugin)](https://jenkins.ci.cloudbees.com/job/plugins/job/google-storage-plugin/)
+## Documentation
+Please see [Google Storage Plugin](docs/home.md) for complete documentation.
 
-Read more: [http://wiki.jenkins-ci.org/display/JENKINS/Google+Cloud+Storage+Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Google+Cloud+Storage+Plugin)
+## Installation
+1. Go to **Manage Jenkins** then **Manage Plugins**.
+1. (Optional) Make sure the plugin manager has updated data by clicking the **Check now** button.
+1. In the Plugin Manager, click the **Available** tab and look for the "Google OAuth Plugin".
+1. Check the box under the **Install** column and click the **Install without restart** button.
+1. If the plugin does not appear under **Available**, make sure it appears under **Installed** and is enabled.
+ 
+## Plugin Source Build Installation
+See [Plugin Source Build Installation](docs/source_build_installation.md) to build and install from source.
 
-Development
-===========
+## Feature requests and bug reports
+Please file feature requests and bug reports as [GitHub Issues](https://github.com/jenkinsci/google-storage-plugin/issues).
 
-How to build
-------------
+## License
+See [LICENSE](LICENSE)
 
-	mvn clean package
-
-Creates the plugin HPI package for use with Jenkins.
-
-
-License
--------
-
-	(The Apache v2 License)
-
-    Copyright 2013 Google Inc. All Rights Reserved.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+## Contributing
+See [CONTRIBUTING.md](CONTRIBUTING.md)
