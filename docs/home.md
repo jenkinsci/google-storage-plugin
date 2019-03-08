@@ -21,7 +21,7 @@ Two build steps are supported by this plugin:
 * Classic Upload step to upload files to Google Storage.
 * Download step to get files from Google Storage into the local Jenkins workspace.
 	
-![downdrop](images/dropdown.png)
+![dropdown](images/dropdown.png)
 
 ## Classic Upload Build Step
 
