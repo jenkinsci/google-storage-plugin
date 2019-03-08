@@ -17,8 +17,7 @@ In this case, you will need to set up credentials in the Credentials tab (see in
 ## Build Step
 
 Two build steps are supported by this plugin:
-
-    * Classic Upload step to upload files to Google Storage, and
+    * Classic Upload step to upload files to Google Storage.
     * Download step to get files from Google Storage into the local Jenkins workspace.
 	
 ![downdrop](images/dropdown.png)
@@ -28,9 +27,9 @@ Two build steps are supported by this plugin:
 ![classic build step](images/classic_build_step.png)
 
 Use the Classic Upload Build Step to upload an ant-style glob of files (File Pattern) to the specified storage path **(Storage Location)**. Select:
-    * Share Publicly to make the uploaded files publicly accessible.
-    * Show inline in browser to set the metadata of the files such that the file is shown inline in browser, rather than downloaded.
-    * Strip path prefix and specify the prefix you want to strip if you don’t want the whole path of the local files reflected in the bucket object name.
+    * **Share Publicly** to make the uploaded files publicly accessible.
+    * **Show inline in browser** to set the metadata of the files such that the file is shown inline in browser, rather than downloaded.
+    * **Strip path prefix** and specify the prefix you want to strip if you don’t want the whole path of the local files reflected in the bucket object name.
 	
 ## Download Build Step
 
