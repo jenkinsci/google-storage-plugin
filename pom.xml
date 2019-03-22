@@ -46,24 +46,19 @@
 
   <developers>
     <developer>
-      <id>mattmoor</id>
-      <name>Matt Moore</name>
+      <id>craigatgoogle</id>
+      <name>Craig Barber</name>
+      <email>craigbarber@google.com</email>
     </developer>
     <developer>
-      <id>tcnghia</id>
-      <name>Nghia Tran</name>
+      <id>rachely3n</id>
+      <name>Rachel Yen</name>
+      <email>rachelyen@google.com</email>
     </developer>
     <developer>
-      <id>astroilov</id>
-      <name>Andrey Stroilov</name>
-    </developer>
-    <developer>
-      <id>agoulti</id>
-      <name>Alexandra Goultiaeva</name>
-    </developer>
-    <developer>
-      <id>bwkimmel</id>
-      <name>Brad Kimmel</name>
+      <id>stephenashank</id>
+      <name>Stephen Shank</name>
+      <email>stephenshank@google.com</email>
     </developer>
   </developers>
 
