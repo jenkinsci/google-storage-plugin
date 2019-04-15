@@ -15,21 +15,17 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
-import java.util.Set;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import hudson.model.Actionable;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import hudson.model.Actionable;
-
-/**
- * Unit test for {@link AbstractGcsUploadReport}.
- */
+/** Unit test for {@link AbstractGcsUploadReport}. */
 public class AbstractGcsUploadReportTest {
 
   @Mock private Actionable parent;
@@ -38,29 +34,29 @@ public class AbstractGcsUploadReportTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    underTest = new AbstractGcsUploadReport(parent) {
-      @Override
-      public Set<String> getStorageObjects() {
-        return null;
-      }
+    underTest =
+        new AbstractGcsUploadReport(parent) {
+          @Override
+          public Set<String> getStorageObjects() {
+            return null;
+          }
 
-      @Override
-      public Integer getBuildNumber() {
-        return null;
-      }
+          @Override
+          public Integer getBuildNumber() {
+            return null;
+          }
 
-      @Override
-      public Set<String> getBuckets() {
-        return null;
-      }
-    };
+          @Override
+          public Set<String> getBuckets() {
+            return null;
+          }
+        };
   }
 
   @Test
   public void getters() {
     assertEquals(parent, underTest.getParent());
-    assertEquals(Messages.AbstractGcsUploadReport_DisplayName(),
-        underTest.getDisplayName());
+    assertEquals(Messages.AbstractGcsUploadReport_DisplayName(), underTest.getDisplayName());
     assertNotNull(underTest.getIconFileName());
     assertNotNull(underTest.getUrlName());
   }

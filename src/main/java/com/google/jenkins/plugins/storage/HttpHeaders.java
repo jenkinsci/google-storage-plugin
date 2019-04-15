@@ -17,16 +17,11 @@ package com.google.jenkins.plugins.storage;
 
 import com.google.common.base.Charsets;
 
-/**
- * Utility class for building HTTP header values.
- */
+/** Utility class for building HTTP header values. */
 public class HttpHeaders {
 
-  /**
-   * Returns an RFC 6266 Content-Disposition header for the given filename.
-   */
-  public static String getContentDisposition(String filename,
-      boolean showInline) {
+  /** Returns an RFC 6266 Content-Disposition header for the given filename. */
+  public static String getContentDisposition(String filename, boolean showInline) {
     return String.format(
         "%s; filename=%s; filename*=%s",
         showInline ? "inline" : "attachment",
@@ -35,8 +30,8 @@ public class HttpHeaders {
   }
 
   /**
-   * Returns an RFC 2616 quoted-string encoding of the given text. Code points
-   * &lt;= U+255 will be encoded, others will be zapped to underscore.
+   * Returns an RFC 2616 quoted-string encoding of the given text. Code points &lt;= U+255 will be
+   * encoded, others will be zapped to underscore.
    */
   private static String getRfc2616QuotedString(String text) {
     StringBuilder builder = new StringBuilder("\"");
@@ -58,8 +53,8 @@ public class HttpHeaders {
   }
 
   /**
-   * Returns an RFC 5987 ext-value encoding of the given text, with charset
-   * UTF-8 and no language tag.
+   * Returns an RFC 5987 ext-value encoding of the given text, with charset UTF-8 and no language
+   * tag.
    */
   private static String getRfc5987ExtValue(String text) {
     StringBuilder builder = new StringBuilder("UTF-8''");

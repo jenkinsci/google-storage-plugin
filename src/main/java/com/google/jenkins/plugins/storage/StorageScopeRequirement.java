@@ -15,20 +15,14 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import java.util.Collection;
-
 import com.google.api.services.storage.StorageScopes;
 import com.google.common.collect.ImmutableList;
 import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
+import java.util.Collection;
 
-/**
- * The required OAuth2 scopes for managing Google Cloud Storage buckets
- * and objects.
- */
+/** The required OAuth2 scopes for managing Google Cloud Storage buckets and objects. */
 public class StorageScopeRequirement extends GoogleOAuth2ScopeRequirement {
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public Collection<String> getScopes() {
     return ImmutableList.of(StorageScopes.DEVSTORAGE_FULL_CONTROL);

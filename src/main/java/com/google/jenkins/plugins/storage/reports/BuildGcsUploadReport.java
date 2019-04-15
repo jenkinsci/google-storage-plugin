@@ -15,23 +15,18 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
-import java.util.Collections;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
 import com.google.api.client.util.Sets;
 import com.google.jenkins.plugins.storage.util.BucketPath;
-
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
+import java.util.Collections;
+import java.util.Set;
+import javax.annotation.Nullable;
 
 /**
- * A build {@link hudson.model.Action} to surface direct links of objects
- * uploaded through the
- * {@link com.google.jenkins.plugins.storage.StdoutUpload} Listener
- * to the Jenkins UI.
+ * A build {@link hudson.model.Action} to surface direct links of objects uploaded through the
+ * {@link com.google.jenkins.plugins.storage.StdoutUpload} Listener to the Jenkins UI.
  */
 public class BuildGcsUploadReport extends AbstractGcsUploadReport {
 
@@ -45,10 +40,9 @@ public class BuildGcsUploadReport extends AbstractGcsUploadReport {
   }
 
   /**
-   * @param project
-   *          a project to get {@link BuildGcsUploadReport} for.
-   * @return the {@link BuildGcsUploadReport} of the last build, as returned
-   *         by {@link #of(Run)}, or null of no build existed.
+   * @param project a project to get {@link BuildGcsUploadReport} for.
+   * @return the {@link BuildGcsUploadReport} of the last build, as returned by {@link #of(Run)}, or
+   *     null of no build existed.
    */
   @Nullable
   public static BuildGcsUploadReport of(AbstractProject<?, ?> project) {
@@ -68,15 +62,12 @@ public class BuildGcsUploadReport extends AbstractGcsUploadReport {
   }
 
   /**
-   * @param run
-   *          the run to get {@link BuildGcsUploadReport} for.
-   * @return the existing {@link BuildGcsUploadReport} of a build. If none,
-   *         create a new {@link BuildGcsUploadReport} and return.
+   * @param run the run to get {@link BuildGcsUploadReport} for.
+   * @return the existing {@link BuildGcsUploadReport} of a build. If none, create a new {@link
+   *     BuildGcsUploadReport} and return.
    */
-  public static synchronized BuildGcsUploadReport of(
-      Run<?, ?> run) {
-    BuildGcsUploadReport links =
-        run.getAction(BuildGcsUploadReport.class);
+  public static synchronized BuildGcsUploadReport of(Run<?, ?> run) {
+    BuildGcsUploadReport links = run.getAction(BuildGcsUploadReport.class);
     if (links != null) {
       return links;
     }
@@ -85,47 +76,34 @@ public class BuildGcsUploadReport extends AbstractGcsUploadReport {
     return links;
   }
 
-  /**
-   * @param bucketName
-   *          the name of the destination bucket.
-   */
+  /** @param bucketName the name of the destination bucket. */
   public void addBucket(String bucketName) {
     buckets.add(bucketName);
   }
 
   /**
-   * @param relativePath
-   *          the relative path (to the workspace) of the uploaded file.
-   * @param bucket
-   *          the directory location in the cloud
+   * @param relativePath the relative path (to the workspace) of the uploaded file.
+   * @param bucket the directory location in the cloud
    */
   public void addUpload(String relativePath, BucketPath bucket) {
     files.add(bucket.getPath() + "/" + relativePath);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public Set<String> getBuckets() {
     return Collections.unmodifiableSet(buckets);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public Set<String> getStorageObjects() {
     return Collections.unmodifiableSet(files);
   }
 
-
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public Integer getBuildNumber() {
     return ((AbstractBuild<?, ?>) getParent()).getNumber();
   }
-
 }

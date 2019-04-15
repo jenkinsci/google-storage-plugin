@@ -15,11 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.security.GeneralSecurityException;
-
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.storage.Storage;
@@ -27,13 +22,16 @@ import com.google.jenkins.plugins.credentials.domains.DomainRequirementProvider;
 import com.google.jenkins.plugins.credentials.domains.RequiresDomain;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.util.Executor;
-
 import hudson.Plugin;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.security.GeneralSecurityException;
 import jenkins.model.Jenkins;
 
 /**
- * This module abstracts how the Upload implementations instantiate
- * their connection to the Storage service.
+ * This module abstracts how the Upload implementations instantiate their connection to the Storage
+ * service.
  */
 @RequiresDomain(value = StorageScopeRequirement.class)
 public class UploadModule implements Serializable {
@@ -48,8 +46,7 @@ public class UploadModule implements Serializable {
   }
 
   public StorageScopeRequirement getRequirement() {
-    return DomainRequirementProvider.of(getClass(),
-        StorageScopeRequirement.class);
+    return DomainRequirementProvider.of(getClass(), StorageScopeRequirement.class);
   }
 
   public String getVersion() {
@@ -61,8 +58,7 @@ public class UploadModule implements Serializable {
     return version;
   }
 
-  public Storage getStorageService(GoogleRobotCredentials credentials,
-      String version)
+  public Storage getStorageService(GoogleRobotCredentials credentials, String version)
       throws IOException {
     try {
       String appName = Messages.UploadModule_AppName();
@@ -70,33 +66,28 @@ public class UploadModule implements Serializable {
         version = version.split(" ")[0];
         appName = appName.concat("/").concat(version);
       }
-      return new Storage.Builder(new NetHttpTransport(), new JacksonFactory(),
-          credentials.getGoogleCredential(getRequirement()))
+      return new Storage.Builder(
+              new NetHttpTransport(),
+              new JacksonFactory(),
+              credentials.getGoogleCredential(getRequirement()))
           .setApplicationName(appName)
           .build();
     } catch (GeneralSecurityException e) {
-      throw new IOException(
-          Messages.UploadModule_ExceptionStorageService(), e);
+      throw new IOException(Messages.UploadModule_ExceptionStorageService(), e);
     }
   }
 
-  /**
-   * Controls the number of object insertion retries.
-   */
+  /** Controls the number of object insertion retries. */
   public int getInsertRetryCount() {
     return 5;
   }
 
-  /**
-   * Prefix the given log message with our module.
-   */
+  /** Prefix the given log message with our module. */
   public String prefix(String x) {
-    return Messages.StorageUtil_PrefixFormat(
-        Messages.GoogleCloudStorageUploader_DisplayName(), x);
+    return Messages.StorageUtil_PrefixFormat(Messages.GoogleCloudStorageUploader_DisplayName(), x);
   }
 
-  public InputStream executeMediaAsInputStream(Storage.Objects.Get getObject)
-      throws IOException {
+  public InputStream executeMediaAsInputStream(Storage.Objects.Get getObject) throws IOException {
     return getObject.executeMediaAsInputStream();
   }
 

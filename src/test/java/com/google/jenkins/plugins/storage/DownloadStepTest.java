@@ -15,12 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -28,15 +22,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.WithoutJenkins;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
@@ -47,33 +32,38 @@ import com.google.jenkins.plugins.credentials.oauth.AbstractGoogleRobotCredentia
 import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.util.MockExecutor;
-
 import hudson.AbortException;
 import hudson.FilePath;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.util.IOUtils;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.WithoutJenkins;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-
-/**
- * Tests for {@link AbstractUpload}.
- */
+/** Tests for {@link AbstractUpload}. */
 public class DownloadStepTest {
 
-  @Rule
-  public JenkinsRule jenkins = new JenkinsRule();
+  @Rule public JenkinsRule jenkins = new JenkinsRule();
 
-  @Rule
-  public TemporaryFolder tempDir = new TemporaryFolder();
+  @Rule public TemporaryFolder tempDir = new TemporaryFolder();
 
-  @Mock
-  private GoogleRobotCredentials credentials;
+  @Mock private GoogleRobotCredentials credentials;
   private GoogleCredential credential;
 
   private final MockExecutor executor = new MockExecutor();
 
-  @Mock
-  private AbstractGoogleRobotCredentialsDescriptor descriptor;
+  @Mock private AbstractGoogleRobotCredentialsDescriptor descriptor;
 
   @Before
   public void setUp() throws Exception {
@@ -90,27 +80,22 @@ public class DownloadStepTest {
     }
 
     credential = new GoogleCredential();
-    when(credentials.getGoogleCredential(isA(
-        GoogleOAuth2ScopeRequirement.class)))
+    when(credentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
         .thenReturn(credential);
 
     // Return ourselves as remotable
-    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class)))
-        .thenReturn(credentials);
+    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class))).thenReturn(credentials);
   }
 
-  private void ConfigurationRoundTripTest(DownloadStep s)
-      throws Exception {
+  private void ConfigurationRoundTripTest(DownloadStep s) throws Exception {
     DownloadStep after = jenkins.configRoundtrip(s);
-    jenkins
-        .assertEqualBeans(s, after,
-            "bucketUri,localDirectory,pathPrefix,credentialsId");
+    jenkins.assertEqualBeans(s, after, "bucketUri,localDirectory,pathPrefix,credentialsId");
   }
 
   @Test
   public void testRoundtrip() throws Exception {
-    DownloadStep step = new DownloadStep(CREDENTIALS_ID, "bucket",
-        "Dir", new MockUploadModule(executor));
+    DownloadStep step =
+        new DownloadStep(CREDENTIALS_ID, "bucket", "Dir", new MockUploadModule(executor));
     ConfigurationRoundTripTest(step);
 
     step.setPathPrefix("prefix");
@@ -120,17 +105,16 @@ public class DownloadStepTest {
   @Test
   public void testBuild() throws Exception {
     MockUploadModule module = new MockUploadModule(executor);
-    DownloadStep step = new DownloadStep(CREDENTIALS_ID,
-        "gs://bucket/path/to/object.txt",
-        "", module);
+    DownloadStep step =
+        new DownloadStep(CREDENTIALS_ID, "gs://bucket/path/to/object.txt", "", module);
     FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
 
     // Set up mock to retrieve the object
     StorageObject objToGet = new StorageObject();
     objToGet.setBucket("bucket");
     objToGet.setName("path/to/obj.txt");
-    executor.when(Storage.Objects.Get.class, objToGet,
-        MockUploadModule.checkGetObject("path/to/object.txt"));
+    executor.when(
+        Storage.Objects.Get.class, objToGet, MockUploadModule.checkGetObject("path/to/object.txt"));
 
     module.addNextMedia(IOUtils.toInputStream("test", "UTF-8"));
 
@@ -145,9 +129,8 @@ public class DownloadStepTest {
   @Test
   public void testBuildPrefix() throws Exception {
     MockUploadModule module = new MockUploadModule(executor);
-    DownloadStep step = new DownloadStep(CREDENTIALS_ID,
-        "gs://bucket/path/to/object.txt",
-        "subPath", module);
+    DownloadStep step =
+        new DownloadStep(CREDENTIALS_ID, "gs://bucket/path/to/object.txt", "subPath", module);
     step.setPathPrefix("path/to/");
     FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
 
@@ -155,8 +138,8 @@ public class DownloadStepTest {
     StorageObject objToGet = new StorageObject();
     objToGet.setBucket("bucket");
     objToGet.setName("path/to/obj.txt");
-    executor.when(Storage.Objects.Get.class, objToGet,
-        MockUploadModule.checkGetObject("path/to/object.txt"));
+    executor.when(
+        Storage.Objects.Get.class, objToGet, MockUploadModule.checkGetObject("path/to/object.txt"));
 
     module.addNextMedia(IOUtils.toInputStream("test", "UTF-8"));
 
@@ -171,9 +154,12 @@ public class DownloadStepTest {
   @Test
   public void testBuildMoreComplex() throws Exception {
     MockUploadModule module = new MockUploadModule(executor);
-    DownloadStep step = new DownloadStep(CREDENTIALS_ID,
-        "gs://bucket/download/$BUILD_ID/path/$BUILD_ID/test_$BUILD_ID.txt",
-        "output", module);
+    DownloadStep step =
+        new DownloadStep(
+            CREDENTIALS_ID,
+            "gs://bucket/download/$BUILD_ID/path/$BUILD_ID/test_$BUILD_ID.txt",
+            "output",
+            module);
     step.setPathPrefix("download/$BUILD_ID/");
     FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
 
@@ -181,7 +167,9 @@ public class DownloadStepTest {
     StorageObject objToGet = new StorageObject();
     objToGet.setBucket("bucket");
     objToGet.setName("download/1/path/1/test_1.txt");
-    executor.when(Storage.Objects.Get.class, objToGet,
+    executor.when(
+        Storage.Objects.Get.class,
+        objToGet,
         MockUploadModule.checkGetObject("download/1/path/1/test_1.txt"));
 
     module.addNextMedia(IOUtils.toInputStream("contents 1", "UTF-8"));
@@ -189,8 +177,7 @@ public class DownloadStepTest {
     project.getBuildersList().add(step);
     FreeStyleBuild build = jenkins.buildAndAssertSuccess(project);
 
-    FilePath result = build.getWorkspace()
-        .withSuffix("/output/path/1/test_1.txt");
+    FilePath result = build.getWorkspace().withSuffix("/output/path/1/test_1.txt");
     assertTrue(result.exists());
     assertEquals("contents 1", result.readToString());
   }
@@ -209,14 +196,14 @@ public class DownloadStepTest {
   @WithoutJenkins
   public void testSplit() throws Exception {
     assertArrayEquals(DownloadStep.split("a"), new String[] {"a"});
-    assertArrayEquals(DownloadStep.split("asdjfkl2358/9/8024@#$@%^$#^#"),
+    assertArrayEquals(
+        DownloadStep.split("asdjfkl2358/9/8024@#$@%^$#^#"),
         new String[] {"asdjfkl2358/9/8024@#$@%^$#^#"});
 
     assertArrayEquals(DownloadStep.split("a*"), new String[] {"a", ""});
     assertArrayEquals(DownloadStep.split("*"), new String[] {"", ""});
 
-    assertArrayEquals(DownloadStep.split("pre-*-post"),
-        new String[] {"pre-", "-post"});
+    assertArrayEquals(DownloadStep.split("pre-*-post"), new String[] {"pre-", "-post"});
 
     // Not yet supported
     checkSplitException("**");
@@ -257,13 +244,10 @@ public class DownloadStepTest {
     return o;
   }
 
-  public void tryWildcards(String uriPostfix, String[] matches,
-      String[] notMatches)
+  public void tryWildcards(String uriPostfix, String[] matches, String[] notMatches)
       throws Exception {
     MockUploadModule module = new MockUploadModule(executor);
-    DownloadStep step = new DownloadStep(CREDENTIALS_ID,
-        "gs://bucket/" + uriPostfix,
-        ".", module);
+    DownloadStep step = new DownloadStep(CREDENTIALS_ID, "gs://bucket/" + uriPostfix, ".", module);
 
     FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
 
@@ -296,56 +280,43 @@ public class DownloadStepTest {
     FreeStyleBuild build = jenkins.buildAndAssertSuccess(project);
 
     for (String s : matches) {
-      FilePath result = build.getWorkspace()
-          .withSuffix("/" + s);
+      FilePath result = build.getWorkspace().withSuffix("/" + s);
       assertTrue(result.exists());
       assertEquals("contents 1", result.readToString());
     }
     for (String s : notMatches) {
-      FilePath result = build.getWorkspace()
-          .withSuffix("/" + s);
+      FilePath result = build.getWorkspace().withSuffix("/" + s);
       assertFalse("File exists but shouldn't:" + result, result.exists());
     }
   }
 
   @Test
   public void testBuildWildcards() throws Exception {
-    tryWildcards("download/log_*.txt",
-        new String[]{
-            "download/log_1.txt",
-            "download/log_1_.txt",
-            "download/log_.txt",
-            "download/log_ajkl23-d.txt"},
-        new String[]{
-            "downloa/log_1.txt",
-            "download/log.txt",
-            "download/log_",
-            "download/log_1/a.txt",
-            "download/log_1"});
+    tryWildcards(
+        "download/log_*.txt",
+        new String[] {
+          "download/log_1.txt",
+          "download/log_1_.txt",
+          "download/log_.txt",
+          "download/log_ajkl23-d.txt"
+        },
+        new String[] {
+          "downloa/log_1.txt",
+          "download/log.txt",
+          "download/log_",
+          "download/log_1/a.txt",
+          "download/log_1"
+        });
   }
-
 
   @Test
   public void testBuildWildcardsOnly() throws Exception {
-    tryWildcards("*",
-        new String[]{
-            "a",
-            "b.txt",
-            "l_a_b_d_f"},
-        new String[]{
-            "a/b.txt",
-            "/b"});
+    tryWildcards("*", new String[] {"a", "b.txt", "l_a_b_d_f"}, new String[] {"a/b.txt", "/b"});
   }
 
   @Test
   public void testBuildWildcardEnd() throws Exception {
-    tryWildcards("a/*",
-        new String[]{
-            "a/a.txt",
-            "a/b.txt",
-            "a/log"},
-        new String[]{
-            "a/b/c.txt"});
+    tryWildcards("a/*", new String[] {"a/a.txt", "a/b.txt", "a/log"}, new String[] {"a/b/c.txt"});
   }
 
   private static final String PROJECT_ID = "foo.com:bar-baz";

@@ -20,20 +20,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.api.services.storage.model.Bucket;
 
 /**
- * This exception is intended to be thrown by implementations of the hook
- * {@link AbstractBucketLifecycleManager#checkBucket} when a bucket is not
- * properly annotated.
+ * This exception is intended to be thrown by implementations of the hook {@link
+ * AbstractBucketLifecycleManager#checkBucket} when a bucket is not properly annotated.
  */
 public class InvalidAnnotationException extends Exception {
   public InvalidAnnotationException(Bucket bucket) {
     this.bucket = checkNotNull(bucket);
   }
 
-  /**
-   * The bucket that isn't properly annotated.
-   */
+  /** The bucket that isn't properly annotated. */
   public Bucket getBucket() {
     return this.bucket;
   }
+
   private final Bucket bucket;
 }

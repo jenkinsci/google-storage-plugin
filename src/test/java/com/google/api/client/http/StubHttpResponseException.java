@@ -15,10 +15,7 @@
  */
 package com.google.api.client.http;
 
-/**
- * Liberal use of the 'final' keyword makes mocking HttpResponseException
- * impossible.
- */
+/** Liberal use of the 'final' keyword makes mocking HttpResponseException impossible. */
 public class StubHttpResponseException extends HttpResponseException {
 
   /**

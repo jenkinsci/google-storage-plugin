@@ -15,23 +15,11 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.Verifier;
-import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.WithoutJenkins;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
@@ -42,21 +30,26 @@ import com.google.jenkins.plugins.util.ConflictException;
 import com.google.jenkins.plugins.util.ForbiddenException;
 import com.google.jenkins.plugins.util.MockExecutor;
 import com.google.jenkins.plugins.util.NotFoundException;
-
 import hudson.model.FreeStyleProject;
 import hudson.model.Run;
 import hudson.util.FormValidation;
+import java.io.BufferedReader;
+import java.io.IOException;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.Verifier;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.WithoutJenkins;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-/**
- * Tests for {@link ClassicUpload}.
- */
+/** Tests for {@link ClassicUpload}. */
 public class ClassicUploadTest {
 
-  @Rule
-  public JenkinsRule jenkins = new JenkinsRule();
+  @Rule public JenkinsRule jenkins = new JenkinsRule();
 
-  @Mock
-  private GoogleRobotCredentials credentials;
+  @Mock private GoogleRobotCredentials credentials;
 
   private GoogleCredential credential;
 
@@ -85,17 +78,19 @@ public class ClassicUploadTest {
     public MockExecutor newExecutor() {
       return executor;
     }
+
     private final MockExecutor executor;
   }
 
   @Rule
-  public Verifier verifySawAll = new Verifier() {
-      @Override
-      public void verify() {
-        assertTrue(executor.sawAll());
-        assertFalse(executor.sawUnexpected());
-      }
-    };
+  public Verifier verifySawAll =
+      new Verifier() {
+        @Override
+        public void verify() {
+          assertTrue(executor.sawAll());
+          assertFalse(executor.sawUnexpected());
+        }
+      };
 
   @Before
   public void setUp() throws Exception {
@@ -112,13 +107,11 @@ public class ClassicUploadTest {
     }
 
     credential = new GoogleCredential();
-    when(credentials.getGoogleCredential(isA(
-        GoogleOAuth2ScopeRequirement.class)))
+    when(credentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
         .thenReturn(credential);
 
     // Return ourselves as remotable
-    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class)))
-        .thenReturn(credentials);
+    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class))).thenReturn(credentials);
 
     notFoundException = new NotFoundException();
     conflictException = new ConflictException();
@@ -126,8 +119,13 @@ public class ClassicUploadTest {
 
     bucket = "gs://bucket";
     glob = "bar.txt";
-    underTest = new ClassicUpload(bucket, new MockUploadModule(executor),
-        glob, null /* legacy arg */, null /* legacy arg */);
+    underTest =
+        new ClassicUpload(
+            bucket,
+            new MockUploadModule(executor),
+            glob,
+            null /* legacy arg */,
+            null /* legacy arg */);
   }
 
   @Test
@@ -139,16 +137,16 @@ public class ClassicUploadTest {
   @Test
   @WithoutJenkins
   public void testLegacyArgs() {
-    ClassicUpload legacyVersion = new ClassicUpload(null /* bucket */,
-        new MockUploadModule(executor), null /* glob */, bucket, glob);
+    ClassicUpload legacyVersion =
+        new ClassicUpload(
+            null /* bucket */, new MockUploadModule(executor), null /* glob */, bucket, glob);
     legacyVersion.setSharedPublicly(sharedPublicly);
     legacyVersion.setForFailedJobs(forFailedJobs);
     legacyVersion.setShowInline(showInline);
     legacyVersion.setPathPrefix(pathPrefix);
 
     assertEquals(underTest.getBucket(), legacyVersion.getBucket());
-    assertEquals(underTest.isSharedPublicly(),
-        legacyVersion.isSharedPublicly());
+    assertEquals(underTest.isSharedPublicly(), legacyVersion.isSharedPublicly());
     assertEquals(underTest.isForFailedJobs(), legacyVersion.isForFailedJobs());
     assertEquals(underTest.getPattern(), legacyVersion.getPattern());
   }
@@ -156,15 +154,15 @@ public class ClassicUploadTest {
   @Test(expected = NullPointerException.class)
   @WithoutJenkins
   public void testCheckNullGlob() throws Exception {
-    new ClassicUpload(bucket, new MockUploadModule(executor), null,
-        null /* legacy arg */, null /* legacy arg */);
+    new ClassicUpload(
+        bucket, new MockUploadModule(executor), null, null /* legacy arg */, null /* legacy arg */);
   }
 
   @Test
   public void testCheckNullOnNullables() throws Exception {
     // The upload should handle null for the other fields.
-    new ClassicUpload(bucket,
-        null /* module */, glob, null /* legacy arg */, null /* legacy arg */);
+    new ClassicUpload(
+        bucket, null /* module */, glob, null /* legacy arg */, null /* legacy arg */);
   }
 
   @Test
@@ -172,22 +170,16 @@ public class ClassicUploadTest {
   public void doCheckGlobTest() throws IOException {
     DescriptorImpl descriptor = new DescriptorImpl();
 
-    assertEquals(FormValidation.Kind.OK,
-        descriptor.doCheckPattern("asdf").kind);
+    assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("asdf").kind);
     // Some good sample globs we should accept
-    assertEquals(FormValidation.Kind.OK,
-        descriptor.doCheckPattern("target/*.war").kind);
-    assertEquals(FormValidation.Kind.OK,
-        descriptor.doCheckPattern("**/target/foo.*").kind);
+    assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("target/*.war").kind);
+    assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("**/target/foo.*").kind);
     // Successfully resolved
-    assertEquals(FormValidation.Kind.OK,
-        descriptor.doCheckPattern("asdf$BUILD_NUMBER").kind);
+    assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("asdf$BUILD_NUMBER").kind);
     // UN-successfully resolved
-    assertEquals(FormValidation.Kind.ERROR,
-        descriptor.doCheckPattern("$foo").kind);
+    assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckPattern("$foo").kind);
     // Escaped $BUILD_NUMBER
-    assertEquals(FormValidation.Kind.ERROR,
-        descriptor.doCheckPattern("$$BUILD_NUMBER").kind);
+    assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckPattern("$$BUILD_NUMBER").kind);
   }
 
   private void dumpLog(Run<?, ?> run) throws IOException {

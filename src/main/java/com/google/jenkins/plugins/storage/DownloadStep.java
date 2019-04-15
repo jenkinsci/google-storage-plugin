@@ -15,27 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.logging.Logger;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.Symbol;
-import org.jenkinsci.remoting.RoleChecker;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.api.client.googleapis.media.MediaHttpDownloader;
@@ -51,7 +30,6 @@ import com.google.jenkins.plugins.storage.util.RetryStorageOperation.RepeatOpera
 import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.Executor;
 import com.google.jenkins.plugins.util.ExecutorException;
-
 import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
@@ -65,31 +43,44 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.logging.Logger;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
+import org.jenkinsci.remoting.RoleChecker;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 
-/**
- * A step to allow Download from Google Cloud Storage as a Build step and in
- * pipeline.
- */
+/** A step to allow Download from Google Cloud Storage as a Build step and in pipeline. */
 @RequiresDomain(value = StorageScopeRequirement.class)
-public class DownloadStep extends Builder implements SimpleBuildStep,
-    Serializable {
+public class DownloadStep extends Builder implements SimpleBuildStep, Serializable {
 
-  private static final Logger logger =
-      Logger.getLogger(DownloadStep.class.getName());
+  private static final Logger logger = Logger.getLogger(DownloadStep.class.getName());
 
-  /**
-   * Construct the download step.
-   */
+  /** Construct the download step. */
   @DataBoundConstructor
-  public DownloadStep(String credentialsId, String bucketUri,
-      String localDirectory) {
+  public DownloadStep(String credentialsId, String bucketUri, String localDirectory) {
     this(credentialsId, bucketUri, localDirectory, null);
   }
 
-  public DownloadStep(String credentialsId, String bucketUri,
-      String localDirectory, @Nullable UploadModule module) {
+  public DownloadStep(
+      String credentialsId,
+      String bucketUri,
+      String localDirectory,
+      @Nullable UploadModule module) {
     if (module != null) {
       this.module = module;
     } else {
@@ -102,8 +93,8 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
   }
 
   /**
-   * The bucket uri specified by the user, which potentially contains
-   * unresolved symbols, such as $JOB_NAME and $BUILD_NUMBER.
+   * The bucket uri specified by the user, which potentially contains unresolved symbols, such as
+   * $JOB_NAME and $BUILD_NUMBER.
    */
   public String getBucketUri() {
     return bucketUri;
@@ -112,9 +103,8 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
   private final String bucketUri;
 
   /**
-   * The local directory in the Jenkins workspace that will receive the files.
-   * This might contain unresolved symbols, such as $JOB_NAME and
-   * $BUILD_NUMBER.
+   * The local directory in the Jenkins workspace that will receive the files. This might contain
+   * unresolved symbols, such as $JOB_NAME and $BUILD_NUMBER.
    */
   public String getLocalDirectory() {
     return localDirectory;
@@ -123,11 +113,11 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
   private final String localDirectory;
 
   /**
-   * The path prefix that will be stripped from downloaded files. May be null if
-   * no path prefix needs to be stripped.
+   * The path prefix that will be stripped from downloaded files. May be null if no path prefix
+   * needs to be stripped.
    *
-   * Filenames that do not start with this prefix will not be modified. Trailing
-   * slash is automatically added if it is missing.
+   * <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
+   * automatically added if it is missing.
    */
   @DataBoundSetter
   public void setPathPrefix(@Nullable String pathPrefix) {
@@ -144,24 +134,17 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
 
   private String pathPrefix;
 
-  /**
-   * The module to use for providing dependencies.
-   */
+  /** The module to use for providing dependencies. */
   protected final UploadModule module;
 
-  /**
-   * The unique ID for the credentials we are using to
-   * authenticate with GCS.
-   */
+  /** The unique ID for the credentials we are using to authenticate with GCS. */
   public String getCredentialsId() {
     return credentialsId;
   }
 
   private final String credentialsId;
 
-  /**
-   * The credentials we are using to authenticate with GCS.
-   */
+  /** The credentials we are using to authenticate with GCS. */
   public GoogleRobotCredentials getCredentials() {
     return GoogleRobotCredentials.getById(getCredentialsId());
   }
@@ -172,8 +155,11 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
   }
 
   @Override
-  public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath workspace,
-      @Nonnull Launcher launcher, @Nonnull TaskListener listener)
+  public void perform(
+      @Nonnull Run<?, ?> run,
+      @Nonnull FilePath workspace,
+      @Nonnull Launcher launcher,
+      @Nonnull TaskListener listener)
       throws IOException, InterruptedException {
     try {
       String version = module.getVersion();
@@ -183,87 +169,87 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
         throw new IOException("Invalid bucket path: " + getBucketUri());
       }
 
-      String dirName = StorageUtil
-          .replaceMacro(getLocalDirectory(), run, listener);
+      String dirName = StorageUtil.replaceMacro(getLocalDirectory(), run, listener);
       FilePath dirPath = workspace.child(dirName);
 
-      List<StorageObjectId> objects = resolveBucketPath(bucketPath,
-          getCredentials(), version);
+      List<StorageObjectId> objects = resolveBucketPath(bucketPath, getCredentials(), version);
 
-      listener.getLogger()
-          .println(module.prefix(
-              Messages.Download_FoundForPattern(objects.size(), path)));
+      listener
+          .getLogger()
+          .println(module.prefix(Messages.Download_FoundForPattern(objects.size(), path)));
 
       // TODO(agoulti): add a download report.
 
-      String resolvedPrefix = StorageUtil
-          .replaceMacro(pathPrefix, run, listener);
+      String resolvedPrefix = StorageUtil.replaceMacro(pathPrefix, run, listener);
 
-      initiateDownloadsAtWorkspace(getCredentials(), run, objects, dirPath,
-          listener, version, resolvedPrefix);
+      initiateDownloadsAtWorkspace(
+          getCredentials(), run, objects, dirPath, listener, version, resolvedPrefix);
     } catch (ExecutorException e) {
       throw new IOException(Messages.Download_DownloadException(), e);
     }
   }
 
-  private void performDownloadWithRetry(final Executor executor,
+  private void performDownloadWithRetry(
+      final Executor executor,
       final Storage service,
-      final StorageObjectId obj, final FilePath localName,
-      final UploadModule module, final TaskListener listener)
+      final StorageObjectId obj,
+      final FilePath localName,
+      final UploadModule module,
+      final TaskListener listener)
       throws IOException, InterruptedException, ExecutorException {
-    Operation a = new Operation() {
-      public void act()
-          throws IOException, InterruptedException, ExecutorException {
-        listener.getLogger().println(module.prefix(
-            Messages.Download_Downloading(obj.getName(), localName)));
-        Storage.Objects.Get getObject = service.objects()
-            .get(obj.getBucket(), obj.getName());
-        MediaHttpDownloader downloader = getObject.getMediaHttpDownloader();
-        if (downloader != null) {
-          downloader.setDirectDownloadEnabled(true);
-        }
+    Operation a =
+        new Operation() {
+          public void act() throws IOException, InterruptedException, ExecutorException {
+            listener
+                .getLogger()
+                .println(module.prefix(Messages.Download_Downloading(obj.getName(), localName)));
+            Storage.Objects.Get getObject = service.objects().get(obj.getBucket(), obj.getName());
+            MediaHttpDownloader downloader = getObject.getMediaHttpDownloader();
+            if (downloader != null) {
+              downloader.setDirectDownloadEnabled(true);
+            }
 
-        InputStream is = module.executeMediaAsInputStream(getObject);
-        localName.copyFrom(is);
-      }
-    };
+            InputStream is = module.executeMediaAsInputStream(getObject);
+            localName.copyFrom(is);
+          }
+        };
 
-    RetryStorageOperation
-        .performRequestWithRetry(executor, a, module.getInsertRetryCount());
+    RetryStorageOperation.performRequestWithRetry(executor, a, module.getInsertRetryCount());
   }
 
-  private void performDownloads(final GoogleRobotCredentials credentials,
-      final FilePath localDir, final List<StorageObjectId> objs,
-      final TaskListener listener, final String version,
-      final String resolvedPrefix) throws IOException {
-    RepeatOperation<IOException> a = new RepeatOperation<IOException>() {
-      private Queue<StorageObjectId> objects =
-          new LinkedList<StorageObjectId>(objs);
-      Executor executor = module.newExecutor();
+  private void performDownloads(
+      final GoogleRobotCredentials credentials,
+      final FilePath localDir,
+      final List<StorageObjectId> objs,
+      final TaskListener listener,
+      final String version,
+      final String resolvedPrefix)
+      throws IOException {
+    RepeatOperation<IOException> a =
+        new RepeatOperation<IOException>() {
+          private Queue<StorageObjectId> objects = new LinkedList<StorageObjectId>(objs);
+          Executor executor = module.newExecutor();
 
-      Storage service;
+          Storage service;
 
-      public void initCredentials() throws IOException {
-        service = module.getStorageService(credentials, version);
-      }
+          public void initCredentials() throws IOException {
+            service = module.getStorageService(credentials, version);
+          }
 
-      public boolean moreWork() {
-        return !objects.isEmpty();
-      }
+          public boolean moreWork() {
+            return !objects.isEmpty();
+          }
 
-      public void act()
-          throws IOException, InterruptedException, ExecutorException {
-        StorageObjectId obj = objects.peek();
+          public void act() throws IOException, InterruptedException, ExecutorException {
+            StorageObjectId obj = objects.peek();
 
-        String addPath = StorageUtil
-            .getStrippedFilename(obj.getName(), resolvedPrefix);
-        FilePath localName = localDir.withSuffix("/" + addPath);
+            String addPath = StorageUtil.getStrippedFilename(obj.getName(), resolvedPrefix);
+            FilePath localName = localDir.withSuffix("/" + addPath);
 
-        performDownloadWithRetry(executor, service, obj, localName, module,
-            listener);
-        objects.remove();
-      }
-    };
+            performDownloadWithRetry(executor, service, obj, localName, module, listener);
+            objects.remove();
+          }
+        };
 
     try {
       RetryStorageOperation.performRequestWithReinitCredentials(a);
@@ -276,9 +262,12 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
 
   private void initiateDownloadsAtWorkspace(
       final GoogleRobotCredentials credentials,
-      final Run run, final List<StorageObjectId> objects,
-      final FilePath localDir, final TaskListener listener,
-      final String version, final String resolvedPrefix)
+      final Run run,
+      final List<StorageObjectId> objects,
+      final FilePath localDir,
+      final TaskListener listener,
+      final String version,
+      final String resolvedPrefix)
       throws IOException, InterruptedException {
     try {
       // Use remotable credential to access the storage service from the
@@ -290,28 +279,23 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
           new Callable<Void, IOException>() {
             @Override
             public Void call() throws IOException {
-              performDownloads(remoteCredentials, localDir, objects, listener,
-                  version, resolvedPrefix);
+              performDownloads(
+                  remoteCredentials, localDir, objects, listener, version, resolvedPrefix);
               return (Void) null;
             }
 
             @Override
-            public void checkRoles(RoleChecker checker)
-                throws SecurityException {
+            public void checkRoles(RoleChecker checker) throws SecurityException {
               // We know by definition that this is the correct role;
               // the callable exists only in this method context.
             }
           });
     } catch (GeneralSecurityException e) {
-      throw new IOException(
-          Messages.AbstractUpload_RemoteCredentialError(), e);
+      throw new IOException(Messages.AbstractUpload_RemoteCredentialError(), e);
     }
   }
 
-  /**
-   * A class to store StorageObject information in a serializable manner.
-   *
-   */
+  /** A class to store StorageObject information in a serializable manner. */
   protected static class StorageObjectId implements Serializable {
     public StorageObjectId(StorageObject obj) {
       this.bucket = obj.getBucket();
@@ -333,50 +317,44 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
   /**
    * Split the string on wildcards.
    *
-   * String.split removes trailing empty strings, for example, "a", "a*" and
-   * "a**" and would procude the same result, so that method is not suitable.
+   * <p>String.split removes trailing empty strings, for example, "a", "a*" and "a**" and would
+   * procude the same result, so that method is not suitable.
    */
   public static String[] split(String uri) throws AbortException {
     int occurs = StringUtils.countMatches(uri, "*");
 
     if (occurs == 0) {
-      return new String[]{uri};
+      return new String[] {uri};
     }
 
     if (occurs > 1) {
-      throw new AbortException(
-          Messages.Download_UnsupportedMultipleAsterisks(uri));
+      throw new AbortException(Messages.Download_UnsupportedMultipleAsterisks(uri));
     }
 
     int index = uri.indexOf('*');
-    return new String[]{uri.substring(0, index), uri.substring(index + 1)};
+    return new String[] {uri.substring(0, index), uri.substring(index + 1)};
   }
-  /**
-   * Verifies that the given path is supported within current limitations
-   */
+  /** Verifies that the given path is supported within current limitations */
   private static void verifySupported(BucketPath path) throws AbortException {
     if (path.getBucket().contains("*")) {
-      throw new AbortException(
-          Messages.Download_UnsupportedAsteriskInBucket(path.getBucket()));
+      throw new AbortException(Messages.Download_UnsupportedAsteriskInBucket(path.getBucket()));
     }
     String[] pieces = split(path.getObject());
     if (pieces.length == 2) {
       if (pieces[1].contains("/")) {
-        throw new AbortException(
-            Messages.Download_UnsupportedDirSuffix(path.getObject()));
+        throw new AbortException(Messages.Download_UnsupportedDirSuffix(path.getObject()));
       }
     }
   }
 
   /**
-   * Take the bucket path and return a list of objects in the cloud that match
-   * it.
+   * Take the bucket path and return a list of objects in the cloud that match it.
    *
-   * This will eventually handle wildcards, but for now is limited to directly
-   * specifying the object.
+   * <p>This will eventually handle wildcards, but for now is limited to directly specifying the
+   * object.
    */
-  private List<StorageObjectId> resolveBucketPath(BucketPath bucketPath,
-      GoogleRobotCredentials credentials, String version)
+  private List<StorageObjectId> resolveBucketPath(
+      BucketPath bucketPath, GoogleRobotCredentials credentials, String version)
       throws IOException, ExecutorException {
     Storage service = module.getStorageService(credentials, version);
     Executor executor = module.newExecutor();
@@ -395,8 +373,8 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
 
     if (pieces.length == 1) {
       // No wildcards. Do simple lookup
-      Storage.Objects.Get obj = service.objects()
-          .get(bucketPath.getBucket(), bucketPath.getObject());
+      Storage.Objects.Get obj =
+          service.objects().get(bucketPath.getBucket(), bucketPath.getObject());
 
       result.add(new StorageObjectId(executor.execute(obj)));
 
@@ -410,8 +388,12 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
 
     String pageToken = "";
     do {
-      Storage.Objects.List list = service.objects().list(bucketPath.getBucket())
-          .setPrefix(bucketPathPrefix).setDelimiter("/");
+      Storage.Objects.List list =
+          service
+              .objects()
+              .list(bucketPath.getBucket())
+              .setPrefix(bucketPathPrefix)
+              .setDelimiter("/");
       if (pageToken.length() > 0) {
         list.setPageToken(pageToken);
       }
@@ -431,17 +413,13 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
   }
 
   /**
-   * Boilerplate, see:
-   * https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
+   * Boilerplate, see: https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
    */
   public DescriptorImpl getDescriptor() {
-    return (DescriptorImpl) checkNotNull(Hudson.getInstance())
-        .getDescriptor(getClass());
+    return (DescriptorImpl) checkNotNull(Hudson.getInstance()).getDescriptor(getClass());
   }
 
-  /**
-   * Descriptor for the DownloadStep
-   */
+  /** Descriptor for the DownloadStep */
   @Extension
   @Symbol("googleStorageDownload")
   public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
@@ -456,37 +434,28 @@ public class DownloadStep extends Builder implements SimpleBuildStep,
       this.module = new UploadModule();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public String getDisplayName() {
       return Messages.Download_BuildStepDisplayName();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean isApplicable(Class<? extends AbstractProject> jobType) {
       return true;
     }
 
     @Override
-    public Builder newInstance(StaplerRequest req, JSONObject formData)
-        throws FormException {
+    public Builder newInstance(StaplerRequest req, JSONObject formData) throws FormException {
       if (Boolean.FALSE.equals(formData.remove("stripPathPrefix"))) {
         formData.remove("pathPrefix");
       }
       return super.newInstance(req, formData);
     }
 
-    /**
-     * This callback validates the {@code bucketNameWithVars} input field's
-     * values.
-     */
-    public FormValidation doCheckBucketUri(
-        @QueryParameter final String bucketUri)
+    /** This callback validates the {@code bucketNameWithVars} input field's values. */
+    public FormValidation doCheckBucketUri(@QueryParameter final String bucketUri)
         throws IOException {
       try {
         BucketPath path = new BucketPath(bucketUri);

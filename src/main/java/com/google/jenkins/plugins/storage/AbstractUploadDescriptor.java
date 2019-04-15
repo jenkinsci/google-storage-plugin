@@ -15,48 +15,38 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import java.io.IOException;
-
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.jenkins.plugins.util.Resolve;
-
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
+import java.io.IOException;
 import net.sf.json.JSONObject;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 
-/**
- * Descriptor from which Upload extensions must derive their descriptor.
- */
-public abstract class AbstractUploadDescriptor
-    extends Descriptor<AbstractUpload> {
+/** Descriptor from which Upload extensions must derive their descriptor. */
+public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload> {
 
   /**
-   * Create the descriptor of the Upload from it's type on associated module
-   * for instantiating dependencies.
+   * Create the descriptor of the Upload from it's type on associated module for instantiating
+   * dependencies.
    */
-  protected AbstractUploadDescriptor(
-      Class<? extends AbstractUpload> clazz,
-      UploadModule module) {
+  protected AbstractUploadDescriptor(Class<? extends AbstractUpload> clazz, UploadModule module) {
     super(checkNotNull(clazz));
     this.module = module;
   }
 
   /**
-   * Boilerplate, see:
-   * https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
+   * Boilerplate, see: https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
    */
-  protected AbstractUploadDescriptor(
-      Class<? extends AbstractUpload> clazz) {
+  protected AbstractUploadDescriptor(Class<? extends AbstractUpload> clazz) {
     this(checkNotNull(clazz), new UploadModule());
   }
 
   /**
-   * Retrieve the module to use for instantiating dependencies
-   * for instances described by this descriptor.
+   * Retrieve the module to use for instantiating dependencies for instances described by this
+   * descriptor.
    */
   public UploadModule getModule() {
     return module;
@@ -64,31 +54,25 @@ public abstract class AbstractUploadDescriptor
 
   private final UploadModule module;
 
-  /**
-   * This callback validates the {@code bucketNameWithVars} input field's
-   * values.
-   */
-  public static FormValidation staticDoCheckBucket(
-      final String bucketNameWithVars)
+  /** This callback validates the {@code bucketNameWithVars} input field's values. */
+  public static FormValidation staticDoCheckBucket(final String bucketNameWithVars)
       throws IOException {
     String resolvedInput = Resolve.resolveBuiltin(bucketNameWithVars);
     if (!resolvedInput.startsWith(GCS_SCHEME)) {
       return FormValidation.error(
-          Messages.AbstractUploadDescriptor_BadPrefix(
-              resolvedInput, GCS_SCHEME));
+          Messages.AbstractUploadDescriptor_BadPrefix(resolvedInput, GCS_SCHEME));
     }
     // Lop off the prefix.
     resolvedInput = resolvedInput.substring(GCS_SCHEME.length());
 
     if (resolvedInput.isEmpty()) {
-      return FormValidation.error(
-          Messages.AbstractUploadDescriptor_EmptyBucketName());
+      return FormValidation.error(Messages.AbstractUploadDescriptor_EmptyBucketName());
     }
     if (resolvedInput.contains("$")) {
       // resolved bucket name still contains variable markers
       return FormValidation.error(
-          Messages.AbstractUploadDescriptor_BadBucketChar("$",
-              Messages.AbstractUploadDescriptor_DollarSuggest()));
+          Messages.AbstractUploadDescriptor_BadBucketChar(
+              "$", Messages.AbstractUploadDescriptor_DollarSuggest()));
     }
     // TODO(mattmoor): This has a much more constrained form than the
     // glob, since it:
@@ -101,21 +85,17 @@ public abstract class AbstractUploadDescriptor
     return FormValidation.ok();
   }
 
-  public FormValidation doCheckBucketNameWithVars(
-      @QueryParameter final String bucketNameWithVars)
+  public FormValidation doCheckBucketNameWithVars(@QueryParameter final String bucketNameWithVars)
       throws IOException {
     return staticDoCheckBucket(bucketNameWithVars);
   }
 
-  public FormValidation doCheckBucket(
-      @QueryParameter final String bucket)
-      throws IOException {
+  public FormValidation doCheckBucket(@QueryParameter final String bucket) throws IOException {
     return staticDoCheckBucket(bucket);
   }
 
   @Override
-  public AbstractUpload newInstance(StaplerRequest req, JSONObject formData)
-      throws FormException {
+  public AbstractUpload newInstance(StaplerRequest req, JSONObject formData) throws FormException {
     // Since the config form lists the optional parameter pathPrefix as inline,
     // it will be passed through even if stripPathPrefix is false. This might
     // cause problems if the user, for example, fills in the field and then
@@ -127,8 +107,6 @@ public abstract class AbstractUploadDescriptor
     return super.newInstance(req, formData);
   }
 
-  /**
-   * The URI "scheme" that prefixes GCS URIs
-   */
+  /** The URI "scheme" that prefixes GCS URIs */
   public static final String GCS_SCHEME = "gs://";
 }

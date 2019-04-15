@@ -15,26 +15,20 @@
  */
 package com.google.jenkins.plugins.storage.util;
 
-import java.io.IOException;
-
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_UNAUTHORIZED;
 import static org.junit.Assert.assertEquals;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.jvnet.hudson.test.WithoutJenkins;
-
-import static com.google.api.client.http.HttpStatusCodes
-    .STATUS_CODE_UNAUTHORIZED;
 
 import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.StubHttpResponseException;
 import com.google.jenkins.plugins.storage.util.RetryStorageOperation.Operation;
 import com.google.jenkins.plugins.storage.util.RetryStorageOperation.RepeatOperation;
 import com.google.jenkins.plugins.util.MockExecutor;
+import java.io.IOException;
+import org.junit.Assert;
+import org.junit.Test;
+import org.jvnet.hudson.test.WithoutJenkins;
 
-/**
- * Tests for {@link StorageUtil}.
- */
+/** Tests for {@link StorageUtil}. */
 public class RetryStorageOperationTest {
 
   private final MockExecutor executor = new MockExecutor();
@@ -154,9 +148,7 @@ public class RetryStorageOperationTest {
     assertEquals(1, action.succeeded);
   }
 
-
-  private class FailingCredentials implements
-      RepeatOperation<NullPointerException> {
+  private class FailingCredentials implements RepeatOperation<NullPointerException> {
 
     public int credLength;
     public int usesLeft;
@@ -174,14 +166,12 @@ public class RetryStorageOperationTest {
       usesLeft = credLength;
     }
 
-    public void act()
-        throws HttpResponseException {
+    public void act() throws HttpResponseException {
       assert (stepsLeft > 0);
 
       if (usesLeft <= 0) {
         failures++;
-        throw new StubHttpResponseException(STATUS_CODE_UNAUTHORIZED,
-            "No more credentials!");
+        throw new StubHttpResponseException(STATUS_CODE_UNAUTHORIZED, "No more credentials!");
       }
 
       usesLeft--;
@@ -230,8 +220,7 @@ public class RetryStorageOperationTest {
         super(credLength, stepsLeft);
       }
 
-      public void act()
-          throws HttpResponseException {
+      public void act() throws HttpResponseException {
         if (stepsLeft <= 5) {
           usesLeft = 0;
         }

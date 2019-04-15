@@ -15,27 +15,23 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import hudson.model.Action;
 import hudson.model.Actionable;
+import java.util.Set;
+import javax.annotation.Nullable;
 
 /**
- * Common functionalities for {@link BuildGcsUploadReport} and
- * {@link ProjectGcsUploadReport}. See {@link ProjectGcsUploadReport} for
- * details on why we will need at least two different kind of reports.
+ * Common functionalities for {@link BuildGcsUploadReport} and {@link ProjectGcsUploadReport}. See
+ * {@link ProjectGcsUploadReport} for details on why we will need at least two different kind of
+ * reports.
  *
  * @see ProjectGcsUploadReport
  */
 public abstract class AbstractGcsUploadReport implements Action {
 
-  /**
-   * @see #getParent().
-   */
+  /** @see #getParent(). */
   private Actionable parent;
 
   /**
@@ -46,25 +42,19 @@ public abstract class AbstractGcsUploadReport implements Action {
     this.parent = checkNotNull(parent);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getIconFileName() {
     return "save.gif";
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getDisplayName() {
     return Messages.AbstractGcsUploadReport_DisplayName();
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getUrlName() {
     /* stapler will match this URL name to our action page */
@@ -72,27 +62,20 @@ public abstract class AbstractGcsUploadReport implements Action {
   }
 
   /**
-   * @return the parent object of this action. For a build action,
-   *         this is the containing build. For a project action, this is the
-   *         containing project.
+   * @return the parent object of this action. For a build action, this is the containing build. For
+   *     a project action, this is the containing project.
    */
   public Actionable getParent() {
     return parent;
   }
 
-  /**
-   * @return the build number of this report.
-   */
-  @Nullable public abstract Integer getBuildNumber();
+  /** @return the build number of this report. */
+  @Nullable
+  public abstract Integer getBuildNumber();
 
-  /**
-   * @return the uploaded objects (qualified with bucket name).
-   */
+  /** @return the uploaded objects (qualified with bucket name). */
   public abstract Set<String> getStorageObjects();
 
-  /**
-   * @return the buckets that were used as upload destinations.
-   */
+  /** @return the buckets that were used as upload destinations. */
   public abstract Set<String> getBuckets();
-
 }
