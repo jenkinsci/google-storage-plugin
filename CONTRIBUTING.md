@@ -30,7 +30,8 @@ again.
 
 ## Branching Model
 
-This repository uses the [Gitflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) branching model.
+This repository uses the [Gitflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)
+branching model.
 
 Use of the [git flow](https://github.com/nvie/gitflow) git extension is recommended.
 
