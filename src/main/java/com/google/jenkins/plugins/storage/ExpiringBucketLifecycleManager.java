@@ -17,35 +17,29 @@ package com.google.jenkins.plugins.storage;
 
 import static java.util.logging.Level.WARNING;
 
-import java.util.List;
-import java.util.logging.Logger;
-
-import javax.annotation.Nullable;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import com.google.api.services.storage.model.Bucket;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
-
 import hudson.Extension;
+import java.util.List;
+import java.util.logging.Logger;
+import javax.annotation.Nullable;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
- * A simple implementation of the bucket lifecycle extension point
- * that surfaces object expiration (aka TTL).
+ * A simple implementation of the bucket lifecycle extension point that surfaces object expiration
+ * (aka TTL).
  */
-public class ExpiringBucketLifecycleManager
-    extends AbstractBucketLifecycleManager {
+public class ExpiringBucketLifecycleManager extends AbstractBucketLifecycleManager {
   private static final Logger logger =
       Logger.getLogger(ExpiringBucketLifecycleManager.class.getName());
 
-  /**
-   * Construct the simple lifecycle manager from a TLL and the
-   * common properties.
-   */
+  /** Construct the simple lifecycle manager from a TLL and the common properties. */
   @DataBoundConstructor
-  public ExpiringBucketLifecycleManager(String bucket,
-      @Nullable UploadModule module, Integer ttl,
+  public ExpiringBucketLifecycleManager(
+      String bucket,
+      @Nullable UploadModule module,
+      Integer ttl,
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars,
       @Deprecated @Nullable Integer bucketObjectTTL) {
@@ -54,21 +48,15 @@ public class ExpiringBucketLifecycleManager
     this.bucketObjectTTL = Objects.firstNonNull(ttl, bucketObjectTTL);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getDetails() {
-    return Messages.ExpiringBucketLifecycleManager_DetailsMessage(
-        getTtl());
+    return Messages.ExpiringBucketLifecycleManager_DetailsMessage(getTtl());
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
-  protected Bucket checkBucket(Bucket bucket)
-      throws InvalidAnnotationException {
+  protected Bucket checkBucket(Bucket bucket) throws InvalidAnnotationException {
     Bucket.Lifecycle lifecycle = bucket.getLifecycle();
     if (lifecycle == null) {
       throw new InvalidAnnotationException(bucket);
@@ -78,8 +66,7 @@ public class ExpiringBucketLifecycleManager
       // TODO(mattmoor): Consider allowing this plugin to augment, rather
       // than replace existing lifecycle rules.
       if (lifecycle.getRule().size() > 1) {
-        logger.log(WARNING, "Found complex lifecycle rule on: " +
-            bucket.getName());
+        logger.log(WARNING, "Found complex lifecycle rule on: " + bucket.getName());
       }
       throw new InvalidAnnotationException(bucket);
     }
@@ -102,21 +89,17 @@ public class ExpiringBucketLifecycleManager
 
       return bucket;
     }
-    logger.log(WARNING, "Mismatched lifecycle rule on: " +
-        bucket.getName());
+    logger.log(WARNING, "Mismatched lifecycle rule on: " + bucket.getName());
     throw new InvalidAnnotationException(bucket);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   protected Bucket decorateBucket(Bucket bucket) {
-    Bucket.Lifecycle.Rule rule = new Bucket.Lifecycle.Rule()
-        .setCondition(new Bucket.Lifecycle.Rule.Condition()
-            .setAge(getTtl())) // age is in days
-        .setAction(new Bucket.Lifecycle.Rule.Action()
-            .setType(DELETE));
+    Bucket.Lifecycle.Rule rule =
+        new Bucket.Lifecycle.Rule()
+            .setCondition(new Bucket.Lifecycle.Rule.Condition().setAge(getTtl())) // age is in days
+            .setAction(new Bucket.Lifecycle.Rule.Action().setType(DELETE));
 
     List<Bucket.Lifecycle.Rule> rules = Lists.newArrayList();
 
@@ -140,10 +123,7 @@ public class ExpiringBucketLifecycleManager
     return bucket;
   }
 
-  /**
-   * Surface the TTL for objects contained within the bucket for roundtripping
-   * to the jelly UI.
-   */
+  /** Surface the TTL for objects contained within the bucket for roundtripping to the jelly UI. */
   public int getTtl() {
     return bucketObjectTTL;
   }
@@ -152,24 +132,18 @@ public class ExpiringBucketLifecycleManager
 
   private static final String DELETE = "Delete";
 
-  /**
-   * Denotes this is an {@link AbstractUpload} plugin
-   */
+  /** Denotes this is an {@link AbstractUpload} plugin */
   @Extension
-  public static class DescriptorImpl
-      extends AbstractBucketLifecycleManagerDescriptor {
+  public static class DescriptorImpl extends AbstractBucketLifecycleManagerDescriptor {
     public DescriptorImpl() {
       this(ExpiringBucketLifecycleManager.class);
     }
 
-    public DescriptorImpl(
-      Class<? extends ExpiringBucketLifecycleManager> clazz) {
+    public DescriptorImpl(Class<? extends ExpiringBucketLifecycleManager> clazz) {
       super(clazz);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public String getDisplayName() {
       return Messages.ExpiringBucketLifecycleManager_DisplayName();

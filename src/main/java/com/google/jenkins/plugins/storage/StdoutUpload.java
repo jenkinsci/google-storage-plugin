@@ -15,15 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
-import javax.annotation.Nullable;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.io.ByteStreams.copy;
 
@@ -32,7 +23,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.Closeables;
 import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.Resolve;
-
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.console.PlainTextConsoleOutputStream;
@@ -40,47 +30,48 @@ import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import javax.annotation.Nullable;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 /**
- * This upload extension allow the user to upload the build log
- * for the Jenkins build to a given bucket, with a specified file
- * name.  By default, the file is named "build-log.txt".
+ * This upload extension allow the user to upload the build log for the Jenkins build to a given
+ * bucket, with a specified file name. By default, the file is named "build-log.txt".
  */
 public class StdoutUpload extends AbstractUpload {
 
   /**
-   * Construct the Upload with the stock properties, and the additional
-   * information about how to name the build log file.
+   * Construct the Upload with the stock properties, and the additional information about how to
+   * name the build log file.
    */
   @DataBoundConstructor
-  public StdoutUpload(@Nullable String bucket,
-      @Nullable UploadModule module, String logName,
+  public StdoutUpload(
+      @Nullable String bucket,
+      @Nullable UploadModule module,
+      String logName,
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars) {
     super(Objects.firstNonNull(bucket, bucketNameWithVars), module);
     this.logName = checkNotNull(logName);
   }
 
-  /**
-   * The name to give the file we upload for the build log.
-   */
+  /** The name to give the file we upload for the build log. */
   public String getLogName() {
     return logName;
   }
 
   private final String logName;
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getDetails() {
     return Messages.StdoutUpload_DetailsMessage(getLogName());
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public boolean forResult(Result result) {
     if (result == null) {
@@ -92,21 +83,18 @@ public class StdoutUpload extends AbstractUpload {
     return super.forResult(result);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   @Nullable
-  protected UploadSpec getInclusions(Run<?, ?> run,
-      FilePath workspace, TaskListener listener) throws UploadException {
+  protected UploadSpec getInclusions(Run<?, ?> run, FilePath workspace, TaskListener listener)
+      throws UploadException {
     try {
       OutputStream outputStream = null;
       InputStream inputStream = null;
       try {
         FilePath logDir = new FilePath(run.getLogFile()).getParent();
 
-        String resolvedLogName = StorageUtil
-            .replaceMacro(getLogName(), run, listener);
+        String resolvedLogName = StorageUtil.replaceMacro(getLogName(), run, listener);
         FilePath logFile = new FilePath(logDir, resolvedLogName);
 
         outputStream = new PlainTextConsoleOutputStream(logFile.write());
@@ -126,9 +114,7 @@ public class StdoutUpload extends AbstractUpload {
     }
   }
 
-  /**
-   * Denotes this is an {@link AbstractUpload} plugin
-   */
+  /** Denotes this is an {@link AbstractUpload} plugin */
   @Extension
   public static class DescriptorImpl extends AbstractUploadDescriptor {
 
@@ -136,35 +122,27 @@ public class StdoutUpload extends AbstractUpload {
       this(StdoutUpload.class);
     }
 
-    public DescriptorImpl(
-        Class<? extends StdoutUpload> clazz) {
+    public DescriptorImpl(Class<? extends StdoutUpload> clazz) {
       super(clazz);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public String getDisplayName() {
       return Messages.StdoutUpload_DisplayName();
     }
 
-    /**
-     * This callback validates the {@code logName} input field's values.
-     */
-    public FormValidation doCheckLogName(
-        @QueryParameter final String logName) throws IOException {
+    /** This callback validates the {@code logName} input field's values. */
+    public FormValidation doCheckLogName(@QueryParameter final String logName) throws IOException {
       String resolvedInput = Resolve.resolveBuiltin(logName);
       if (resolvedInput.isEmpty()) {
-        return FormValidation.error(
-            Messages.StdoutUpload_LogNameRequired());
+        return FormValidation.error(Messages.StdoutUpload_LogNameRequired());
       }
 
       if (resolvedInput.contains("$")) {
         // resolved file name still contains variable marker
         return FormValidation.error(
-            Messages.StdoutUpload_BadChar("$",
-                Messages.AbstractUploadDescriptor_DollarSuggest()));
+            Messages.StdoutUpload_BadChar("$", Messages.AbstractUploadDescriptor_DollarSuggest()));
       }
       // TODO(mattmoor): Proper filename validation
       return FormValidation.ok();

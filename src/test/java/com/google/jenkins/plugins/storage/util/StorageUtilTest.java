@@ -15,28 +15,23 @@
  */
 package com.google.jenkins.plugins.storage.util;
 
-import java.io.File;
-import java.io.IOException;
-
 import static org.junit.Assert.assertEquals;
 
+import hudson.FilePath;
+import java.io.File;
+import java.io.IOException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.WithoutJenkins;
 
-import hudson.FilePath;
-
-/**
- * Tests for {@link StorageUtil}.
- */
+/** Tests for {@link StorageUtil}. */
 public class StorageUtilTest {
   private FilePath workspace;
   private FilePath nonWorkspace;
 
-  @Rule
-  public TemporaryFolder tempDir = new TemporaryFolder();
+  @Rule public TemporaryFolder tempDir = new TemporaryFolder();
 
   @Before
   public void setUp() throws Exception {
@@ -53,8 +48,7 @@ public class StorageUtilTest {
 
     FilePath second = one.child(SECOND_NAME);
     assertEquals(SECOND_NAME, StorageUtil.getRelative(second, one));
-    assertEquals(FIRST_NAME + '/' + SECOND_NAME,
-        StorageUtil.getRelative(second, workspace));
+    assertEquals(FIRST_NAME + '/' + SECOND_NAME, StorageUtil.getRelative(second, workspace));
   }
 
   @Test
@@ -62,10 +56,8 @@ public class StorageUtilTest {
   public void getRelativeNegativeTest() throws Exception {
     FilePath one = workspace.child(FIRST_NAME);
 
-    assertEquals(workspace.toString(),
-        "/" + StorageUtil.getRelative(workspace, one));
-    assertEquals(nonWorkspace.toString(),
-        "/" + StorageUtil.getRelative(nonWorkspace, workspace));
+    assertEquals(workspace.toString(), "/" + StorageUtil.getRelative(workspace, one));
+    assertEquals(nonWorkspace.toString(), "/" + StorageUtil.getRelative(nonWorkspace, workspace));
   }
 
   private File makeTempDir(String name) throws IOException {

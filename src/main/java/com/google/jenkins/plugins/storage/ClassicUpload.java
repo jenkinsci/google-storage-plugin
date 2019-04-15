@@ -15,66 +15,57 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import java.io.IOException;
-import java.util.Arrays;
-
-import javax.annotation.Nullable;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-
 import com.google.common.base.Objects;
 import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.Resolve;
-
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
+import java.io.IOException;
+import java.util.Arrays;
+import javax.annotation.Nullable;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 /**
- * This upload extension implements the classical upload pattern
- * where a user provides an Ant-style glob, e.g. ** / *.java
- * relative to the build workspace, and those files are uploaded
- * to the storage bucket.
+ * This upload extension implements the classical upload pattern where a user provides an Ant-style
+ * glob, e.g. ** / *.java relative to the build workspace, and those files are uploaded to the
+ * storage bucket.
  */
 public class ClassicUpload extends AbstractUpload {
 
   /**
-   * Construct the classic upload implementation from the base properties
-   * and the glob for matching files.
+   * Construct the classic upload implementation from the base properties and the glob for matching
+   * files.
    */
   @DataBoundConstructor
-  public ClassicUpload(String bucket, @Nullable UploadModule module,
+  public ClassicUpload(
+      String bucket,
+      @Nullable UploadModule module,
       String pattern,
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars,
       @Deprecated @Nullable String sourceGlobWithVars) {
     super(Objects.firstNonNull(bucket, bucketNameWithVars), module);
-    this.sourceGlobWithVars =
-        Objects.firstNonNull(pattern, sourceGlobWithVars);
+    this.sourceGlobWithVars = Objects.firstNonNull(pattern, sourceGlobWithVars);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getDetails() {
     return getPattern();
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   @Nullable
-  protected UploadSpec getInclusions(Run<?, ?> run,
-      FilePath workspace, TaskListener listener) throws UploadException {
+  protected UploadSpec getInclusions(Run<?, ?> run, FilePath workspace, TaskListener listener)
+      throws UploadException {
     try {
 
-      String globResolvedVars = StorageUtil
-          .replaceMacro(getPattern(), run, listener);
+      String globResolvedVars = StorageUtil.replaceMacro(getPattern(), run, listener);
 
       // In order to support absolute globs (e.g. /gagent/metaOutput/std*.txt)
       // we must identify absolute paths and rebase the "workspace" to be the
@@ -96,14 +87,14 @@ public class ClassicUpload extends AbstractUpload {
 
       FilePath[] inclusions = workspace.list(globResolvedVars);
       if (inclusions.length == 0) {
-        listener.error(module.prefix(
-            Messages.ClassicUpload_NoArtifacts(
-                globResolvedVars)));
+        listener.error(module.prefix(Messages.ClassicUpload_NoArtifacts(globResolvedVars)));
         return null;
       }
-      listener.getLogger().println(module.prefix(
-          Messages.ClassicUpload_FoundForPattern(
-              inclusions.length, getPattern())));
+      listener
+          .getLogger()
+          .println(
+              module.prefix(
+                  Messages.ClassicUpload_FoundForPattern(inclusions.length, getPattern())));
       return new UploadSpec(workspace, Arrays.asList(inclusions));
     } catch (InterruptedException e) {
       throw new UploadException(Messages.AbstractUpload_IncludeException(), e);
@@ -112,10 +103,7 @@ public class ClassicUpload extends AbstractUpload {
     }
   }
 
-
-  /**
-   * Iterate from the workspace through parent directories to its root.
-   */
+  /** Iterate from the workspace through parent directories to its root. */
   private FilePath getRoot(final FilePath workspace) {
     FilePath iter = workspace;
     while (iter.getParent() != null) {
@@ -125,22 +113,17 @@ public class ClassicUpload extends AbstractUpload {
   }
 
   /**
-   * The glob of files to upload, which potentially contains unresolved
-   * symbols, such as $JOB_NAME and $BUILD_NUMBER.
+   * The glob of files to upload, which potentially contains unresolved symbols, such as $JOB_NAME
+   * and $BUILD_NUMBER.
    */
   public String getPattern() {
     return sourceGlobWithVars;
   }
 
-  /**
-   * NOTE: old name kept for deserialization
-   */
+  /** NOTE: old name kept for deserialization */
   private final String sourceGlobWithVars;
 
-
-  /**
-   * Denotes this is an {@link AbstractUpload} plugin
-   */
+  /** Denotes this is an {@link AbstractUpload} plugin */
   @Extension
   public static class DescriptorImpl extends AbstractUploadDescriptor {
 
@@ -148,37 +131,29 @@ public class ClassicUpload extends AbstractUpload {
       this(ClassicUpload.class);
     }
 
-    public DescriptorImpl(
-        Class<? extends ClassicUpload> clazz) {
+    public DescriptorImpl(Class<? extends ClassicUpload> clazz) {
       super(clazz);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public String getDisplayName() {
       return Messages.ClassicUpload_DisplayName();
     }
 
-    /**
-     * This callback validates the {@code pattern} input field's
-     * values.
-     */
-    public static FormValidation staticDoCheckPattern(
-        @QueryParameter final String pattern)
+    /** This callback validates the {@code pattern} input field's values. */
+    public static FormValidation staticDoCheckPattern(@QueryParameter final String pattern)
         throws IOException {
       String resolvedInput = Resolve.resolveBuiltin(pattern);
       if (resolvedInput.isEmpty()) {
-        return FormValidation.error(
-            Messages.ClassicUpload_EmptyGlob());
+        return FormValidation.error(Messages.ClassicUpload_EmptyGlob());
       }
 
       if (resolvedInput.contains("$")) {
         // resolved file name still contains variable marker
         return FormValidation.error(
-            Messages.ClassicUpload_BadGlobChar("$",
-                Messages.AbstractUploadDescriptor_DollarSuggest()));
+            Messages.ClassicUpload_BadGlobChar(
+                "$", Messages.AbstractUploadDescriptor_DollarSuggest()));
       }
       // TODO(mattmoor): Validation:
       //  - relative path from workspace
@@ -193,13 +168,8 @@ public class ClassicUpload extends AbstractUpload {
       return FormValidation.ok();
     }
 
-    /**
-     * This callback validates the {@code pattern} input field's
-     * values.
-     */
-    public FormValidation doCheckPattern(
-        @QueryParameter final String pattern)
-        throws IOException {
+    /** This callback validates the {@code pattern} input field's values. */
+    public FormValidation doCheckPattern(@QueryParameter final String pattern) throws IOException {
       return staticDoCheckPattern(pattern);
     }
   }

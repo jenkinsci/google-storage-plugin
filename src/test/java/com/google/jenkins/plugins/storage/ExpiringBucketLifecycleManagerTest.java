@@ -22,14 +22,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.rules.Verifier;
-import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.WithoutJenkins;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.storage.Storage;
@@ -43,21 +35,23 @@ import com.google.jenkins.plugins.util.ConflictException;
 import com.google.jenkins.plugins.util.ForbiddenException;
 import com.google.jenkins.plugins.util.MockExecutor;
 import com.google.jenkins.plugins.util.NotFoundException;
-
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.TaskListener;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.rules.Verifier;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.WithoutJenkins;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-/**
- * Tests for {@link ExpiringBucketLifecycleManager}.
- */
+/** Tests for {@link ExpiringBucketLifecycleManager}. */
 public class ExpiringBucketLifecycleManagerTest {
 
-  @org.junit.Rule
-  public JenkinsRule jenkins = new JenkinsRule();
+  @org.junit.Rule public JenkinsRule jenkins = new JenkinsRule();
 
-  @Mock
-  private GoogleRobotCredentials credentials;
+  @Mock private GoogleRobotCredentials credentials;
 
   private GoogleCredential credential;
 
@@ -90,17 +84,19 @@ public class ExpiringBucketLifecycleManagerTest {
     public MockExecutor newExecutor() {
       return executor;
     }
+
     private final MockExecutor executor;
   }
 
   @org.junit.Rule
-  public Verifier verifySawAll = new Verifier() {
-      @Override
-      public void verify() {
-        assertTrue(executor.sawAll());
-        assertFalse(executor.sawUnexpected());
-      }
-    };
+  public Verifier verifySawAll =
+      new Verifier() {
+        @Override
+        public void verify() {
+          assertTrue(executor.sawAll());
+          assertFalse(executor.sawUnexpected());
+        }
+      };
 
   private FreeStyleProject project;
   private FreeStyleBuild build;
@@ -116,28 +112,32 @@ public class ExpiringBucketLifecycleManagerTest {
       SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
 
       project = jenkins.createFreeStyleProject("test");
-      project.getPublishersList().add(
-          // Create a storage plugin with no uploaders to fake things out.
-          new GoogleCloudStorageUploader(CREDENTIALS_ID, null));
+      project
+          .getPublishersList()
+          .add(
+              // Create a storage plugin with no uploaders to fake things out.
+              new GoogleCloudStorageUploader(CREDENTIALS_ID, null));
       build = project.scheduleBuild2(0).get();
     }
 
     credential = new GoogleCredential();
-    when(credentials.getGoogleCredential(isA(
-        GoogleOAuth2ScopeRequirement.class)))
+    when(credentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
         .thenReturn(credential);
 
     // Return ourselves as remotable
-    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class)))
-        .thenReturn(credentials);
+    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class))).thenReturn(credentials);
 
     notFoundException = new NotFoundException();
     conflictException = new ConflictException();
     forbiddenException = new ForbiddenException();
 
-    underTest = new ExpiringBucketLifecycleManager(BUCKET_URI,
-        new MockUploadModule(executor), TTL,
-        null /* legacy arg */, null /* legacy arg */);
+    underTest =
+        new ExpiringBucketLifecycleManager(
+            BUCKET_URI,
+            new MockUploadModule(executor),
+            TTL,
+            null /* legacy arg */,
+            null /* legacy arg */);
   }
 
   @Test
@@ -150,124 +150,140 @@ public class ExpiringBucketLifecycleManagerTest {
   @Test
   @WithoutJenkins
   public void testGettersWithLegacy() {
-    underTest = new ExpiringBucketLifecycleManager(null /* bucket */,
-        new MockUploadModule(executor), null /* ttl */,
-        BUCKET_URI, TTL);
+    underTest =
+        new ExpiringBucketLifecycleManager(
+            null /* bucket */, new MockUploadModule(executor), null /* ttl */, BUCKET_URI, TTL);
     assertEquals(BUCKET_URI, underTest.getBucket());
     assertEquals(TTL, underTest.getTtl());
   }
 
   @Test
   public void testFailingCheckWithAnnotation() throws Exception {
-    final Bucket bucket =
-        new Bucket().setName(BUCKET_NAME);
+    final Bucket bucket = new Bucket().setName(BUCKET_NAME);
 
     // A get that returns a bucket should trigger a check/decorate/update
     executor.when(Storage.Buckets.Get.class, bucket);
-    executor.passThruWhen(Storage.Buckets.Update.class,
-        checkHasOneRuleLifecycle());
+    executor.passThruWhen(Storage.Buckets.Update.class, checkHasOneRuleLifecycle());
 
     underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
   public void testBadTTLWithUpdate() throws Exception {
-    final Bucket bucket = new Bucket()
-        .setName(BUCKET_NAME)
-        .setLifecycle(
-            new Bucket.Lifecycle().setRule(ImmutableList.of(new Rule()
-                    .setCondition(new Rule.Condition().setAge(BAD_TTL))
-                    .setAction(new Rule.Action().setType("Delete")))));
+    final Bucket bucket =
+        new Bucket()
+            .setName(BUCKET_NAME)
+            .setLifecycle(
+                new Bucket.Lifecycle()
+                    .setRule(
+                        ImmutableList.of(
+                            new Rule()
+                                .setCondition(new Rule.Condition().setAge(BAD_TTL))
+                                .setAction(new Rule.Action().setType("Delete")))));
 
     // A get that returns a bucket should trigger a check/decorate/update
     executor.when(Storage.Buckets.Get.class, bucket);
-    executor.passThruWhen(Storage.Buckets.Update.class,
-        checkHasOneRuleLifecycle());
+    executor.passThruWhen(Storage.Buckets.Update.class, checkHasOneRuleLifecycle());
 
     underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
   public void testReplaceComplexLifecycle() throws Exception {
-    final Rule expireGoodTTL = new Rule()
-        .setCondition(new Rule.Condition().setAge(TTL))
-        .setAction(new Rule.Action().setType("Delete"));
-    final Bucket bucket = new Bucket()
-        .setName(BUCKET_NAME)
-        .setLifecycle(new Bucket.Lifecycle().setRule(
-            // Create a list with two good rules, to validate that
-            // multi-clause rules get thrown out.
-            ImmutableList.of(expireGoodTTL, expireGoodTTL)));
+    final Rule expireGoodTTL =
+        new Rule()
+            .setCondition(new Rule.Condition().setAge(TTL))
+            .setAction(new Rule.Action().setType("Delete"));
+    final Bucket bucket =
+        new Bucket()
+            .setName(BUCKET_NAME)
+            .setLifecycle(
+                new Bucket.Lifecycle()
+                    .setRule(
+                        // Create a list with two good rules, to validate that
+                        // multi-clause rules get thrown out.
+                        ImmutableList.of(expireGoodTTL, expireGoodTTL)));
 
     // A get that returns a bucket should trigger a check/decorate/update
     executor.when(Storage.Buckets.Get.class, bucket);
-    executor.passThruWhen(Storage.Buckets.Update.class,
-        checkHasOneRuleLifecycle());
+    executor.passThruWhen(Storage.Buckets.Update.class, checkHasOneRuleLifecycle());
 
     underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
   public void testBadAction() throws Exception {
-    final Bucket bucket = new Bucket()
-        .setName(BUCKET_NAME)
-        .setLifecycle(
-            new Bucket.Lifecycle().setRule(ImmutableList.of(new Rule()
-                    .setCondition(new Rule.Condition().setAge(TTL))
-                    .setAction(new Rule.Action().setType("Unknown")))));
+    final Bucket bucket =
+        new Bucket()
+            .setName(BUCKET_NAME)
+            .setLifecycle(
+                new Bucket.Lifecycle()
+                    .setRule(
+                        ImmutableList.of(
+                            new Rule()
+                                .setCondition(new Rule.Condition().setAge(TTL))
+                                .setAction(new Rule.Action().setType("Unknown")))));
 
     // A get that returns a bucket should trigger a check/decorate/update
     executor.when(Storage.Buckets.Get.class, bucket);
-    executor.passThruWhen(Storage.Buckets.Update.class,
-        checkHasOneRuleLifecycle());
+    executor.passThruWhen(Storage.Buckets.Update.class, checkHasOneRuleLifecycle());
 
     underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
   public void testBadCondition() throws Exception {
-    final Bucket bucket = new Bucket()
-        .setName(BUCKET_NAME)
-        .setLifecycle(
-            new Bucket.Lifecycle().setRule(ImmutableList.of(new Rule()
-                    .setCondition(new Rule.Condition().setNumNewerVersions(3))
-                    .setAction(new Rule.Action().setType("Delete")))));
+    final Bucket bucket =
+        new Bucket()
+            .setName(BUCKET_NAME)
+            .setLifecycle(
+                new Bucket.Lifecycle()
+                    .setRule(
+                        ImmutableList.of(
+                            new Rule()
+                                .setCondition(new Rule.Condition().setNumNewerVersions(3))
+                                .setAction(new Rule.Action().setType("Delete")))));
 
     // A get that returns a bucket should trigger a check/decorate/update
     executor.when(Storage.Buckets.Get.class, bucket);
-    executor.passThruWhen(Storage.Buckets.Update.class,
-        checkHasOneRuleLifecycle());
+    executor.passThruWhen(Storage.Buckets.Update.class, checkHasOneRuleLifecycle());
 
     underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
   public void testBadComplexCondition() throws Exception {
-    final Bucket bucket = new Bucket()
-        .setName(BUCKET_NAME)
-        .setLifecycle(
-            new Bucket.Lifecycle().setRule(ImmutableList.of(new Rule()
-                    .setCondition(new Rule.Condition()
-                        .setAge(TTL)
-                        .setNumNewerVersions(3))
-                    .setAction(new Rule.Action().setType("Delete")))));
+    final Bucket bucket =
+        new Bucket()
+            .setName(BUCKET_NAME)
+            .setLifecycle(
+                new Bucket.Lifecycle()
+                    .setRule(
+                        ImmutableList.of(
+                            new Rule()
+                                .setCondition(
+                                    new Rule.Condition().setAge(TTL).setNumNewerVersions(3))
+                                .setAction(new Rule.Action().setType("Delete")))));
 
     // A get that returns a bucket should trigger a check/decorate/update
     executor.when(Storage.Buckets.Get.class, bucket);
-    executor.passThruWhen(Storage.Buckets.Update.class,
-        checkHasOneRuleLifecycle());
+    executor.passThruWhen(Storage.Buckets.Update.class, checkHasOneRuleLifecycle());
 
     underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
   }
 
   @Test
   public void testPassingCheck() throws Exception {
-    final Bucket bucket = new Bucket()
-        .setName(BUCKET_NAME)
-        .setLifecycle(
-            new Bucket.Lifecycle().setRule(ImmutableList.of(new Rule()
-                    .setCondition(new Rule.Condition().setAge(TTL))
-                    .setAction(new Rule.Action().setType("dElEtE")))));
+    final Bucket bucket =
+        new Bucket()
+            .setName(BUCKET_NAME)
+            .setLifecycle(
+                new Bucket.Lifecycle()
+                    .setRule(
+                        ImmutableList.of(
+                            new Rule()
+                                .setCondition(new Rule.Condition().setAge(TTL))
+                                .setAction(new Rule.Action().setType("dElEtE")))));
 
     // A get that returns a bucket should trigger a check/decorate/update
     executor.when(Storage.Buckets.Get.class, bucket);

@@ -16,10 +16,6 @@
 
 package com.google.jenkins.plugins.storage;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.LinkedList;
-
 import static org.junit.Assert.assertEquals;
 
 import com.google.api.services.storage.Storage;
@@ -28,10 +24,11 @@ import com.google.api.services.storage.model.Bucket;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.common.base.Predicate;
 import com.google.jenkins.plugins.util.MockExecutor;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.LinkedList;
 
-/**
- * Mock upload module to stub out executor for testing.
- */
+/** Mock upload module to stub out executor for testing. */
 public class MockUploadModule extends UploadModule {
   public MockUploadModule(MockExecutor executor) {
     this(executor, 1 /* retries */);
@@ -51,11 +48,11 @@ public class MockUploadModule extends UploadModule {
   public MockExecutor newExecutor() {
     return executor;
   }
+
   private final MockExecutor executor;
   private final int retryCount;
 
-  public static Predicate<Storage.Objects.Insert> checkObjectName(
-      final String objectName) {
+  public static Predicate<Storage.Objects.Insert> checkObjectName(final String objectName) {
     return new Predicate<Storage.Objects.Insert>() {
       @Override
       public boolean apply(Storage.Objects.Insert operation) {
@@ -66,8 +63,7 @@ public class MockUploadModule extends UploadModule {
     };
   }
 
-  public static Predicate<Storage.Objects.Get> checkGetObject(
-      final String objectName) {
+  public static Predicate<Storage.Objects.Get> checkGetObject(final String objectName) {
     return new Predicate<Storage.Objects.Get>() {
       @Override
       public boolean apply(Storage.Objects.Get operation) {
@@ -77,8 +73,7 @@ public class MockUploadModule extends UploadModule {
     };
   }
 
-  public static Predicate<Storage.Buckets.Insert> checkBucketName(
-      final String bucketName) {
+  public static Predicate<Storage.Buckets.Insert> checkBucketName(final String bucketName) {
     return new Predicate<Storage.Buckets.Insert>() {
       @Override
       public boolean apply(Storage.Buckets.Insert operation) {
@@ -89,13 +84,13 @@ public class MockUploadModule extends UploadModule {
     };
   }
 
-  private final LinkedList<InputStream> mediaStreams =
-      new LinkedList<InputStream>();
+  private final LinkedList<InputStream> mediaStreams = new LinkedList<InputStream>();
+
   public void addNextMedia(InputStream stream) {
     mediaStreams.add(stream);
   }
-  public InputStream executeMediaAsInputStream(Get getObject)
-      throws IOException {
+
+  public InputStream executeMediaAsInputStream(Get getObject) throws IOException {
     if (mediaStreams.isEmpty()) {
       return null;
     }

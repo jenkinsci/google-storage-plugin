@@ -15,28 +15,23 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
-import java.io.IOException;
-import java.util.Set;
-
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
 import com.google.common.collect.ImmutableSet;
-
 import hudson.model.Descriptor;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.tasks.Publisher;
 import hudson.util.DescribableList;
+import java.io.IOException;
+import java.util.Set;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-/**
- * Unit test for {@link ProjectGcsUploadReport}.
- */
+/** Unit test for {@link ProjectGcsUploadReport}. */
 public class ProjectGcsUploadReportTest {
 
   @Mock private FreeStyleProject project;
@@ -44,16 +39,14 @@ public class ProjectGcsUploadReportTest {
   @Mock private FreeStyleBuild noUploadBuild;
   @Mock private FreeStyleProject noUploadProject;
   @Mock private BuildGcsUploadReport buildUploadReport;
-  @Mock 
-  private DescribableList<Publisher, Descriptor<Publisher>> noUploadPublishers;
+  @Mock private DescribableList<Publisher, Descriptor<Publisher>> noUploadPublishers;
 
   @Before
   public void setup() throws IOException {
     MockitoAnnotations.initMocks(this);
     // set up for a case where the last build did have some uploads.
     when(project.getLastBuild()).thenReturn(build);
-    when(build.getAction(BuildGcsUploadReport.class)).thenReturn(
-        buildUploadReport);
+    when(build.getAction(BuildGcsUploadReport.class)).thenReturn(buildUploadReport);
     // set up for a case where the last build didn't have any upload.
     when(noUploadBuild.getProject()).thenReturn(noUploadProject);
     when(noUploadProject.getLastBuild()).thenReturn(noUploadBuild);
@@ -63,8 +56,7 @@ public class ProjectGcsUploadReportTest {
   @Test
   public void getters_noUpload() {
     /* in case there are no upload, test that empty lists are returned */
-    ProjectGcsUploadReport underTest =
-        new ProjectGcsUploadReport(noUploadProject);
+    ProjectGcsUploadReport underTest = new ProjectGcsUploadReport(noUploadProject);
     assertEquals(0, underTest.getBuckets().size());
     assertEquals(0, underTest.getStorageObjects().size());
   }

@@ -15,24 +15,21 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
+import com.google.common.collect.ImmutableSet;
+import hudson.model.AbstractProject;
 import java.util.Set;
 
-import com.google.common.collect.ImmutableSet;
-
-import hudson.model.AbstractProject;
-
 /**
- * The model for contributing project actions aren't the same as build action.
- * Instead of calling @{code project.addAction(someProjectAction)} we will
- * need to contribute through a project's build steps. This is done by
- * overriding {@link hudson.tasks.BuildStep#getProjectAction(AbstractProject)}.
- * When the project UI is rendered, Jenkins will the overriden method to ask
- * build steps to contribute their project actions.
+ * The model for contributing project actions aren't the same as build action. Instead of
+ * calling @{code project.addAction(someProjectAction)} we will need to contribute through a
+ * project's build steps. This is done by overriding {@link
+ * hudson.tasks.BuildStep#getProjectAction(AbstractProject)}. When the project UI is rendered,
+ * Jenkins will the overriden method to ask build steps to contribute their project actions.
  *
- * Since the project UI is rendered infrequently, we can't just provide a static
- * action for the latest build. Instead, in this {@link ProjectGcsUploadReport}
- * action we will need to dynamically look for the latest build's 
- * {@link BuildGcsUploadReport} and return the values that such report returns.
+ * <p>Since the project UI is rendered infrequently, we can't just provide a static action for the
+ * latest build. Instead, in this {@link ProjectGcsUploadReport} action we will need to dynamically
+ * look for the latest build's {@link BuildGcsUploadReport} and return the values that such report
+ * returns.
  */
 public class ProjectGcsUploadReport extends AbstractGcsUploadReport {
 
@@ -40,39 +37,29 @@ public class ProjectGcsUploadReport extends AbstractGcsUploadReport {
     super(project);
   }
 
-  /**
-   * @return the project that this {@link ProjectGcsUploadReport} belongs to.
-   */
+  /** @return the project that this {@link ProjectGcsUploadReport} belongs to. */
   public AbstractProject<?, ?> getProject() {
     return (AbstractProject<?, ?>) getParent();
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public Set<String> getBuckets() {
     BuildGcsUploadReport links = BuildGcsUploadReport.of(getProject());
     return links == null ? ImmutableSet.<String>of() : links.getBuckets();
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public Set<String> getStorageObjects() {
     BuildGcsUploadReport links = BuildGcsUploadReport.of(getProject());
-    return links == null ? ImmutableSet.<String>of()
-                         : links.getStorageObjects();
+    return links == null ? ImmutableSet.<String>of() : links.getStorageObjects();
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public Integer getBuildNumber() {
     BuildGcsUploadReport links = BuildGcsUploadReport.of(getProject());
     return links == null ? null : links.getBuildNumber();
   }
-
 }

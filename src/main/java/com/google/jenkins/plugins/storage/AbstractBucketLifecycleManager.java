@@ -15,10 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import java.io.IOException;
-
-import javax.annotation.Nullable;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.api.services.storage.Storage;
@@ -29,60 +25,53 @@ import com.google.jenkins.plugins.util.ConflictException;
 import com.google.jenkins.plugins.util.Executor;
 import com.google.jenkins.plugins.util.ExecutorException;
 import com.google.jenkins.plugins.util.NotFoundException;
-
 import hudson.FilePath;
 import hudson.model.Hudson;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import java.io.IOException;
+import javax.annotation.Nullable;
 
 /**
- * This extension point may be implemented to surface the object lifecycle
- * options available on cloud storage buckets.  Generally the expectation is
- * that the UI will ask for the bucket, and surface some additional UI for
- * capturing the lifecycle features of the plugin.
+ * This extension point may be implemented to surface the object lifecycle options available on
+ * cloud storage buckets. Generally the expectation is that the UI will ask for the bucket, and
+ * surface some additional UI for capturing the lifecycle features of the plugin.
  *
- * This is done by implementing these two overrides:
+ * <p>This is done by implementing these two overrides:
+ *
  * <ul>
- *  <li><code>checkBucket</code>: Validated the annotations on a pre-existing
- * bucket, returning it if they are satisfactory, and throwing a
- * InvalidAnnotationException if we must update it.
- *  <li><code>decorateBucket</code>: Annotates either a new or existing bucket
- * with the lifecycle features of the plugin.
+ *   <li><code>checkBucket</code>: Validated the annotations on a pre-existing bucket, returning it
+ *       if they are satisfactory, and throwing a InvalidAnnotationException if we must update it.
+ *   <li><code>decorateBucket</code>: Annotates either a new or existing bucket with the lifecycle
+ *       features of the plugin.
  * </ul>
  *
- * NOTE: This extends {@link AbstractUpload}, but isn't really an upload.  You
- * could reason about it as an empty upload to a bucket with special bucket
- * annotation properties.
+ * NOTE: This extends {@link AbstractUpload}, but isn't really an upload. You could reason about it
+ * as an empty upload to a bucket with special bucket annotation properties.
  *
- * TODO(mattmoor): We should factor out a common AbstractStorageOperation base
- * class that this and AbstractUpload can share.  The current entrypoint is
- * benign enough (see "perform").
+ * <p>TODO(mattmoor): We should factor out a common AbstractStorageOperation base class that this
+ * and AbstractUpload can share. The current entrypoint is benign enough (see "perform").
  *
  * @see com.google.jenkins.plugins.storage.ExpiringBucketLifecycleManager
  */
 public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
-  /**
-   * Constructs the base bucket OLM plugin from the bucket name and module.
-   */
-  public AbstractBucketLifecycleManager(String bucket,
-      @Nullable UploadModule module) {
+  /** Constructs the base bucket OLM plugin from the bucket name and module. */
+  public AbstractBucketLifecycleManager(String bucket, @Nullable UploadModule module) {
     super(bucket, module);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   @Nullable
-  protected final UploadSpec getInclusions(Run<?, ?> run,
-      FilePath workspace, TaskListener listener) throws UploadException {
+  protected final UploadSpec getInclusions(Run<?, ?> run, FilePath workspace, TaskListener listener)
+      throws UploadException {
     // Return an empty list, we don't actually do any uploads.
     return new UploadSpec(workspace, ImmutableList.<FilePath>of());
   }
 
   /**
-   * This overrides the core implementation to provide additional hooks for
-   * decorating storage objects with lifecycle annotations.
+   * This overrides the core implementation to provide additional hooks for decorating storage
+   * objects with lifecycle annotations.
    *
    * @param credentials The credentials with which to fetch/create the bucket
    * @param bucketName The top-level bucket name to ensure exists
@@ -90,15 +79,18 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
    * @throws UploadException if any issues are encountered
    */
   @Override
-  protected Bucket getOrCreateBucket(Storage service,
-      GoogleRobotCredentials credentials, Executor executor, String bucketName)
+  protected Bucket getOrCreateBucket(
+      Storage service, GoogleRobotCredentials credentials, Executor executor, String bucketName)
       throws UploadException {
     try {
       try {
         try {
-          return checkBucket(executor.execute(service.buckets()
-                  .get(bucketName)
-                  .setProjection("full"))); // to retrieve the bucket ACLs
+          return checkBucket(
+              executor.execute(
+                  service
+                      .buckets()
+                      .get(bucketName)
+                      .setProjection("full"))); // to retrieve the bucket ACLs
         } catch (NotFoundException e) {
           try {
             // This is roughly the opposite of how the command-line sample does
@@ -109,9 +101,12 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
             // Annotate the bucket with our lifecycle properties.
             bucket = decorateBucket(bucket);
 
-            bucket = executor.execute(service.buckets()
-                .insert(credentials.getProjectId(), bucket)
-                .setProjection("full")); // to retrieve the bucket ACLs
+            bucket =
+                executor.execute(
+                    service
+                        .buckets()
+                        .insert(credentials.getProjectId(), bucket)
+                        .setProjection("full")); // to retrieve the bucket ACLs
 
             return bucket;
           } catch (ConflictException ex) {
@@ -121,9 +116,12 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
             // NOTE: This could be due to an initial insertion attempt
             // succeeding but returning an exception, or a race with another
             // service.
-            return checkBucket(executor.execute(service.buckets()
-                    .get(bucketName)
-                    .setProjection("full"))); // to retrieve the bucket ACLs
+            return checkBucket(
+                executor.execute(
+                    service
+                        .buckets()
+                        .get(bucketName)
+                        .setProjection("full"))); // to retrieve the bucket ACLs
           }
         }
       } catch (InvalidAnnotationException nae) {
@@ -132,28 +130,23 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
 
         // If it exists, but isn't annotated, then update it with the annotated
         // version.
-        return executor.execute(service.buckets()
-            .update(bucketName, bucket)
-            .setProjection("full"));
+        return executor.execute(service.buckets().update(bucketName, bucket).setProjection("full"));
       }
     } catch (ExecutorException e) {
-      throw new UploadException(
-          Messages.AbstractUpload_ExceptionGetBucket(bucketName), e);
+      throw new UploadException(Messages.AbstractUpload_ExceptionGetBucket(bucketName), e);
     } catch (IOException e) {
-      throw new UploadException(
-          Messages.AbstractUpload_ExceptionGetBucket(bucketName), e);
+      throw new UploadException(Messages.AbstractUpload_ExceptionGetBucket(bucketName), e);
     }
   }
 
   /**
-   * This is intended to be an identity function that throws when the input
-   * is not adequately annotated.
+   * This is intended to be an identity function that throws when the input is not adequately
+   * annotated.
    *
    * @param bucket the pre-existing bucket whose annotations to validate
    * @throws InvalidAnnotationException if not annotated properly
    */
-  protected abstract Bucket checkBucket(Bucket bucket)
-      throws InvalidAnnotationException;
+  protected abstract Bucket checkBucket(Bucket bucket) throws InvalidAnnotationException;
 
   /**
    * A hook by which extensions may annotate a new or existing bucket.
@@ -163,8 +156,7 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
   protected abstract Bucket decorateBucket(Bucket bucket);
 
   /**
-   * Boilerplate, see:
-   * https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
+   * Boilerplate, see: https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
    */
   public AbstractBucketLifecycleManagerDescriptor getDescriptor() {
     return (AbstractBucketLifecycleManagerDescriptor)

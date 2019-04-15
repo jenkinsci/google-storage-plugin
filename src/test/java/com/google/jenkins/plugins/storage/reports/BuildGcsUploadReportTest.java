@@ -15,33 +15,27 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
-import java.util.concurrent.ExecutionException;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import com.google.common.collect.Iterables;
+import com.google.jenkins.plugins.storage.util.BucketPath;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.FreeStyleBuild;
+import hudson.model.FreeStyleProject;
+import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.mockito.MockitoAnnotations;
 
-import com.google.common.collect.Iterables;
-import com.google.jenkins.plugins.storage.util.BucketPath;
-
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.FreeStyleBuild;
-import hudson.model.FreeStyleProject;
-
-/**
- * Unit test for {@link BuildGcsUploadReport}.
- */
+/** Unit test for {@link BuildGcsUploadReport}. */
 public class BuildGcsUploadReportTest {
 
-  @Rule
-  public JenkinsRule jenkins = new JenkinsRule();
+  @Rule public JenkinsRule jenkins = new JenkinsRule();
 
   private AbstractProject<?, ?> project;
   private AbstractBuild<?, ?> build;
@@ -73,10 +67,9 @@ public class BuildGcsUploadReportTest {
   public void addUpload() throws Exception {
     String relativePath = "relative/path";
     assertEquals(0, underTest.getStorageObjects().size());
-    underTest
-        .addUpload(relativePath, new BucketPath("gs://myBucket/helloworld/18"));
-    assertEquals("myBucket/helloworld/18/" + relativePath,
-        Iterables.getLast(underTest.getStorageObjects()));
+    underTest.addUpload(relativePath, new BucketPath("gs://myBucket/helloworld/18"));
+    assertEquals(
+        "myBucket/helloworld/18/" + relativePath, Iterables.getLast(underTest.getStorageObjects()));
   }
 
   @Test
@@ -97,8 +90,7 @@ public class BuildGcsUploadReportTest {
   }
 
   @Test
-  public void of_project_hasLastBuild() throws InterruptedException,
-      ExecutionException {
+  public void of_project_hasLastBuild() throws InterruptedException, ExecutionException {
     project.scheduleBuild2(0).get();
     project.getLastBuild().addAction(underTest);
     assertEquals(underTest, BuildGcsUploadReport.of(project));

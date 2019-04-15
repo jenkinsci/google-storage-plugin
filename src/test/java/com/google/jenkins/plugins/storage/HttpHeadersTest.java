@@ -19,9 +19,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-/**
- * Tests for {@link HttpHeaders}.
- */
+/** Tests for {@link HttpHeaders}. */
 public class HttpHeadersTest {
 
   @Test
@@ -31,8 +29,7 @@ public class HttpHeadersTest {
         HttpHeaders.getContentDisposition("myapp.war", false));
 
     assertEquals(
-        "attachment; filename=\"contains space.txt\"; "
-            + "filename*=UTF-8''contains%20space.txt",
+        "attachment; filename=\"contains space.txt\"; " + "filename*=UTF-8''contains%20space.txt",
         HttpHeaders.getContentDisposition("contains space.txt", false));
   }
 
@@ -46,8 +43,7 @@ public class HttpHeadersTest {
   @Test
   public void testGetContentDisposition_unicodeBmp() {
     assertEquals(
-        "attachment; filename=\"snowman _.txt\"; "
-            + "filename*=UTF-8''snowman%20%E2%98%83.txt",
+        "attachment; filename=\"snowman _.txt\"; " + "filename*=UTF-8''snowman%20%E2%98%83.txt",
         HttpHeaders.getContentDisposition("snowman ☃.txt", false));
   }
 

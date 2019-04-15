@@ -15,26 +15,21 @@
  */
 package com.google.jenkins.plugins.storage.util;
 
-import java.io.Serializable;
-
 import static com.google.jenkins.plugins.storage.AbstractUploadDescriptor.GCS_SCHEME;
 
 import com.google.jenkins.plugins.storage.Messages;
+import java.io.Serializable;
 
-/**
- * Handles cloud uris and their parsing.
- */
+/** Handles cloud uris and their parsing. */
 public class BucketPath implements Serializable {
 
   /**
    * Prepares a new BucketPath.
    *
-   * @param uri path to the bucket object, of the form
-   * "gs://bucket_name/path/to/object". May contain other characters (i.e., *),
-   * no verification is done in this class.
+   * @param uri path to the bucket object, of the form "gs://bucket_name/path/to/object". May
+   *     contain other characters (i.e., *), no verification is done in this class.
    */
-  public BucketPath(String uri)
-      throws IllegalArgumentException {
+  public BucketPath(String uri) throws IllegalArgumentException {
     // Ensure the uri starts with "gs://"
     if (!uri.startsWith(GCS_SCHEME)) {
       throw new IllegalArgumentException(
@@ -57,9 +52,7 @@ public class BucketPath implements Serializable {
     this.object = (halves.length == 1) ? "" : halves[1];
   }
 
-  /**
-   * Initializes BucketPath directly, with no parsing or substitutions.
-   */
+  /** Initializes BucketPath directly, with no parsing or substitutions. */
   public BucketPath(String bucket, String object) {
     this.bucket = bucket;
     this.object = object;
@@ -70,24 +63,17 @@ public class BucketPath implements Serializable {
     return getBucket().length() <= 0;
   }
 
-  /**
-   * Regenerate the path (without gs:// prefix)
-   */
+  /** Regenerate the path (without gs:// prefix) */
   public String getPath() {
     return bucket + (object.isEmpty() ? "" : "/" + object);
   }
 
-
-  /**
-   * The Bucket portion of the URI
-   */
+  /** The Bucket portion of the URI */
   public String getBucket() {
     return bucket;
   }
 
-  /**
-   * The object portion of the URI
-   */
+  /** The object portion of the URI */
   public String getObject() {
     return object;
   }

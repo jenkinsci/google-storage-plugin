@@ -15,10 +15,7 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import java.io.IOException;
-
-import javax.annotation.Nullable;
-
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -26,6 +23,24 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;
 
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.services.storage.Storage;
+import com.google.api.services.storage.model.Bucket;
+import com.google.common.base.Predicate;
+import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
+import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
+import com.google.jenkins.plugins.util.ConflictException;
+import com.google.jenkins.plugins.util.ForbiddenException;
+import com.google.jenkins.plugins.util.MockExecutor;
+import com.google.jenkins.plugins.util.NotFoundException;
+import hudson.Extension;
+import hudson.model.FreeStyleBuild;
+import hudson.model.FreeStyleProject;
+import hudson.model.TaskListener;
+import hudson.util.FormValidation;
+import java.io.IOException;
+import javax.annotation.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -35,37 +50,12 @@ import org.jvnet.hudson.test.WithoutJenkins;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.services.storage.Storage;
-import com.google.api.services.storage.model.Bucket;
-import com.google.common.base.Predicate;
-import com.google.jenkins.plugins.credentials.oauth
-    .GoogleOAuth2ScopeRequirement;
-import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
-import com.google.jenkins.plugins.util.ConflictException;
-import com.google.jenkins.plugins.util.ForbiddenException;
-import com.google.jenkins.plugins.util.MockExecutor;
-import com.google.jenkins.plugins.util.NotFoundException;
-
-import hudson.Extension;
-import hudson.model.FreeStyleBuild;
-import hudson.model.FreeStyleProject;
-import hudson.model.TaskListener;
-import hudson.util.FormValidation;
-
-/**
- * Tests for {@link AbstractBucketLifecycleManager}.
- */
+/** Tests for {@link AbstractBucketLifecycleManager}. */
 public class AbstractBucketLifecycleManagerTest {
 
-  @Rule
-  public JenkinsRule jenkins = new JenkinsRule();
+  @Rule public JenkinsRule jenkins = new JenkinsRule();
 
-  @Mock
-  private GoogleRobotCredentials credentials;
+  @Mock private GoogleRobotCredentials credentials;
   private GoogleCredential credential;
 
   private final MockExecutor executor = new MockExecutor();
@@ -73,8 +63,7 @@ public class AbstractBucketLifecycleManagerTest {
   private ForbiddenException forbiddenException;
   private NotFoundException notFoundException;
 
-  private Predicate<Storage.Buckets.Insert> checkBucketName(
-      final String bucketName) {
+  private Predicate<Storage.Buckets.Insert> checkBucketName(final String bucketName) {
     return new Predicate<Storage.Buckets.Insert>() {
       @Override
       public boolean apply(Storage.Buckets.Insert operation) {
@@ -85,8 +74,7 @@ public class AbstractBucketLifecycleManagerTest {
     };
   }
 
-  private Predicate<Storage.Buckets.Update> checkSameBucket(
-      final Bucket theBucket) {
+  private Predicate<Storage.Buckets.Update> checkSameBucket(final Bucket theBucket) {
     return new Predicate<Storage.Buckets.Update>() {
       @Override
       public boolean apply(Storage.Buckets.Update operation) {
@@ -123,18 +111,19 @@ public class AbstractBucketLifecycleManagerTest {
   }
 
   @Rule
-  public Verifier verifySawAll = new Verifier() {
-    @Override
-    public void verify() {
-      assertTrue(executor.sawAll());
-      assertFalse(executor.sawUnexpected());
-    }
-  };
+  public Verifier verifySawAll =
+      new Verifier() {
+        @Override
+        public void verify() {
+          assertTrue(executor.sawAll());
+          assertFalse(executor.sawUnexpected());
+        }
+      };
 
   private static class FakeUpload extends AbstractBucketLifecycleManager {
 
-    public FakeUpload(String bucketName, MockUploadModule module,
-        String details, @Nullable Bucket bucket) {
+    public FakeUpload(
+        String bucketName, MockUploadModule module, String details, @Nullable Bucket bucket) {
       super(bucketName, module);
       this.details = details;
       this.bucket = bucket;
@@ -160,16 +149,11 @@ public class AbstractBucketLifecycleManagerTest {
       return checkNotNull(this.bucket);
     }
 
-    @Nullable
-    private final Bucket bucket;
+    @Nullable private final Bucket bucket;
 
-    /**
-     * We need this because it is used to retrieve the module when
-     * it is null.
-     */
+    /** We need this because it is used to retrieve the module when it is null. */
     @Extension
-    public static class DescriptorImpl
-        extends AbstractBucketLifecycleManagerDescriptor {
+    public static class DescriptorImpl extends AbstractBucketLifecycleManagerDescriptor {
 
       public DescriptorImpl() {
         super(FakeUpload.class);
@@ -195,20 +179,20 @@ public class AbstractBucketLifecycleManagerTest {
       SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
 
       project = jenkins.createFreeStyleProject("test");
-      project.getPublishersList().add(
-          // Create a storage plugin with no uploaders to fake things out.
-          new GoogleCloudStorageUploader(CREDENTIALS_ID, null));
+      project
+          .getPublishersList()
+          .add(
+              // Create a storage plugin with no uploaders to fake things out.
+              new GoogleCloudStorageUploader(CREDENTIALS_ID, null));
       build = project.scheduleBuild2(0).get();
     }
 
     credential = new GoogleCredential();
-    when(credentials.getGoogleCredential(isA(
-        GoogleOAuth2ScopeRequirement.class)))
+    when(credentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
         .thenReturn(credential);
 
     // Return ourselves as remotable
-    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class)))
-        .thenReturn(credentials);
+    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class))).thenReturn(credentials);
 
     notFoundException = new NotFoundException();
     conflictException = new ConflictException();
@@ -218,9 +202,8 @@ public class AbstractBucketLifecycleManagerTest {
   @Test
   @WithoutJenkins
   public void testGetters() {
-    FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        new MockUploadModule(executor),
-        FAKE_DETAILS, null /* bucket */);
+    FakeUpload underTest =
+        new FakeUpload(BUCKET_URI, new MockUploadModule(executor), FAKE_DETAILS, null /* bucket */);
 
     assertEquals(BUCKET_URI, underTest.getBucket());
     assertEquals(FAKE_DETAILS, underTest.getDetails());
@@ -230,110 +213,99 @@ public class AbstractBucketLifecycleManagerTest {
   public void testFailingBucketCheck() throws Exception {
     final Bucket bucket = new Bucket().setName(BUCKET_NAME);
 
-    FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        new MockUploadModule(executor),
-        FAKE_DETAILS,
-        bucket);
+    FakeUpload underTest =
+        new FakeUpload(BUCKET_URI, new MockUploadModule(executor), FAKE_DETAILS, bucket);
 
     // A get that returns a bucket should trigger a check/decorate/update
     executor.when(Storage.Buckets.Get.class, new Bucket());
-    executor.passThruWhen(Storage.Buckets.Update.class,
-        checkSameBucket(bucket));
+    executor.passThruWhen(Storage.Buckets.Update.class, checkSameBucket(bucket));
 
-    underTest
-        .perform(CREDENTIALS_ID, build, build.getWorkspace(),
-            TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test
   public void testPassingBucketCheck() throws Exception {
     final Bucket bucket = new Bucket().setName(BUCKET_NAME);
 
-    FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        new MockUploadModule(executor),
-        FAKE_DETAILS,
-        null /* pass the bucket check */);
+    FakeUpload underTest =
+        new FakeUpload(
+            BUCKET_URI,
+            new MockUploadModule(executor),
+            FAKE_DETAILS,
+            null /* pass the bucket check */);
 
     // A get that passes our check should incur no further RPC
     executor.when(Storage.Buckets.Get.class, bucket);
 
-    underTest
-        .perform(CREDENTIALS_ID, build, build.getWorkspace(),
-            TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test
-  public void testPassingBucketCheckAfterNotFoundThenConflict()
-      throws Exception {
+  public void testPassingBucketCheckAfterNotFoundThenConflict() throws Exception {
     final Bucket bucket = new Bucket().setName(BUCKET_NAME);
 
-    FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        new MockUploadModule(executor),
-        FAKE_DETAILS,
-        bucket);
+    FakeUpload underTest =
+        new FakeUpload(BUCKET_URI, new MockUploadModule(executor), FAKE_DETAILS, bucket);
 
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.throwWhen(Storage.Buckets.Insert.class, conflictException);
     // Verify that our final "get" handles updating the bucket as well
     executor.when(Storage.Buckets.Get.class, new Bucket());
-    executor.passThruWhen(Storage.Buckets.Update.class,
-        checkSameBucket(bucket));
+    executor.passThruWhen(Storage.Buckets.Update.class, checkSameBucket(bucket));
 
-    underTest
-        .perform(CREDENTIALS_ID, build, build.getWorkspace(),
-            TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test(expected = UploadException.class)
   public void testRandomErrorExecutor() throws Exception {
-    FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        new MockUploadModule(executor),
-        FAKE_DETAILS,
-        null /* pass the bucket check */);
+    FakeUpload underTest =
+        new FakeUpload(
+            BUCKET_URI,
+            new MockUploadModule(executor),
+            FAKE_DETAILS,
+            null /* pass the bucket check */);
 
     executor.throwWhen(Storage.Buckets.Get.class, conflictException);
 
-    underTest
-        .perform(CREDENTIALS_ID, build, build.getWorkspace(),
-            TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test(expected = UploadException.class)
   public void testRandomErrorIOException() throws Exception {
-    FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        new MockUploadModule(executor),
-        FAKE_DETAILS,
-        null /* pass the bucket check */);
+    FakeUpload underTest =
+        new FakeUpload(
+            BUCKET_URI,
+            new MockUploadModule(executor),
+            FAKE_DETAILS,
+            null /* pass the bucket check */);
 
     executor.throwWhen(Storage.Buckets.Get.class, new IOException("test"));
 
-    underTest
-        .perform(CREDENTIALS_ID, build, build.getWorkspace(),
-            TaskListener.NULL);
+    underTest.perform(CREDENTIALS_ID, build, build.getWorkspace(), TaskListener.NULL);
   }
 
   @Test
   public void testCustomBucketNameValidation() throws Exception {
-    FakeUpload underTest = new FakeUpload(BUCKET_URI,
-        new MockUploadModule(executor),
-        FAKE_DETAILS,
-        null /* pass the bucket check */);
+    FakeUpload underTest =
+        new FakeUpload(
+            BUCKET_URI,
+            new MockUploadModule(executor),
+            FAKE_DETAILS,
+            null /* pass the bucket check */);
 
-    AbstractBucketLifecycleManagerDescriptor descriptor =
-        underTest.getDescriptor();
+    AbstractBucketLifecycleManagerDescriptor descriptor = underTest.getDescriptor();
 
-    assertEquals(FormValidation.Kind.OK,
-        descriptor.doCheckBucketNameWithVars("gs://asdf").kind);
+    assertEquals(FormValidation.Kind.OK, descriptor.doCheckBucketNameWithVars("gs://asdf").kind);
     // Successfully resolved
-    assertEquals(FormValidation.Kind.OK,
+    assertEquals(
+        FormValidation.Kind.OK,
         descriptor.doCheckBucketNameWithVars("gs://asdf$BUILD_NUMBER").kind);
     // Not a gs:// URI
-    assertEquals(FormValidation.Kind.ERROR,
-        descriptor.doCheckBucketNameWithVars("foo").kind);
+    assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckBucketNameWithVars("foo").kind);
 
     // Multi-part not allowed for bucket lifecycle plugins
-    assertEquals(FormValidation.Kind.ERROR,
-        descriptor.doCheckBucketNameWithVars("gs://foo/bar").kind);
+    assertEquals(
+        FormValidation.Kind.ERROR, descriptor.doCheckBucketNameWithVars("gs://foo/bar").kind);
   }
 
   private static final String PROJECT_ID = "foo.com:bar-baz";
