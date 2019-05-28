@@ -540,7 +540,11 @@ public abstract class AbstractUpload
                 new Predicate<ObjectAccessControl>() {
                   @Override
                   public boolean apply(ObjectAccessControl access) {
-                    return Objects.equal(access.getEntity(), publicEntity);
+                    if (access != null) {
+                      return Objects.equal(access.getEntity(), publicEntity);
+                    } else {
+                      throw new NullPointerException();
+                    }
                   }
                 })
             .isPresent();
