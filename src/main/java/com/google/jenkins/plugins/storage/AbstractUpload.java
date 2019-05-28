@@ -543,6 +543,7 @@ public abstract class AbstractUpload
                     if (access != null) {
                       return Objects.equal(access.getEntity(), publicEntity);
                     } else {
+                      //TODO: fill with messages, put it in messages.java
                       throw new NullPointerException();
                     }
                   }
