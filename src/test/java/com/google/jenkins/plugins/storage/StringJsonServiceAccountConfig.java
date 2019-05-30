@@ -41,93 +41,93 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 /** Provides a means for read/writing JSON service account config files for integration tests. */
 public class StringJsonServiceAccountConfig extends ServiceAccountConfig {
-    private static final long serialVersionUID = 6818111194672325387L;
-    private static final Logger LOGGER =
-            Logger.getLogger(StringJsonServiceAccountConfig.class.getName());
-    private String jsonKeyFile;
-    private transient JsonKey jsonKey;
+  private static final long serialVersionUID = 6818111194672325387L;
+  private static final Logger LOGGER =
+      Logger.getLogger(StringJsonServiceAccountConfig.class.getName());
+  private String jsonKeyFile;
+  private transient JsonKey jsonKey;
 
-    @DataBoundConstructor
-    public StringJsonServiceAccountConfig(String jsonKeyString) {
-        if (jsonKeyString != null) {
-            InputStream stream = new ByteArrayInputStream(jsonKeyString.getBytes(StandardCharsets.UTF_8));
-            try {
-                JsonKey jsonKey = JsonKey.load(new JacksonFactory(), stream);
-                if (jsonKey.getClientEmail() != null && jsonKey.getPrivateKey() != null) {
-                    try {
-                        this.jsonKeyFile = writeJsonKeyToFile(jsonKey);
-                    } catch (IOException e) {
-                        LOGGER.log(Level.SEVERE, "Failed to write json key to file", e);
-                    }
-                }
-            } catch (IOException e) {
-                LOGGER.log(Level.SEVERE, "Failed to read json key from file", e);
-            }
+  @DataBoundConstructor
+  public StringJsonServiceAccountConfig(String jsonKeyString) {
+    if (jsonKeyString != null) {
+      InputStream stream = new ByteArrayInputStream(jsonKeyString.getBytes(StandardCharsets.UTF_8));
+      try {
+        JsonKey jsonKey = JsonKey.load(new JacksonFactory(), stream);
+        if (jsonKey.getClientEmail() != null && jsonKey.getPrivateKey() != null) {
+          try {
+            this.jsonKeyFile = writeJsonKeyToFile(jsonKey);
+          } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Failed to write json key to file", e);
+          }
         }
+      } catch (IOException e) {
+        LOGGER.log(Level.SEVERE, "Failed to read json key from file", e);
+      }
     }
+  }
 
-    private String writeJsonKeyToFile(JsonKey jsonKey) throws IOException {
-        File jsonKeyFile = KeyUtils.createKeyFile("key", ".json");
-        KeyUtils.writeKeyToFileEncoded(jsonKey.toPrettyString(), jsonKeyFile);
-        return jsonKeyFile.getAbsolutePath();
+  private String writeJsonKeyToFile(JsonKey jsonKey) throws IOException {
+    File jsonKeyFile = KeyUtils.createKeyFile("key", ".json");
+    KeyUtils.writeKeyToFileEncoded(jsonKey.toPrettyString(), jsonKeyFile);
+    return jsonKeyFile.getAbsolutePath();
+  }
+
+  @Override
+  public com.google.jenkins.plugins.credentials.oauth.JsonServiceAccountConfig.DescriptorImpl
+      getDescriptor() {
+    return (com.google.jenkins.plugins.credentials.oauth.JsonServiceAccountConfig.DescriptorImpl)
+        Jenkins.get()
+            .getDescriptorOrDie(
+                com.google.jenkins.plugins.credentials.oauth.JsonServiceAccountConfig.class);
+  }
+
+  /** @returns The path to the created JSON key file. */
+  public String getJsonKeyFile() {
+    return jsonKeyFile;
+  }
+
+  @Override
+  public String getAccountId() {
+    JsonKey jsonKey = getJsonKey();
+    if (jsonKey != null) {
+      return jsonKey.getClientEmail();
     }
+    return null;
+  }
 
-    @Override
-    public com.google.jenkins.plugins.credentials.oauth.JsonServiceAccountConfig.DescriptorImpl
-    getDescriptor() {
-        return (com.google.jenkins.plugins.credentials.oauth.JsonServiceAccountConfig.DescriptorImpl)
-                Jenkins.get()
-                        .getDescriptorOrDie(
-                                com.google.jenkins.plugins.credentials.oauth.JsonServiceAccountConfig.class);
-    }
-
-    /** @returns The path to the created JSON key file. */
-    public String getJsonKeyFile() {
-        return jsonKeyFile;
-    }
-
-    @Override
-    public String getAccountId() {
-        JsonKey jsonKey = getJsonKey();
-        if (jsonKey != null) {
-            return jsonKey.getClientEmail();
+  @Override
+  public PrivateKey getPrivateKey() {
+    JsonKey jsonKey = getJsonKey();
+    if (jsonKey != null) {
+      String privateKey = jsonKey.getPrivateKey();
+      if (privateKey != null && !privateKey.isEmpty()) {
+        PemReader pemReader = new PemReader(new StringReader(privateKey));
+        try {
+          PemReader.Section section = pemReader.readNextSection();
+          PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(section.getBase64DecodedBytes());
+          return KeyFactory.getInstance("RSA").generatePrivate(keySpec);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
+          LOGGER.log(Level.SEVERE, "Failed to read private key", e);
         }
-        return null;
+      }
+    }
+    return null;
+  }
+
+  private JsonKey getJsonKey() {
+    if (jsonKey != null || Strings.isNullOrEmpty(jsonKeyFile)) {
+      return jsonKey;
     }
 
-    @Override
-    public PrivateKey getPrivateKey() {
-        JsonKey jsonKey = getJsonKey();
-        if (jsonKey != null) {
-            String privateKey = jsonKey.getPrivateKey();
-            if (privateKey != null && !privateKey.isEmpty()) {
-                PemReader pemReader = new PemReader(new StringReader(privateKey));
-                try {
-                    PemReader.Section section = pemReader.readNextSection();
-                    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(section.getBase64DecodedBytes());
-                    return KeyFactory.getInstance("RSA").generatePrivate(keySpec);
-                } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-                    LOGGER.log(Level.SEVERE, "Failed to read private key", e);
-                }
-            }
-        }
-        return null;
+    try (FileInputStream keyFileIs = new FileInputStream(jsonKeyFile)) {
+      jsonKey = JsonKey.load(new JacksonFactory(), keyFileIs);
+      File jsonKeyFileObject = new File(jsonKeyFile);
+      KeyUtils.updatePermissions(jsonKeyFileObject);
+      KeyUtils.writeKeyToFileEncoded(jsonKey.toPrettyString(), jsonKeyFileObject);
+    } catch (IOException ignored) {
+      LOGGER.log(Level.WARNING, "Failed to update permissions", ignored);
     }
 
-    private JsonKey getJsonKey() {
-        if (jsonKey != null || Strings.isNullOrEmpty(jsonKeyFile)) {
-            return jsonKey;
-        }
-
-        try (FileInputStream keyFileIs = new FileInputStream(jsonKeyFile)) {
-            jsonKey = JsonKey.load(new JacksonFactory(), keyFileIs);
-            File jsonKeyFileObject = new File(jsonKeyFile);
-            KeyUtils.updatePermissions(jsonKeyFileObject);
-            KeyUtils.writeKeyToFileEncoded(jsonKey.toPrettyString(), jsonKeyFileObject);
-        } catch (IOException ignored) {
-            LOGGER.log(Level.WARNING, "Failed to update permissions", ignored);
-        }
-
-        return jsonKey;
-    }
+    return jsonKey;
+  }
 }
