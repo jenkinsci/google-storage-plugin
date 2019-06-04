@@ -91,8 +91,24 @@ public class ClassicUploadStepPipelineIT {
     }
   }
   // test a malformed one
+  @Test
+  public void testMalformedClassicUploadStepFailure() throws Exception {
+    try {
+      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test2");
 
-  //tODO: exceptions lol
+      testProject.setDefinition(
+          new CpsFlowDefinition(
+              loadResource(getClass(), "malformedClassicUploadStepPipeline.groovy"), true));
+      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+      assertNotNull(run);
+      jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
+      dumpLog(LOGGER, run);
+    } catch (Exception e) {
+      throw e;
+    }
+  }
+
+  // tODO: exceptions lol
   private static Credential getCredential(String credentialsId) throws Exception {
     Credential credential;
     GoogleRobotCredentials robotCreds =
@@ -112,7 +128,7 @@ public class ClassicUploadStepPipelineIT {
   }
 
   // TODO: cleanup method. Basically remove buckets (if necessary) and artifacts
-  //TODO: exceptions lol
+  // TODO: exceptions lol
   @AfterClass
   public static void cleanUp() throws Exception {
     Storage service =
