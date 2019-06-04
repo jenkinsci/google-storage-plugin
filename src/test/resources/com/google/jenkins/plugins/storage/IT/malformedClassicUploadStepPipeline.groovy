@@ -1,5 +1,6 @@
+package com.google.jenkins.plugins.storage.IT
+
 pipeline {
-    agent any
     stages{
         stage('Store to GCS') {
             steps{

@@ -1,21 +1,30 @@
-package com.google.jenkins.plugins.storage;
+package com.google.jenkins.plugins.storage.IT;
 
+import static com.google.jenkins.plugins.storage.IT.ITUtil.getService;
 import static org.junit.Assert.assertNotNull;
 
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.google.api.client.http.InputStreamContent;
+import com.google.api.services.storage.Storage;
 import com.google.common.io.ByteStreams;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
 import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
+import com.google.jenkins.plugins.storage.StringJsonServiceAccountConfig;
 import hudson.EnvVars;
 import hudson.FilePath;
+import hudson.model.Project;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -23,6 +32,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.JenkinsRule;
 
 public class DownloadStepPipelineIT {
@@ -63,6 +73,15 @@ public class DownloadStepPipelineIT {
     jenkinsRule.jenkins.getGlobalNodeProperties().add(prop);
 
     // create file to download
+    Storage service = getService(jenkinsRule.jenkins.get(), credentialsId);
+    //    File file = new File(loadResource(DownloadStepPipelineIT.class, "downloadstep_test.txt"));
+    //    service.objects().insert(bucket, )
+    InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream("downloadstep_test.txt");
+    String contentType = URLConnection.guessContentTypeFromStream(stream);
+    InputStreamContent content = new InputStreamContent(contentType, stream);
+    Storage.Objects.Insert insert = service.objects().insert(bucket, null, content);
+    insert.setName("downloadstep_test");
+    insert.execute();
   }
 
   // test a working one
@@ -70,17 +89,14 @@ public class DownloadStepPipelineIT {
   public void testDownloadStepSuccessful() throws Exception {
     try {
       WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test");
-      FilePath workspace = jenkinsRule.jenkins.getWorkspaceFor(testProject);
-      LOGGER.info("workspace is " + workspace.readToString());
-      FilePath tempFile = workspace.createTempFile("hello_integration", "txt");
-      envVars.put("PATTERN", "hello_integration.txt");
+      // TODO: upload file
+      envVars.put("PATTERN", "build_log.txt");
       testProject.setDefinition(
           new CpsFlowDefinition(loadResource(getClass(), "downloadStepPipeline.groovy"), true));
       WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
       assertNotNull(run);
       jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
       dumpLog(LOGGER, run);
-      workspace.deleteRecursive();
     } catch (Exception e) {
       throw e;
     }
@@ -102,8 +118,6 @@ public class DownloadStepPipelineIT {
   //      throw e;
   //    }
   //  }
-
-  // TODO: do I need to remove from directory?
 
   /**
    * TODO: move this to ITUtil Loads the content of the specified resource.

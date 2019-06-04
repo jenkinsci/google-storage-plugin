@@ -1,3 +1,5 @@
+package com.google.jenkins.plugins.storage.IT
+
 pipeline {
     agent any
     stages {

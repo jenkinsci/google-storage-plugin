@@ -1,29 +1,20 @@
-package com.google.jenkins.plugins.storage;
+package com.google.jenkins.plugins.storage.IT;
 
+import static com.google.jenkins.plugins.storage.IT.ITUtil.deleteFromBucket;
+import static com.google.jenkins.plugins.storage.IT.ITUtil.dumpLog;
+import static com.google.jenkins.plugins.storage.IT.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
 
 import com.cloudbees.plugins.credentials.Credentials;
-import com.cloudbees.plugins.credentials.CredentialsMatchers;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson.JacksonFactory;
-import com.google.api.services.storage.Storage;
-import com.google.common.io.ByteStreams;
-import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
 import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
+import com.google.jenkins.plugins.storage.StringJsonServiceAccountConfig;
 import hudson.EnvVars;
 import hudson.model.Result;
-import hudson.model.Run;
-import hudson.security.ACL;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -108,62 +99,10 @@ public class ClassicUploadStepPipelineIT {
     }
   }
 
-  // tODO: exceptions lol
-  private static Credential getCredential(String credentialsId) throws Exception {
-    Credential credential;
-    GoogleRobotCredentials robotCreds =
-        CredentialsMatchers.firstOrNull(
-            CredentialsProvider.lookupCredentials(
-                GoogleRobotCredentials.class,
-                jenkinsRule.jenkins.get(),
-                ACL.SYSTEM,
-                new ArrayList<>()),
-            CredentialsMatchers.withId(credentialsId));
-    try {
-      credential = robotCreds.getGoogleCredential(new StorageScopeRequirement());
-    } catch (Exception e) {
-      throw new Exception(e);
-    }
-    return credential;
-  }
-
   // TODO: cleanup method. Basically remove buckets (if necessary) and artifacts
   // TODO: exceptions lol
   @AfterClass
   public static void cleanUp() throws Exception {
-    Storage service =
-        new Storage.Builder(
-                new NetHttpTransport(), new JacksonFactory(), getCredential(credentialsId))
-            .build();
-
-    Storage.Objects.Delete delete = service.objects().delete(bucket, pattern);
-    delete.execute();
-  }
-
-  /**
-   * TODO: move this to ITUtil Loads the content of the specified resource.
-   *
-   * @param testClass The test class the resource is being loaded for.
-   * @param name The name of the resource being loaded.
-   * @return The contents of the loaded resource.
-   * @throws java.io.IOException If an error occurred during loading.
-   */
-  static String loadResource(Class testClass, String name) throws IOException {
-    return new String(ByteStreams.toByteArray(testClass.getResourceAsStream(name)));
-  }
-
-  /**
-   * TODO: move to ITUtil Dumps the logs from the specified {@link hudson.model.Run}.
-   *
-   * @param logger The {@link java.util.logging.Logger} to be written to.
-   * @param run The {@link hudson.model.Run} from which the logs will be read.
-   * @throws java.io.IOException If an error occurred while dumping the logs.
-   */
-  static void dumpLog(Logger logger, Run<?, ?> run) throws IOException {
-    BufferedReader reader = new BufferedReader(run.getLogReader());
-    String line = null;
-    while ((line = reader.readLine()) != null) {
-      logger.info(line);
-    }
+    deleteFromBucket(jenkinsRule.jenkins.get(), credentialsId, bucket, pattern);
   }
 }
