@@ -10,6 +10,7 @@ import com.google.common.io.ByteStreams;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
 import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
 import hudson.EnvVars;
+import hudson.FilePath;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
@@ -58,10 +59,10 @@ public class DownloadStepPipelineIT {
     envVars = prop.getEnvVars();
     envVars.put("CREDENTIALS_ID", credentialsId);
     envVars.put("BUCKET", bucket);
-    envVars.put("PATTERN", pattern);
+    //    envVars.put("PATTERN", pattern);
     jenkinsRule.jenkins.getGlobalNodeProperties().add(prop);
 
-    // local directory to download to
+    // create file to download
   }
 
   // test a working one
@@ -69,37 +70,40 @@ public class DownloadStepPipelineIT {
   public void testDownloadStepSuccessful() throws Exception {
     try {
       WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test");
-
+      FilePath workspace = jenkinsRule.jenkins.getWorkspaceFor(testProject);
+      LOGGER.info("workspace is " + workspace.readToString());
+      FilePath tempFile = workspace.createTempFile("hello_integration", "txt");
+      envVars.put("PATTERN", "hello_integration.txt");
       testProject.setDefinition(
           new CpsFlowDefinition(loadResource(getClass(), "downloadStepPipeline.groovy"), true));
       WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
       assertNotNull(run);
       jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
       dumpLog(LOGGER, run);
+      workspace.deleteRecursive();
     } catch (Exception e) {
       throw e;
     }
   }
 
-  // test a working one
-  @Test
-  public void testMalformedDownloadStepFailure() throws Exception {
-    try {
-      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test2");
+  //  @Test
+  //  public void testMalformedDownloadStepFailure() throws Exception {
+  //    try {
+  //      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test2");
+  //
+  //      testProject.setDefinition(
+  //          new CpsFlowDefinition(
+  //              loadResource(getClass(), "malformedDownloadStepPipeline.groovy"), true));
+  //      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+  //      assertNotNull(run);
+  //      jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
+  //      dumpLog(LOGGER, run);
+  //    } catch (Exception e) {
+  //      throw e;
+  //    }
+  //  }
 
-      testProject.setDefinition(
-          new CpsFlowDefinition(
-              loadResource(getClass(), "malformedDownloadStepPipeline.groovy"), true));
-      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-      assertNotNull(run);
-      jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
-      dumpLog(LOGGER, run);
-    } catch (Exception e) {
-      throw e;
-    }
-  }
-
-  //TODO: do I need to remove from directory?
+  // TODO: do I need to remove from directory?
 
   /**
    * TODO: move this to ITUtil Loads the content of the specified resource.
