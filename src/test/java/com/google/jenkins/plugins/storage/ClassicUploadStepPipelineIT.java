@@ -3,22 +3,32 @@ package com.google.jenkins.plugins.storage;
 import static org.junit.Assert.assertNotNull;
 
 import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.jackson.JacksonFactory;
+import com.google.api.services.storage.Storage;
 import com.google.common.io.ByteStreams;
+import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
 import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
 import hudson.EnvVars;
 import hudson.model.Result;
 import hudson.model.Run;
+import hudson.security.ACL;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -31,6 +41,8 @@ public class ClassicUploadStepPipelineIT {
   private static EnvVars envVars;
   private static String projectId;
   private static String credentialsId;
+  private static String bucket;
+  private static String pattern;
 
   @BeforeClass
   public static void init() throws Exception {
@@ -38,10 +50,10 @@ public class ClassicUploadStepPipelineIT {
 
     projectId = System.getenv("GOOGLE_PROJECT_ID");
     assertNotNull("GOOGLE_PROJECT_ID env var must be set", projectId);
-    String bucket = System.getenv("GOOGLE_BUCKET");
+    bucket = System.getenv("GOOGLE_BUCKET");
     assertNotNull("GOOGLE_BUCKET env var must be set", bucket);
 
-    String pattern = System.getenv("GOOGLE_PATTERN");
+    pattern = System.getenv("GOOGLE_PATTERN");
     assertNotNull("GOOGLE_PATTERN env var must be set", pattern);
 
     String serviceAccountKeyJson = System.getenv("GOOGLE_CREDENTIALS");
@@ -59,10 +71,6 @@ public class ClassicUploadStepPipelineIT {
     envVars.put("BUCKET", bucket);
     envVars.put("PATTERN", pattern);
     jenkinsRule.jenkins.getGlobalNodeProperties().add(prop);
-
-    //		      step([$class: 'ClassicUploadStep', credentialsId: env
-    // .JENKINS_TEST_CRED_ID, bucket: "gs://${JENKINS_TEST_BUCKET}", pattern:
-    // env.BUILD_CONTEXT])
   }
 
   // test a working one
@@ -84,8 +92,37 @@ public class ClassicUploadStepPipelineIT {
   }
   // test a malformed one
 
+  //tODO: exceptions lol
+  private static Credential getCredential(String credentialsId) throws Exception {
+    Credential credential;
+    GoogleRobotCredentials robotCreds =
+        CredentialsMatchers.firstOrNull(
+            CredentialsProvider.lookupCredentials(
+                GoogleRobotCredentials.class,
+                jenkinsRule.jenkins.get(),
+                ACL.SYSTEM,
+                new ArrayList<>()),
+            CredentialsMatchers.withId(credentialsId));
+    try {
+      credential = robotCreds.getGoogleCredential(new StorageScopeRequirement());
+    } catch (Exception e) {
+      throw new Exception(e);
+    }
+    return credential;
+  }
+
   // TODO: cleanup method. Basically remove buckets (if necessary) and artifacts
-  private static void cleanUp() {}
+  //TODO: exceptions lol
+  @AfterClass
+  public static void cleanUp() throws Exception {
+    Storage service =
+        new Storage.Builder(
+                new NetHttpTransport(), new JacksonFactory(), getCredential(credentialsId))
+            .build();
+
+    Storage.Objects.Delete delete = service.objects().delete(bucket, pattern);
+    delete.execute();
+  }
 
   /**
    * TODO: move this to ITUtil Loads the content of the specified resource.
