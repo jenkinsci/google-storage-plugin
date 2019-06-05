@@ -25,6 +25,7 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 public class StdoutUploadStepPipelineIT {
   private static final Logger LOGGER = Logger.getLogger(StdoutUploadStepPipelineIT.class.getName());
+
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
   private static EnvVars envVars;
   private static String projectId;
@@ -59,7 +60,7 @@ public class StdoutUploadStepPipelineIT {
 
   // test a working one
   @Test
-  public void testClassicUploadStepSuccessful() throws Exception {
+  public void testStdoutUploadStepSuccessful() throws Exception {
     try {
       // TODO: use format random name?
       WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test");
@@ -69,6 +70,23 @@ public class StdoutUploadStepPipelineIT {
       WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
       assertNotNull(run);
       jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
+      dumpLog(LOGGER, run);
+    } catch (Exception e) {
+      throw e;
+    }
+  }
+
+  @Test
+  public void testMalformedStdoutUploadStepFailure() throws Exception {
+    try {
+      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test2");
+
+      testProject.setDefinition(
+          new CpsFlowDefinition(
+              loadResource(getClass(), "malformedStdoutUploadStepPipeline.groovy"), true));
+      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+      assertNotNull(run);
+      jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
       dumpLog(LOGGER, run);
     } catch (Exception e) {
       throw e;
