@@ -46,7 +46,7 @@ public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serial
     upload = new StdoutUpload(bucket, module, logName, null);
 
     // Build steps will not be executed following a failed build.
-    // Pipeline steps performed sequentually will not be executed
+    // Pipeline steps performed sequentially will not be executed
     //   following a failed step
     // If we ever get to execute this on a failed build, that must
     // have been done intentionally, e.g., using "post" with appropriate
