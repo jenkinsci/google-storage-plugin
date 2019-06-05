@@ -1,5 +1,6 @@
 package com.google.jenkins.plugins.storage.IT;
 
+import static com.google.jenkins.plugins.storage.IT.ITUtil.deleteFromBucket;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.dumpLog;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
@@ -18,6 +19,7 @@ import java.util.logging.Logger;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -91,5 +93,10 @@ public class StdoutUploadStepPipelineIT {
     } catch (Exception e) {
       throw e;
     }
+  }
+
+  @AfterClass
+  public static void cleanUp() throws Exception {
+    deleteFromBucket(jenkinsRule.jenkins.get(), credentialsId, bucket, pattern);
   }
 }

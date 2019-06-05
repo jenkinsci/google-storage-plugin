@@ -44,8 +44,7 @@ public class ClassicUploadStepPipelineIT {
     bucket = System.getenv("GOOGLE_BUCKET");
     assertNotNull("GOOGLE_BUCKET env var must be set", bucket);
 
-    pattern = System.getenv("GOOGLE_PATTERN");
-    assertNotNull("GOOGLE_PATTERN env var must be set", pattern);
+    pattern = "build_environment.txt";
 
     String serviceAccountKeyJson = System.getenv("GOOGLE_CREDENTIALS");
     assertNotNull("GOOGLE_CREDENTIALS env var must be set", serviceAccountKeyJson);
@@ -82,11 +81,31 @@ public class ClassicUploadStepPipelineIT {
     }
   }
 
+  // test a working one in post
+  @Test
+  public void testClassicUploadPostStepSuccessful() throws Exception {
+    try {
+      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test2");
+
+      testProject.setDefinition(
+          new CpsFlowDefinition(
+              loadResource(getClass(), "classicUploadPostStepPipeline.groovy"), true));
+      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+      assertNotNull(run);
+      jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
+      dumpLog(LOGGER, run);
+    } catch (Exception e) {
+      throw e;
+    }
+  }
+
+  // TODO: test classic upload step in post?
+
   // test a malformed one
   @Test
   public void testMalformedClassicUploadStepFailure() throws Exception {
     try {
-      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test2");
+      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test3");
 
       testProject.setDefinition(
           new CpsFlowDefinition(
