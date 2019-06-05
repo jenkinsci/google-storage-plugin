@@ -38,11 +38,10 @@ public class DownloadStepPipelineIT {
   private static String credentialsId;
   private static String bucket;
   private static String pattern = "downloadstep_test.txt";
-  private static String localDir;
 
   @BeforeClass
   public static void init() throws Exception {
-    LOGGER.info("Initializing ClassicUploadStepPipelineIT");
+    LOGGER.info("Initializing DownloadStepPipelineIT");
 
     projectId = System.getenv("GOOGLE_PROJECT_ID");
     assertNotNull("GOOGLE_PROJECT_ID env var must be set", projectId);
@@ -81,7 +80,7 @@ public class DownloadStepPipelineIT {
   public void testDownloadStepSuccessful() throws Exception {
     try {
       WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test");
-      // TODO: upload file
+      // TODO: not use test name and use formatRandomName instead?
       testProject.setDefinition(
           new CpsFlowDefinition(loadResource(getClass(), "downloadStepPipeline.groovy"), true));
       WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
