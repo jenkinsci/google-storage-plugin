@@ -7,7 +7,7 @@ pipeline {
             steps{
                 step([$class: 'DownloadStep', credentialsId: env
                         .CREDENTIALS_ID,  bucketUri: "gs://${env.BUCKET}/${env.PATTERN}",
-                      localDirectory: "test/**/*"])
+                      localDirectory: "${env.DIR}/**/*"])
             }
         }
     }

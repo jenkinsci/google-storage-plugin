@@ -2,6 +2,7 @@ package com.google.jenkins.plugins.storage.IT;
 
 import static com.google.jenkins.plugins.storage.IT.ITUtil.deleteFromBucket;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.dumpLog;
+import static com.google.jenkins.plugins.storage.IT.ITUtil.formatRandomName;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.getService;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
@@ -79,8 +80,9 @@ public class DownloadStepPipelineIT {
   @Test
   public void testDownloadStepSuccessful() throws Exception {
     try {
-      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test");
-      // TODO: not use test name and use formatRandomName instead?
+      String jobName = formatRandomName("test");
+      envVars.put("DIR", jobName);
+      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
       testProject.setDefinition(
           new CpsFlowDefinition(loadResource(getClass(), "downloadStepPipeline.groovy"), true));
       WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
@@ -95,8 +97,9 @@ public class DownloadStepPipelineIT {
   @Test
   public void testMalformedDownloadStepFailure() throws Exception {
     try {
-      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test2");
-
+      String jobName = formatRandomName("test");
+      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
+      envVars.put("DIR", jobName);
       testProject.setDefinition(
           new CpsFlowDefinition(
               loadResource(getClass(), "malformedDownloadStepPipeline.groovy"), true));
