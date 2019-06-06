@@ -11,19 +11,15 @@ import com.google.api.services.storage.Storage;
 import com.google.common.io.ByteStreams;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.StorageScopeRequirement;
-import hudson.FilePath;
 import hudson.model.ItemGroup;
-import hudson.model.Project;
 import hudson.model.Run;
 import hudson.security.ACL;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.logging.Logger;
-import org.junit.rules.TemporaryFolder;
 
 public class ITUtil {
   /**
@@ -34,38 +30,6 @@ public class ITUtil {
    */
   static String formatRandomName(String prefix) {
     return String.format("%s-%s", prefix, UUID.randomUUID().toString().replace("-", ""));
-  }
-
-  /**
-   * Creates a temporary workspace for testing, configuring it as a custom workspace for the
-   * specified {@link hudson.model.Project}.
-   *
-   * @param testProject The {@link hudson.model.Project} the test workspace for.
-   * @return The {@link org.junit.rules.TemporaryFolder} serving as the test workspace.
-   * @throws java.io.IOException If an error occurred while creating the test workspace.
-   */
-  static TemporaryFolder createTestWorkspace(Project testProject) throws IOException {
-    TemporaryFolder testWorkspace = new TemporaryFolder();
-    testWorkspace.create();
-    testProject.setCustomWorkspace(testWorkspace.getRoot().toString());
-    return testWorkspace;
-  }
-
-  /**
-   * Copies the contents of the specified file to the specified directory.
-   *
-   * @param testClass The test class related to the file being copied.
-   * @param toDir The path of the target directory.
-   * @param testFile The test file to copied.
-   * @throws IOException If an error occurred while copying test file.
-   * @throws InterruptedException If an error occurred while copying test file.
-   */
-  static void copyTestFileToDir(Class testClass, String toDir, String testFile)
-      throws IOException, InterruptedException {
-    FilePath dirPath = new FilePath(new File(toDir));
-    String testFileContents = loadResource(testClass, testFile);
-    FilePath testWorkspaceFile = dirPath.child(testFile);
-    testWorkspaceFile.write(testFileContents, StandardCharsets.UTF_8.toString());
   }
 
   /**
@@ -109,32 +73,68 @@ public class ITUtil {
     return location;
   }
 
-  // tODO: exceptions and doc header
-  static Credential getCredential(ItemGroup itemGroup, String credentialsId) throws Exception {
-    Credential credential;
+  /**
+   * Given jenkins instance and credentials ID, return Credential
+   *
+   * @param itemGroup A handle to the Jenkins instance.
+   * @param credentialsId credentialsId to retrieve credential. Must exist in credentials store.
+   * @return Credential based on credentialsId.
+   * @throws GeneralSecurityException
+   */
+  static Credential getCredential(ItemGroup itemGroup, String credentialsId)
+      throws GeneralSecurityException {
     GoogleRobotCredentials robotCreds =
         CredentialsMatchers.firstOrNull(
             CredentialsProvider.lookupCredentials(
                 GoogleRobotCredentials.class, itemGroup, ACL.SYSTEM, new ArrayList<>()),
             CredentialsMatchers.withId(credentialsId));
     try {
-      credential = robotCreds.getGoogleCredential(new StorageScopeRequirement());
-    } catch (Exception e) {
-      throw new Exception(e);
+      return robotCreds.getGoogleCredential(new StorageScopeRequirement());
+    } catch (GeneralSecurityException gse) {
+      throw new GeneralSecurityException(gse);
     }
-    return credential;
   }
 
-  // todo: exceptions and doc header
-  static Storage getService(ItemGroup itemGroup, String credentialsId) throws Exception {
-    return new Storage.Builder(
-            new NetHttpTransport(), new JacksonFactory(), getCredential(itemGroup, credentialsId))
-        .build();
+  /**
+   * Given Jenkins instance and credentials ID, return a Storage object to make calls to the Google
+   * Cloud Storage JSON API.
+   *
+   * @param itemGroup A handle to the Jenkins instance.
+   * @param credentialsId credentialsId to retrieve credential. Must exist in credentials store.
+   * @return Storage object authenticated with credentialsId.
+   * @throws GeneralSecurityException
+   */
+  static Storage getService(ItemGroup itemGroup, String credentialsId)
+      throws GeneralSecurityException {
+    try {
+      return new Storage.Builder(
+              new NetHttpTransport(), new JacksonFactory(), getCredential(itemGroup, credentialsId))
+          .build();
+    } catch (GeneralSecurityException gse) {
+      throw new GeneralSecurityException(gse);
+    }
   }
 
+  /**
+   * Delete object matching pattern from Google Cloud Storage bucket of name bucket.
+   *
+   * @param itemGroup A handle to the Jenkins instance.
+   * @param credentialsId credentialsId to retrieve credential. Must exist in credentials store.
+   * @param bucket Name of Google Cloud Storage bucket to delete from.
+   * @param pattern Pattern to match object name to delete from bucket.
+   * @throws GeneralSecurityException
+   * @throws IOException
+   */
   static void deleteFromBucket(
-      ItemGroup itemGroup, String credentialsId, String bucket, String pattern) throws Exception {
-    Storage service = getService(itemGroup, credentialsId);
-    service.objects().delete(bucket, pattern).execute();
+      ItemGroup itemGroup, String credentialsId, String bucket, String pattern)
+      throws GeneralSecurityException, IOException {
+    try {
+      Storage service = getService(itemGroup, credentialsId);
+      service.objects().delete(bucket, pattern).execute();
+    } catch (GeneralSecurityException gse) {
+      throw new GeneralSecurityException(gse);
+    } catch (IOException ioe) {
+      throw new IOException(ioe);
+    }
   }
 }
