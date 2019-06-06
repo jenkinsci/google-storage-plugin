@@ -2,6 +2,7 @@ package com.google.jenkins.plugins.storage.IT;
 
 import static com.google.jenkins.plugins.storage.IT.ITUtil.deleteFromBucket;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.dumpLog;
+import static com.google.jenkins.plugins.storage.IT.ITUtil.formatRandomName;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
 
@@ -67,7 +68,8 @@ public class ClassicUploadStepPipelineIT {
   @Test
   public void testClassicUploadStepSuccessful() throws Exception {
     try {
-      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test");
+      WorkflowJob testProject =
+          jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
       testProject.setDefinition(
           new CpsFlowDefinition(
@@ -85,7 +87,8 @@ public class ClassicUploadStepPipelineIT {
   @Test
   public void testClassicUploadPostStepSuccessful() throws Exception {
     try {
-      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test2");
+      WorkflowJob testProject =
+          jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
       testProject.setDefinition(
           new CpsFlowDefinition(
@@ -105,7 +108,8 @@ public class ClassicUploadStepPipelineIT {
   @Test
   public void testMalformedClassicUploadStepFailure() throws Exception {
     try {
-      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, "test3");
+      WorkflowJob testProject =
+          jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
       testProject.setDefinition(
           new CpsFlowDefinition(
