@@ -64,7 +64,6 @@ public class ClassicUploadStepPipelineIT {
     jenkinsRule.jenkins.getGlobalNodeProperties().add(prop);
   }
 
-  // test a working one
   @Test
   public void testClassicUploadStepSuccessful() throws Exception {
     try {
@@ -83,7 +82,6 @@ public class ClassicUploadStepPipelineIT {
     }
   }
 
-  // test a working one in post
   @Test
   public void testClassicUploadPostStepSuccessful() throws Exception {
     try {
@@ -102,9 +100,6 @@ public class ClassicUploadStepPipelineIT {
     }
   }
 
-  // TODO: test classic upload step in post?
-
-  // test a malformed one
   @Test
   public void testMalformedClassicUploadStepFailure() throws Exception {
     try {
@@ -123,8 +118,6 @@ public class ClassicUploadStepPipelineIT {
     }
   }
 
-  // TODO: cleanup method. Basically remove buckets (if necessary) and artifacts
-  // TODO: exceptions lol
   @AfterClass
   public static void cleanUp() throws Exception {
     deleteFromBucket(jenkinsRule.jenkins.get(), credentialsId, bucket, pattern);

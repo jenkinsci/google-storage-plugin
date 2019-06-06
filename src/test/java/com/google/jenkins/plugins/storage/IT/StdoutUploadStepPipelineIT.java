@@ -61,11 +61,9 @@ public class StdoutUploadStepPipelineIT {
     jenkinsRule.jenkins.getGlobalNodeProperties().add(prop);
   }
 
-  // test a working one
   @Test
   public void testStdoutUploadStepSuccessful() throws Exception {
     try {
-      // TODO: use format random name?
       WorkflowJob testProject =
           jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 

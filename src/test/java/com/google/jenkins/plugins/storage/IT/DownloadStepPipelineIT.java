@@ -76,7 +76,6 @@ public class DownloadStepPipelineIT {
     insert.execute();
   }
 
-  // test a working one
   @Test
   public void testDownloadStepSuccessful() throws Exception {
     try {
