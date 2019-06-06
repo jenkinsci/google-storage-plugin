@@ -544,7 +544,7 @@ public abstract class AbstractUpload
                       return Objects.equal(access.getEntity(), publicEntity);
                     } else {
                       // TODO: fill with messages, put it in messages.java
-                      throw new NullPointerException();
+                      throw new NullPointerException(Messages.AbstractUpload_NullAccessError());
                     }
                   }
                 })

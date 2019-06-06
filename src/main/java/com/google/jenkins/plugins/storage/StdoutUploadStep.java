@@ -1,5 +1,6 @@
 package com.google.jenkins.plugins.storage;
 
+import com.google.jenkins.plugins.credentials.domains.RequiresDomain;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -26,6 +27,7 @@ import org.kohsuke.stapler.StaplerRequest;
  * Build Step wrapper for StdoutUpload to be run in pipelines. Should ideally be run post build
  * instead of a regular post step.
  */
+@RequiresDomain(StorageScopeRequirement.class)
 public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serializable {
 
   @Nonnull private StdoutUpload upload;
