@@ -139,8 +139,7 @@ public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serial
     /** {@inheritDoc} */
     @Override
     public String getDisplayName() {
-      // TODO: don't hard code here
-      return "Google Build Log Upload";
+      return Messages.StdoutUpload_BuildStepDisplayName();
     }
 
     /** {@inheritDoc} */
