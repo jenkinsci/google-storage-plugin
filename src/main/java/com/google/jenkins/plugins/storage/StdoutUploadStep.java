@@ -53,11 +53,7 @@ public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serial
     this(credentialsId, bucket, null, logName);
   }
 
-  /**
-   * Construct the classic upload step.
-   *
-   * @see ClassicUpload#ClassicUpload
-   */
+  /** Construct the build log upload step. */
   public StdoutUploadStep(
       String credentialsId, String bucket, @Nullable UploadModule module, String logName) {
     this.credentialsId = credentialsId;
