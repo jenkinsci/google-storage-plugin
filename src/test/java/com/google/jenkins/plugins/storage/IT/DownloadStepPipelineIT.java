@@ -53,7 +53,7 @@ public class DownloadStepPipelineIT {
     envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
 
     // create file to download
-    uploadToBucket(jenkinsRule.jenkins.get(), pattern);
+    uploadToBucket(jenkinsRule.jenkins.get(), pattern, DownloadStepPipelineIT.class);
   }
 
   @Test

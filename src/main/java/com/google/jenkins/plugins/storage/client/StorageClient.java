@@ -1,8 +1,11 @@
 package com.google.jenkins.plugins.storage.client;
 
+import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.storage.Storage;
 import com.google.common.base.Preconditions;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 
 public class StorageClient {
@@ -32,5 +35,20 @@ public class StorageClient {
     } catch (IOException ioe) {
       throw new IOException(ioe);
     }
+  }
+
+  /**
+   * Uploads item with path pattern to Google Cloud Storage bucket of name bucket.
+   *
+   * @param pattern Pattern to match object name to upload to bucket.
+   * @param bucket Name of the bucket to upload to.
+   * @param callingClass Class with path to load the resource file.
+   * @throws Exception
+   */
+  public void uploadToBucket(String pattern, String bucket, Class callingClass) throws IOException {
+    InputStream stream = callingClass.getResourceAsStream(pattern);
+    String contentType = URLConnection.guessContentTypeFromStream(stream);
+    InputStreamContent content = new InputStreamContent(contentType, stream);
+    storage.objects().insert(bucket, null, content).setName(pattern).execute();
   }
 }

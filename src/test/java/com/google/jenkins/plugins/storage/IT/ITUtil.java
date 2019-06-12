@@ -25,7 +25,6 @@ import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.http.InputStreamContent;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.storage.Storage;
@@ -45,8 +44,6 @@ import hudson.security.ACL;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -169,17 +166,14 @@ public class ITUtil {
   /**
    * Uploads item with path pattern to Google Cloud Storage bucket of name bucket.
    *
-   * @param itemGroup
-   * @param pattern
+   * @param itemGroup A handle to the Jenkins instance.
+   * @param pattern Pattern to match object name to upload to bucket.
+   * @param callingClass Class with path to load the resource file.
    * @throws Exception
    */
-  static void uploadToBucket(ItemGroup itemGroup, String pattern) throws Exception {
-    // TODO: service client
-    Storage service = getService(itemGroup, getCredentialsId());
-    InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream(pattern);
-    String contentType = URLConnection.guessContentTypeFromStream(stream);
-    InputStreamContent content = new InputStreamContent(contentType, stream);
-    service.objects().insert(bucket, null, content).setName(pattern).execute();
+  static void uploadToBucket(ItemGroup itemGroup, String pattern, Class callingClass)
+      throws Exception {
+    getStorageClient(itemGroup).uploadToBucket(pattern, bucket, callingClass);
   }
   /**
    * Initializes the env variables needed to run pipeline integration tests
