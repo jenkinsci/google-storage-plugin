@@ -58,14 +58,6 @@ public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serial
       String credentialsId, String bucket, @Nullable UploadModule module, String logName) {
     this.credentialsId = credentialsId;
     upload = new StdoutUpload(bucket, module, logName, null);
-
-    // Build steps will not be executed following a failed build.
-    // Pipeline steps performed sequentially will not be executed
-    //   following a failed step
-    // If we ever get to execute this on a failed build, that must
-    // have been done intentionally, e.g., using "post" with appropriate
-    // flags. This should be allowed.
-    upload.setForFailedJobs(true);
   }
 
   /** Whether to surface the file being uploaded to anyone with the link. */

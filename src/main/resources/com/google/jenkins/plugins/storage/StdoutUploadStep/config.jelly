@@ -25,7 +25,8 @@ limitations under the License.
 
     <!-- Allow the user to specify a glob containing build variables
     to be uploaded to GCS -->
-    <f:entry title="${%Log Name}" field="logName">
+    <f:entry title="${%Log Name}" field="logName"
+             help="/descriptor/com.google.jenkins.plugins.storage.StdoutUpload/help/logName">
         <f:textbox default="build-log.txt" />
     </f:entry>
 
