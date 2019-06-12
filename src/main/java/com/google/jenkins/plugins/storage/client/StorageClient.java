@@ -30,11 +30,7 @@ public class StorageClient {
    * @throws IOException
    */
   public void deleteFromBucket(String bucket, String pattern) throws IOException {
-    try {
-      storage.objects().delete(bucket, pattern);
-    } catch (IOException ioe) {
-      throw new IOException(ioe);
-    }
+    storage.objects().delete(bucket, pattern);
   }
 
   /**

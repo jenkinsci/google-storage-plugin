@@ -42,7 +42,7 @@ public class CredentialsUtil {
             CredentialsMatchers.withId(credentialsId));
 
     if (robotCreds == null) {
-      throw new AbortException("meow");
+      throw new AbortException(Messages.CredentialsUtil_FailedToRetrieveCredentials(credentialsId));
     }
 
     return robotCreds;
@@ -61,7 +61,7 @@ public class CredentialsUtil {
     try {
       credential = robotCreds.getGoogleCredential(new StorageScopeRequirement());
     } catch (GeneralSecurityException gse) {
-      throw new AbortException("meow");
+      throw new AbortException(Messages.CredentialsUtil_FailedToInitializeHTTPTransport(gse));
     }
 
     return credential;

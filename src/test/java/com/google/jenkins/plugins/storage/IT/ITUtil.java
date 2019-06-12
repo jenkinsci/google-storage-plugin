@@ -16,23 +16,20 @@
 
 package com.google.jenkins.plugins.storage.IT;
 
+import static com.google.jenkins.plugins.storage.util.CredentialsUtil.getGoogleCredential;
+import static com.google.jenkins.plugins.storage.util.CredentialsUtil.getRobotCredentials;
 import static org.junit.Assert.assertNotNull;
 
 import com.cloudbees.plugins.credentials.Credentials;
-import com.cloudbees.plugins.credentials.CredentialsMatchers;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson.JacksonFactory;
-import com.google.api.services.storage.Storage;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
 import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
-import com.google.jenkins.plugins.storage.StorageScopeRequirement;
 import com.google.jenkins.plugins.storage.StringJsonServiceAccountConfig;
 import com.google.jenkins.plugins.storage.client.ClientFactory;
 import com.google.jenkins.plugins.storage.client.StorageClient;
@@ -40,12 +37,9 @@ import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.model.ItemGroup;
 import hudson.model.Run;
-import hudson.security.ACL;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.util.ArrayList;
 import java.util.UUID;
 import java.util.logging.Logger;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -100,51 +94,19 @@ public class ITUtil {
   static String getCredentialsId() {
     return projectId;
   }
+
   /**
    * Given jenkins instance and credentials ID, return Credential.
    *
    * @param itemGroup A handle to the Jenkins instance.
    * @param credentialsId credentialsId to retrieve credential. Must exist in credentials store.
    * @return Credential based on credentialsId.
-   * @throws GeneralSecurityException
+   * @throws AbortException If there was an issue retrieving the credentials.
    */
-  static Credential getCredential(ItemGroup itemGroup, String credentialsId)
-      throws GeneralSecurityException {
+  static Credential getCredential(ItemGroup itemGroup, String credentialsId) throws AbortException {
     GoogleRobotCredentials robotCreds =
-        CredentialsMatchers.firstOrNull(
-            CredentialsProvider.lookupCredentials(
-                GoogleRobotCredentials.class, itemGroup, ACL.SYSTEM, new ArrayList<>()),
-            CredentialsMatchers.withId(credentialsId));
-    try {
-      return robotCreds.getGoogleCredential(new StorageScopeRequirement());
-    } catch (GeneralSecurityException gse) {
-      throw new GeneralSecurityException(gse);
-    }
-  }
-
-  /**
-   * Given Jenkins instance and credentials ID, return a Storage object to make calls to the Google
-   * Cloud Storage JSON API.
-   *
-   * @param itemGroup A handle to the Jenkins instance.
-   * @param credentialsId credentialsId to retrieve credential. Must exist in credentials store.
-   * @return Storage object authenticated with credentialsId.
-   * @throws GeneralSecurityException
-   */
-  static Storage getService(ItemGroup itemGroup, String credentialsId)
-      throws GeneralSecurityException {
-    Storage service;
-    try {
-      service =
-          new Storage.Builder(
-                  new NetHttpTransport(),
-                  new JacksonFactory(),
-                  getCredential(itemGroup, credentialsId))
-              .build();
-      return service;
-    } catch (GeneralSecurityException gse) {
-      throw new GeneralSecurityException(gse);
-    }
+        getRobotCredentials(itemGroup, ImmutableList.of(), credentialsId);
+    return getGoogleCredential(robotCreds);
   }
 
   /**
@@ -152,8 +114,7 @@ public class ITUtil {
    *
    * @param itemGroup A handle to the Jenkins instance.
    * @param pattern Pattern to match object name to delete from bucket.
-   * @throws GeneralSecurityException
-   * @throws IOException
+   * @throws IOException If there was an issue making the delete API call to GCS.
    */
   static void deleteFromBucket(ItemGroup itemGroup, String pattern) throws IOException {
     try {
@@ -169,18 +130,20 @@ public class ITUtil {
    * @param itemGroup A handle to the Jenkins instance.
    * @param pattern Pattern to match object name to upload to bucket.
    * @param callingClass Class with path to load the resource file.
-   * @throws Exception
+   * @throws IOException If there was in issue making the upload API call to GCS.
    */
   static void uploadToBucket(ItemGroup itemGroup, String pattern, Class callingClass)
-      throws Exception {
+      throws IOException {
     getStorageClient(itemGroup).uploadToBucket(pattern, bucket, callingClass);
   }
+
   /**
    * Initializes the env variables needed to run pipeline integration tests
    *
    * @param pattern pattern needed to run the integration test. Varies depending on which pipeline
    *     integration test is being run.
    * @return Returns handle to EnvVars to change env variables as needed.
+   * @throws Exception If there was in issue initializing or storing credentials.
    */
   static EnvVars initializePipelineITEnvironment(String pattern, JenkinsRule jenkinsRule)
       throws Exception {
@@ -189,15 +152,13 @@ public class ITUtil {
     String serviceAccountKeyJson = System.getenv("GOOGLE_CREDENTIALS");
     assertNotNull("GOOGLE_CREDENTIALS env var must be set", serviceAccountKeyJson);
     String credentialsId = getCredentialsId();
-    // TODO: this part will be part of credentialsUtil?
+
     ServiceAccountConfig sac = new StringJsonServiceAccountConfig(serviceAccountKeyJson);
-
     Credentials c = (Credentials) new GoogleRobotPrivateKeyCredentials(credentialsId, sac, null);
-
     CredentialsStore store =
         new SystemCredentialsProvider.ProviderImpl().getStore(jenkinsRule.jenkins);
-
     store.addCredentials(Domain.global(), c);
+
     EnvironmentVariablesNodeProperty prop = new EnvironmentVariablesNodeProperty();
     EnvVars envVars = prop.getEnvVars();
     envVars.put("CREDENTIALS_ID", credentialsId);
@@ -207,6 +168,13 @@ public class ITUtil {
     return envVars;
   }
 
+  /**
+   * Returns a StorageClient instance.
+   *
+   * @param itemGroup A handle to the Jenkins instance.
+   * @return StorageClient instance to make API calls to GCS API.
+   * @throws AbortException If there was an issue creating the StorageClient instance.
+   */
   static StorageClient getStorageClient(ItemGroup itemGroup) throws AbortException {
     return new ClientFactory(itemGroup, getCredentialsId()).storageClient();
   }

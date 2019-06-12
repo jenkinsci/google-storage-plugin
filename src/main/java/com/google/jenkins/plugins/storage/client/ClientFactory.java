@@ -56,7 +56,7 @@ public class ClientFactory {
     try {
       this.transport = httpTransport.orElse(GoogleNetHttpTransport.newTrustedTransport());
     } catch (GeneralSecurityException | IOException e) {
-      throw new AbortException("meow");
+      throw new AbortException(Messages.ClientFactory_FailedToInitializeHTTPTransport(e));
     }
 
     this.jsonFactory = new JacksonFactory();
