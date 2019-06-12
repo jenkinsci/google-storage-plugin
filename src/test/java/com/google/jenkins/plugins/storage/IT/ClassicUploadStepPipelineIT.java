@@ -61,9 +61,7 @@ public class ClassicUploadStepPipelineIT {
     assertNotNull("GOOGLE_PROJECT_ID env var must be set", projectId);
     bucket = System.getenv("GOOGLE_BUCKET");
     assertNotNull("GOOGLE_BUCKET env var must be set", bucket);
-
     pattern = "build_environment.txt";
-
     String serviceAccountKeyJson = System.getenv("GOOGLE_CREDENTIALS");
     assertNotNull("GOOGLE_CREDENTIALS env var must be set", serviceAccountKeyJson);
     credentialsId = projectId;
@@ -101,30 +99,30 @@ public class ClassicUploadStepPipelineIT {
 
   @Test
   public void testClassicUploadPostStepSuccessful() throws Exception {
-      WorkflowJob testProject =
-          jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
+    WorkflowJob testProject =
+        jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
-      testProject.setDefinition(
-          new CpsFlowDefinition(
-              loadResource(getClass(), "classicUploadPostStepPipeline.groovy"), true));
-      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-      assertNotNull(run);
-      jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
-      dumpLog(LOGGER, run);
+    testProject.setDefinition(
+        new CpsFlowDefinition(
+            loadResource(getClass(), "classicUploadPostStepPipeline.groovy"), true));
+    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+    assertNotNull(run);
+    jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
+    dumpLog(LOGGER, run);
   }
 
   @Test
   public void testMalformedClassicUploadStepFailure() throws Exception {
-      WorkflowJob testProject =
-          jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
+    WorkflowJob testProject =
+        jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
-      testProject.setDefinition(
-          new CpsFlowDefinition(
-              loadResource(getClass(), "malformedClassicUploadStepPipeline.groovy"), true));
-      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-      assertNotNull(run);
-      jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
-      dumpLog(LOGGER, run);
+    testProject.setDefinition(
+        new CpsFlowDefinition(
+            loadResource(getClass(), "malformedClassicUploadStepPipeline.groovy"), true));
+    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+    assertNotNull(run);
+    jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
+    dumpLog(LOGGER, run);
   }
 
   @AfterClass
