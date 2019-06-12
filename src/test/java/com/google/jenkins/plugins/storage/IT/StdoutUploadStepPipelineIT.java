@@ -19,8 +19,7 @@ package com.google.jenkins.plugins.storage.IT;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.deleteFromBucket;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.dumpLog;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.formatRandomName;
-import static com.google.jenkins.plugins.storage.IT.ITUtil
-        .initializePipelineITEnvironment;
+import static com.google.jenkins.plugins.storage.IT.ITUtil.initializePipelineITEnvironment;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
 
@@ -31,9 +30,7 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
 import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
 import com.google.jenkins.plugins.storage.StringJsonServiceAccountConfig;
-import hudson.EnvVars;
 import hudson.model.Result;
-import hudson.slaves.EnvironmentVariablesNodeProperty;
 import java.util.logging.Logger;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -49,7 +46,6 @@ public class StdoutUploadStepPipelineIT {
   private static final Logger LOGGER = Logger.getLogger(StdoutUploadStepPipelineIT.class.getName());
 
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
-  private static EnvVars envVars;
   private static String projectId;
   private static String credentialsId;
   private static String bucket;

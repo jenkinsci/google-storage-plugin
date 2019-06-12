@@ -20,6 +20,7 @@ import static com.google.jenkins.plugins.storage.IT.ITUtil.deleteFromBucket;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.dumpLog;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.formatRandomName;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.getService;
+import static com.google.jenkins.plugins.storage.IT.ITUtil.initializePipelineITEnvironment;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
 
@@ -34,7 +35,6 @@ import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
 import com.google.jenkins.plugins.storage.StringJsonServiceAccountConfig;
 import hudson.EnvVars;
 import hudson.model.Result;
-import hudson.slaves.EnvironmentVariablesNodeProperty;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.util.logging.Logger;
@@ -75,12 +75,7 @@ public class DownloadStepPipelineIT {
         new SystemCredentialsProvider.ProviderImpl().getStore(jenkinsRule.jenkins);
     store.addCredentials(Domain.global(), c);
 
-    EnvironmentVariablesNodeProperty prop = new EnvironmentVariablesNodeProperty();
-    envVars = prop.getEnvVars();
-    envVars.put("CREDENTIALS_ID", credentialsId);
-    envVars.put("BUCKET", bucket);
-    envVars.put("PATTERN", pattern);
-    jenkinsRule.jenkins.getGlobalNodeProperties().add(prop);
+    envVars = initializePipelineITEnvironment(credentialsId, bucket, pattern, jenkinsRule);
 
     // create file to download
     Storage service = getService(jenkinsRule.jenkins.get(), credentialsId);
