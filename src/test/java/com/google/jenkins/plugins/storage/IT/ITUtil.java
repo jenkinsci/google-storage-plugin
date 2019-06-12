@@ -18,15 +18,23 @@ package com.google.jenkins.plugins.storage.IT;
 
 import static org.junit.Assert.assertNotNull;
 
+import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsStore;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.cloudbees.plugins.credentials.domains.Domain;
 import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.http.InputStreamContent;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.storage.Storage;
 import com.google.common.io.ByteStreams;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
+import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
+import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
 import com.google.jenkins.plugins.storage.StorageScopeRequirement;
+import com.google.jenkins.plugins.storage.StringJsonServiceAccountConfig;
 import hudson.EnvVars;
 import hudson.model.ItemGroup;
 import hudson.model.Run;
@@ -34,6 +42,8 @@ import hudson.security.ACL;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -42,6 +52,9 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 /** Provides a library of utility functions for integration tests. */
 public class ITUtil {
+  private static String projectId = System.getenv("GOOGLE_PROJECT_ID");
+  private static String bucket = System.getenv("GOOGLE_BUCKET");
+
   /**
    * Formats a random name using the given prefix.
    *
@@ -80,7 +93,7 @@ public class ITUtil {
   }
 
   /**
-   * Retrieves the location set through environment variables
+   * Retrieves the location set through environment variables.
    *
    * @return A Google Compute Resource Region (us-west1) or Zone (us-west1-a) string
    */
@@ -94,7 +107,15 @@ public class ITUtil {
   }
 
   /**
-   * Given jenkins instance and credentials ID, return Credential
+   * Returns the credentialsId, which is the same as the projectId.
+   *
+   * @return the credentialdId
+   */
+  static String getCredentialsId() {
+    return projectId;
+  }
+  /**
+   * Given jenkins instance and credentials ID, return Credential.
    *
    * @param itemGroup A handle to the Jenkins instance.
    * @param credentialsId credentialsId to retrieve credential. Must exist in credentials store.
@@ -126,10 +147,15 @@ public class ITUtil {
    */
   static Storage getService(ItemGroup itemGroup, String credentialsId)
       throws GeneralSecurityException {
+    Storage service;
     try {
-      return new Storage.Builder(
-              new NetHttpTransport(), new JacksonFactory(), getCredential(itemGroup, credentialsId))
-          .build();
+      service =
+          new Storage.Builder(
+                  new NetHttpTransport(),
+                  new JacksonFactory(),
+                  getCredential(itemGroup, credentialsId))
+              .build();
+      return service;
     } catch (GeneralSecurityException gse) {
       throw new GeneralSecurityException(gse);
     }
@@ -139,17 +165,14 @@ public class ITUtil {
    * Delete object matching pattern from Google Cloud Storage bucket of name bucket.
    *
    * @param itemGroup A handle to the Jenkins instance.
-   * @param credentialsId credentialsId to retrieve credential. Must exist in credentials store.
-   * @param bucket Name of Google Cloud Storage bucket to delete from.
    * @param pattern Pattern to match object name to delete from bucket.
    * @throws GeneralSecurityException
    * @throws IOException
    */
-  static void deleteFromBucket(
-      ItemGroup itemGroup, String credentialsId, String bucket, String pattern)
+  static void deleteFromBucket(ItemGroup itemGroup, String pattern)
       throws GeneralSecurityException, IOException {
     try {
-      Storage service = getService(itemGroup, credentialsId);
+      Storage service = getService(itemGroup, getCredentialsId());
       service.objects().delete(bucket, pattern).execute();
     } catch (GeneralSecurityException gse) {
       throw new GeneralSecurityException(gse);
@@ -158,6 +181,14 @@ public class ITUtil {
     }
   }
 
+  /** Uploads item with path pattern to Google Cloud Storage bucket of name bucket. */
+  static void uploadToBucket(ItemGroup itemGroup, String pattern) throws Exception {
+    Storage service = getService(itemGroup, getCredentialsId());
+    InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream(pattern);
+    String contentType = URLConnection.guessContentTypeFromStream(stream);
+    InputStreamContent content = new InputStreamContent(contentType, stream);
+    service.objects().insert(bucket, null, content).setName(pattern).execute();
+  }
   /**
    * Initializes the env variables needed to run pipeline integration tests
    *
@@ -165,8 +196,24 @@ public class ITUtil {
    *     integration test is being run.
    * @return Returns handle to EnvVars to change env variables as needed.
    */
-  static EnvVars initializePipelineITEnvironment(
-      String credentialsId, String bucket, String pattern, JenkinsRule jenkinsRule) {
+  static EnvVars initializePipelineITEnvironment(String pattern, JenkinsRule jenkinsRule)
+      throws Exception {
+    projectId = System.getenv("GOOGLE_PROJECT_ID");
+    assertNotNull("GOOGLE_PROJECT_ID env var must be set", projectId);
+    bucket = System.getenv("GOOGLE_BUCKET");
+    assertNotNull("GOOGLE_BUCKET env var must be set", bucket);
+    String serviceAccountKeyJson = System.getenv("GOOGLE_CREDENTIALS");
+    assertNotNull("GOOGLE_CREDENTIALS env var must be set", serviceAccountKeyJson);
+    String credentialsId = projectId;
+    // TODO: this part will be part of credentialsUtil?
+    ServiceAccountConfig sac = new StringJsonServiceAccountConfig(serviceAccountKeyJson);
+
+    Credentials c = (Credentials) new GoogleRobotPrivateKeyCredentials(credentialsId, sac, null);
+
+    CredentialsStore store =
+        new SystemCredentialsProvider.ProviderImpl().getStore(jenkinsRule.jenkins);
+
+    store.addCredentials(Domain.global(), c);
     EnvironmentVariablesNodeProperty prop = new EnvironmentVariablesNodeProperty();
     EnvVars envVars = prop.getEnvVars();
     envVars.put("CREDENTIALS_ID", credentialsId);

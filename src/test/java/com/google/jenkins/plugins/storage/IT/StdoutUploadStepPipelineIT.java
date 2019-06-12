@@ -23,13 +23,6 @@ import static com.google.jenkins.plugins.storage.IT.ITUtil.initializePipelineITE
 import static com.google.jenkins.plugins.storage.IT.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
 
-import com.cloudbees.plugins.credentials.Credentials;
-import com.cloudbees.plugins.credentials.CredentialsStore;
-import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
-import com.cloudbees.plugins.credentials.domains.Domain;
-import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
-import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
-import com.google.jenkins.plugins.storage.StringJsonServiceAccountConfig;
 import hudson.model.Result;
 import java.util.logging.Logger;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -55,19 +48,7 @@ public class StdoutUploadStepPipelineIT {
   public static void init() throws Exception {
     LOGGER.info("Initializing StdoutUploadStepPipelineIT");
 
-    projectId = System.getenv("GOOGLE_PROJECT_ID");
-    assertNotNull("GOOGLE_PROJECT_ID env var must be set", projectId);
-    bucket = System.getenv("GOOGLE_BUCKET");
-    assertNotNull("GOOGLE_BUCKET env var must be set", bucket);
-    String serviceAccountKeyJson = System.getenv("GOOGLE_CREDENTIALS");
-    assertNotNull("GOOGLE_CREDENTIALS env var must be set", serviceAccountKeyJson);
-    credentialsId = projectId;
-    ServiceAccountConfig sac = new StringJsonServiceAccountConfig(serviceAccountKeyJson);
-    Credentials c = (Credentials) new GoogleRobotPrivateKeyCredentials(credentialsId, sac, null);
-    CredentialsStore store =
-        new SystemCredentialsProvider.ProviderImpl().getStore(jenkinsRule.jenkins);
-    store.addCredentials(Domain.global(), c);
-    initializePipelineITEnvironment(credentialsId, bucket, pattern, jenkinsRule);
+    initializePipelineITEnvironment(pattern, jenkinsRule);
   }
 
   @Test
@@ -99,6 +80,6 @@ public class StdoutUploadStepPipelineIT {
 
   @AfterClass
   public static void cleanUp() throws Exception {
-    deleteFromBucket(jenkinsRule.jenkins.get(), credentialsId, bucket, pattern);
+    deleteFromBucket(jenkinsRule.jenkins.get(), pattern);
   }
 }
