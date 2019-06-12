@@ -89,34 +89,33 @@ public class DownloadStepPipelineIT {
     String contentType = URLConnection.guessContentTypeFromStream(stream);
     InputStreamContent content = new InputStreamContent(contentType, stream);
     service.objects().insert(bucket, null, content).setName(pattern).execute();
-
   }
 
   @Test
   public void testDownloadStepSuccessful() throws Exception {
-      String jobName = formatRandomName("test");
-      envVars.put("DIR", jobName);
-      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
-      testProject.setDefinition(
-          new CpsFlowDefinition(loadResource(getClass(), "downloadStepPipeline.groovy"), true));
-      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-      assertNotNull(run);
-      jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
-      dumpLog(LOGGER, run);
+    String jobName = formatRandomName("test");
+    envVars.put("DIR", jobName);
+    WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
+    testProject.setDefinition(
+        new CpsFlowDefinition(loadResource(getClass(), "downloadStepPipeline.groovy"), true));
+    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+    assertNotNull(run);
+    jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
+    dumpLog(LOGGER, run);
   }
 
   @Test
   public void testMalformedDownloadStepFailure() throws Exception {
-      String jobName = formatRandomName("test");
-      WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
-      envVars.put("DIR", jobName);
-      testProject.setDefinition(
-          new CpsFlowDefinition(
-              loadResource(getClass(), "malformedDownloadStepPipeline.groovy"), true));
-      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-      assertNotNull(run);
-      jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
-      dumpLog(LOGGER, run);
+    String jobName = formatRandomName("test");
+    WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
+    envVars.put("DIR", jobName);
+    testProject.setDefinition(
+        new CpsFlowDefinition(
+            loadResource(getClass(), "malformedDownloadStepPipeline.groovy"), true));
+    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+    assertNotNull(run);
+    jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
+    dumpLog(LOGGER, run);
   }
 
   @AfterClass
