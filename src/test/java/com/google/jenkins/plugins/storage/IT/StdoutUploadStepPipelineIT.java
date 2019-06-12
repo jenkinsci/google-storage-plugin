@@ -19,6 +19,8 @@ package com.google.jenkins.plugins.storage.IT;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.deleteFromBucket;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.dumpLog;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.formatRandomName;
+import static com.google.jenkins.plugins.storage.IT.ITUtil
+        .initializePipelineITEnvironment;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
 
@@ -69,40 +71,34 @@ public class StdoutUploadStepPipelineIT {
     CredentialsStore store =
         new SystemCredentialsProvider.ProviderImpl().getStore(jenkinsRule.jenkins);
     store.addCredentials(Domain.global(), c);
-
-    EnvironmentVariablesNodeProperty prop = new EnvironmentVariablesNodeProperty();
-    envVars = prop.getEnvVars();
-    envVars.put("CREDENTIALS_ID", credentialsId);
-    envVars.put("BUCKET", bucket);
-    envVars.put("PATTERN", pattern);
-    jenkinsRule.jenkins.getGlobalNodeProperties().add(prop);
+    initializePipelineITEnvironment(credentialsId, bucket, pattern, jenkinsRule);
   }
 
   @Test
   public void testStdoutUploadStepSuccessful() throws Exception {
-      WorkflowJob testProject =
-          jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
+    WorkflowJob testProject =
+        jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
-      testProject.setDefinition(
-          new CpsFlowDefinition(loadResource(getClass(), "stdoutUploadStepPipeline.groovy"), true));
-      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-      assertNotNull(run);
-      jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
-      dumpLog(LOGGER, run);
+    testProject.setDefinition(
+        new CpsFlowDefinition(loadResource(getClass(), "stdoutUploadStepPipeline.groovy"), true));
+    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+    assertNotNull(run);
+    jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
+    dumpLog(LOGGER, run);
   }
 
   @Test
   public void testMalformedStdoutUploadStepFailure() throws Exception {
-      WorkflowJob testProject =
-          jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
+    WorkflowJob testProject =
+        jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
-      testProject.setDefinition(
-          new CpsFlowDefinition(
-              loadResource(getClass(), "malformedStdoutUploadStepPipeline.groovy"), true));
-      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-      assertNotNull(run);
-      jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
-      dumpLog(LOGGER, run);
+    testProject.setDefinition(
+        new CpsFlowDefinition(
+            loadResource(getClass(), "malformedStdoutUploadStepPipeline.groovy"), true));
+    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+    assertNotNull(run);
+    jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
+    dumpLog(LOGGER, run);
   }
 
   @AfterClass
