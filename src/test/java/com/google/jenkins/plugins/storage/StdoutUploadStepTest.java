@@ -90,9 +90,6 @@ public class StdoutUploadStepTest {
 
     FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
 
-    Bucket bucket = new Bucket();
-    bucket.setName(BUCKET_NAME);
-
     // Perform is run twice: one from scheduleBuild2, one from step.perform
     executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
     executor.passThruWhen(
