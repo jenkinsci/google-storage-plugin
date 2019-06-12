@@ -123,7 +123,7 @@ public class ITUtil {
   }
 
   /**
-   * Initializes the env variables needed to run pipeline integration tests
+   * Initializes the env variables needed to run pipeline integration tests.
    *
    * @param pattern pattern needed to run the integration test. Varies depending on which pipeline
    *     integration test is being run.
