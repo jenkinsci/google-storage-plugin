@@ -27,15 +27,18 @@ import com.google.api.services.storage.Storage;
 import com.google.common.io.ByteStreams;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.StorageScopeRequirement;
+import hudson.EnvVars;
 import hudson.model.ItemGroup;
 import hudson.model.Run;
 import hudson.security.ACL;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.logging.Logger;
+import org.jvnet.hudson.test.JenkinsRule;
 
 /** Provides a library of utility functions for integration tests. */
 public class ITUtil {
@@ -153,5 +156,23 @@ public class ITUtil {
     } catch (IOException ioe) {
       throw new IOException(ioe);
     }
+  }
+
+  /**
+   * Initializes the env variables needed to run pipeline integration tests
+   *
+   * @param pattern pattern needed to run the integration test. Varies depending on which pipeline
+   *     integration test is being run.
+   * @return Returns handle to EnvVars to change env variables as needed.
+   */
+  static EnvVars initializePipelineITEnvironment(
+      String credentialsId, String bucket, String pattern, JenkinsRule jenkinsRule) {
+    EnvironmentVariablesNodeProperty prop = new EnvironmentVariablesNodeProperty();
+    EnvVars envVars = prop.getEnvVars();
+    envVars.put("CREDENTIALS_ID", credentialsId);
+    envVars.put("BUCKET", bucket);
+    envVars.put("PATTERN", pattern);
+    jenkinsRule.jenkins.getGlobalNodeProperties().add(prop);
+    return envVars;
   }
 }
