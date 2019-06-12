@@ -16,18 +16,13 @@
 
 package com.google.jenkins.plugins.storage.IT;
 
-import static com.google.jenkins.plugins.storage.util.CredentialsUtil.getGoogleCredential;
-import static com.google.jenkins.plugins.storage.util.CredentialsUtil.getRobotCredentials;
 import static org.junit.Assert.assertNotNull;
 
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
-import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
 import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
 import com.google.jenkins.plugins.storage.StringJsonServiceAccountConfig;
@@ -88,6 +83,7 @@ public class ITUtil {
 
   /**
    * Returns the credentialsId, which is the same as the projectId.
+   *
    * @return the credentialsId
    */
   static String getCredentialsId() {
