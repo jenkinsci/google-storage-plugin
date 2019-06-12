@@ -29,7 +29,6 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import java.io.IOException;
 import java.io.Serializable;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
@@ -45,7 +44,7 @@ import org.kohsuke.stapler.StaplerRequest;
  */
 @RequiresDomain(StorageScopeRequirement.class)
 public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serializable {
-  @Nonnull private StdoutUpload upload;
+  private StdoutUpload upload;
   private final String credentialsId;
 
   @DataBoundConstructor
