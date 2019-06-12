@@ -168,8 +168,14 @@ public class ITUtil {
     }
   }
 
-  /** Uploads item with path pattern to Google Cloud Storage bucket of name bucket. */
-  static void uploadToBucket(ItemGroup itemGroup, String pattern) throws Exception {
+  /**
+   * Uploads item with path pattern to Google Cloud Storage bucket of name bucket.
+   * @param itemGroup
+   * @param pattern
+   * @throws Exception
+   */
+  static void uploadToBucket(ItemGroup itemGroup, String pattern) throws
+          Exception {
     // TODO: service client
     Storage service = getService(itemGroup, getCredentialsId());
     InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream(pattern);
