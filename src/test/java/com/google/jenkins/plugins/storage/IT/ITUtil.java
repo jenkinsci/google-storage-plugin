@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+/** Provides a library of utility functions for integration tests. */
 public class ITUtil {
   /**
    * Formats a random name using the given prefix.

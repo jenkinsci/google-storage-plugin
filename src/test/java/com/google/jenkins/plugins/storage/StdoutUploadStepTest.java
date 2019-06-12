@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.storage.Storage;
-import com.google.api.services.storage.model.Bucket;
 import com.google.jenkins.plugins.credentials.oauth.AbstractGoogleRobotCredentialsDescriptor;
 import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;

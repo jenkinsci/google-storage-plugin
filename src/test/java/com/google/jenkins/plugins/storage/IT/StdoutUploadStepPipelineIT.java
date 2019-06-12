@@ -42,6 +42,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
+/** Tests the {@link StdoutUploadStep} for use-cases involving the Jenkins Pipeline DSL. */
 public class StdoutUploadStepPipelineIT {
   private static final Logger LOGGER = Logger.getLogger(StdoutUploadStepPipelineIT.class.getName());
 

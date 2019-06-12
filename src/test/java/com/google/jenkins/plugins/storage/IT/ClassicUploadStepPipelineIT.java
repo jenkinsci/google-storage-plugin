@@ -42,6 +42,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
+/** Tests the {@link ClassicUploadStep} for use-cases involving the Jenkins Pipeline DSL. */
 public class ClassicUploadStepPipelineIT {
   private static final Logger LOGGER =
       Logger.getLogger(ClassicUploadStepPipelineIT.class.getName());

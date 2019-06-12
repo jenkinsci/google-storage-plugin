@@ -47,6 +47,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
+/** Tests the {@link DownloadStep} for use-cases involving the Jenkins Pipeline DSL. */
 public class DownloadStepPipelineIT {
   private static final Logger LOGGER = Logger.getLogger(DownloadStepPipelineIT.class.getName());
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
@@ -87,9 +88,8 @@ public class DownloadStepPipelineIT {
     InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream(pattern);
     String contentType = URLConnection.guessContentTypeFromStream(stream);
     InputStreamContent content = new InputStreamContent(contentType, stream);
-    Storage.Objects.Insert insert = service.objects().insert(bucket, null, content);
-    insert.setName(pattern);
-    insert.execute();
+    service.objects().insert(bucket, null, content).setName(pattern).execute();
+
   }
 
   @Test
