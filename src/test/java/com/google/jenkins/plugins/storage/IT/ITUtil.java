@@ -88,25 +88,10 @@ public class ITUtil {
 
   /**
    * Returns the credentialsId, which is the same as the projectId.
-   *
-   * @return the credentialdId
+   * @return the credentialsId
    */
   static String getCredentialsId() {
     return projectId;
-  }
-
-  /**
-   * Given jenkins instance and credentials ID, return Credential.
-   *
-   * @param itemGroup A handle to the Jenkins instance.
-   * @param credentialsId credentialsId to retrieve credential. Must exist in credentials store.
-   * @return Credential based on credentialsId.
-   * @throws AbortException If there was an issue retrieving the credentials.
-   */
-  static Credential getCredential(ItemGroup itemGroup, String credentialsId) throws AbortException {
-    GoogleRobotCredentials robotCreds =
-        getRobotCredentials(itemGroup, ImmutableList.of(), credentialsId);
-    return getGoogleCredential(robotCreds);
   }
 
   /**
