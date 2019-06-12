@@ -94,7 +94,6 @@ public class DownloadStepPipelineIT {
 
   @Test
   public void testDownloadStepSuccessful() throws Exception {
-    try {
       String jobName = formatRandomName("test");
       envVars.put("DIR", jobName);
       WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
@@ -104,14 +103,10 @@ public class DownloadStepPipelineIT {
       assertNotNull(run);
       jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
       dumpLog(LOGGER, run);
-    } catch (Exception e) {
-      throw e;
-    }
   }
 
   @Test
   public void testMalformedDownloadStepFailure() throws Exception {
-    try {
       String jobName = formatRandomName("test");
       WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
       envVars.put("DIR", jobName);
@@ -122,9 +117,6 @@ public class DownloadStepPipelineIT {
       assertNotNull(run);
       jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
       dumpLog(LOGGER, run);
-    } catch (Exception e) {
-      throw e;
-    }
   }
 
   @AfterClass

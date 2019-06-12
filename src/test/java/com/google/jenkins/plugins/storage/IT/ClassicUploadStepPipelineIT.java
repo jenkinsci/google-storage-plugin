@@ -101,7 +101,6 @@ public class ClassicUploadStepPipelineIT {
 
   @Test
   public void testClassicUploadPostStepSuccessful() throws Exception {
-    try {
       WorkflowJob testProject =
           jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
@@ -112,14 +111,10 @@ public class ClassicUploadStepPipelineIT {
       assertNotNull(run);
       jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
       dumpLog(LOGGER, run);
-    } catch (Exception e) {
-      throw e;
-    }
   }
 
   @Test
   public void testMalformedClassicUploadStepFailure() throws Exception {
-    try {
       WorkflowJob testProject =
           jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
@@ -130,9 +125,6 @@ public class ClassicUploadStepPipelineIT {
       assertNotNull(run);
       jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
       dumpLog(LOGGER, run);
-    } catch (Exception e) {
-      throw e;
-    }
   }
 
   @AfterClass

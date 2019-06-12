@@ -80,7 +80,6 @@ public class StdoutUploadStepPipelineIT {
 
   @Test
   public void testStdoutUploadStepSuccessful() throws Exception {
-    try {
       WorkflowJob testProject =
           jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
@@ -90,14 +89,10 @@ public class StdoutUploadStepPipelineIT {
       assertNotNull(run);
       jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
       dumpLog(LOGGER, run);
-    } catch (Exception e) {
-      throw e;
-    }
   }
 
   @Test
   public void testMalformedStdoutUploadStepFailure() throws Exception {
-    try {
       WorkflowJob testProject =
           jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
@@ -108,9 +103,6 @@ public class StdoutUploadStepPipelineIT {
       assertNotNull(run);
       jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
       dumpLog(LOGGER, run);
-    } catch (Exception e) {
-      throw e;
-    }
   }
 
   @AfterClass
