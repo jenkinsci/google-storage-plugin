@@ -93,20 +93,6 @@ public class ITUtil {
   }
 
   /**
-   * Retrieves the location set through environment variables.
-   *
-   * @return A Google Compute Resource Region (us-west1) or Zone (us-west1-a) string
-   */
-  static String getLocation() {
-    String location = System.getenv("GOOGLE_PROJECT_LOCATION");
-    if (location == null) {
-      location = System.getenv("GOOGLE_PROJECT_ZONE");
-    }
-    assertNotNull("GOOGLE_PROJECT_LOCATION env var must be set", location);
-    return location;
-  }
-
-  /**
    * Returns the credentialsId, which is the same as the projectId.
    *
    * @return the credentialdId
@@ -172,6 +158,7 @@ public class ITUtil {
   static void deleteFromBucket(ItemGroup itemGroup, String pattern)
       throws GeneralSecurityException, IOException {
     try {
+      // TODO: service client
       Storage service = getService(itemGroup, getCredentialsId());
       service.objects().delete(bucket, pattern).execute();
     } catch (GeneralSecurityException gse) {
@@ -183,6 +170,7 @@ public class ITUtil {
 
   /** Uploads item with path pattern to Google Cloud Storage bucket of name bucket. */
   static void uploadToBucket(ItemGroup itemGroup, String pattern) throws Exception {
+    // TODO: service client
     Storage service = getService(itemGroup, getCredentialsId());
     InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream(pattern);
     String contentType = URLConnection.guessContentTypeFromStream(stream);
@@ -198,13 +186,11 @@ public class ITUtil {
    */
   static EnvVars initializePipelineITEnvironment(String pattern, JenkinsRule jenkinsRule)
       throws Exception {
-    projectId = System.getenv("GOOGLE_PROJECT_ID");
     assertNotNull("GOOGLE_PROJECT_ID env var must be set", projectId);
-    bucket = System.getenv("GOOGLE_BUCKET");
     assertNotNull("GOOGLE_BUCKET env var must be set", bucket);
     String serviceAccountKeyJson = System.getenv("GOOGLE_CREDENTIALS");
     assertNotNull("GOOGLE_CREDENTIALS env var must be set", serviceAccountKeyJson);
-    String credentialsId = projectId;
+    String credentialsId = getCredentialsId();
     // TODO: this part will be part of credentialsUtil?
     ServiceAccountConfig sac = new StringJsonServiceAccountConfig(serviceAccountKeyJson);
 
