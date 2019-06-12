@@ -45,8 +45,8 @@ import org.kohsuke.stapler.StaplerRequest;
  */
 @RequiresDomain(StorageScopeRequirement.class)
 public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serializable {
-
   @Nonnull private StdoutUpload upload;
+  private final String credentialsId;
 
   @DataBoundConstructor
   public StdoutUploadStep(String credentialsId, String bucket, String logName) {
@@ -113,8 +113,6 @@ public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serial
     return credentialsId;
   }
 
-  private final String credentialsId;
-
   @Override
   public BuildStepMonitor getRequiredMonitorService() {
     return BuildStepMonitor.NONE;
@@ -135,11 +133,10 @@ public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serial
     }
   }
 
-  /** Descriptor for the class. */
+  /** Descriptor for {@link StdoutUploadStep} */
   @Extension
   @Symbol("googleStorageUpload")
   public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
-
     /** {@inheritDoc} */
     @Override
     public String getDisplayName() {
