@@ -24,19 +24,13 @@ import org.mockito.MockitoAnnotations;
 /** Tests for {@link StdoutUploadStep} */
 public class StdoutUploadStepTest {
   @Rule public JenkinsRule jenkins = new JenkinsRule();
-
   @Mock private GoogleRobotCredentials credentials;
-
   private GoogleCredential credential;
   @Mock private AbstractGoogleRobotCredentialsDescriptor descriptor;
-
   private final MockExecutor executor = new MockExecutor();
-
   private NotFoundException notFoundException = new NotFoundException();
-
   private static final String PROJECT_ID = "foo.com:project-build";
   private static final String CREDENTIALS_ID = "creds";
-
   private static final String BUCKET_NAME = "test-bucket-43";
   private static final String BUCKET_URI = "gs://" + BUCKET_NAME;
   private static final String LOG_NAME = "build-log.txt";
