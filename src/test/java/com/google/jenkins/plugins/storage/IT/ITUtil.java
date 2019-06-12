@@ -35,6 +35,9 @@ import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredent
 import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
 import com.google.jenkins.plugins.storage.StorageScopeRequirement;
 import com.google.jenkins.plugins.storage.StringJsonServiceAccountConfig;
+import com.google.jenkins.plugins.storage.client.ClientFactory;
+import com.google.jenkins.plugins.storage.client.StorageClient;
+import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.model.ItemGroup;
 import hudson.model.Run;
@@ -155,14 +158,9 @@ public class ITUtil {
    * @throws GeneralSecurityException
    * @throws IOException
    */
-  static void deleteFromBucket(ItemGroup itemGroup, String pattern)
-      throws GeneralSecurityException, IOException {
+  static void deleteFromBucket(ItemGroup itemGroup, String pattern) throws IOException {
     try {
-      // TODO: service client
-      Storage service = getService(itemGroup, getCredentialsId());
-      service.objects().delete(bucket, pattern).execute();
-    } catch (GeneralSecurityException gse) {
-      throw new GeneralSecurityException(gse);
+      getStorageClient(itemGroup).deleteFromBucket(bucket, pattern);
     } catch (IOException ioe) {
       throw new IOException(ioe);
     }
@@ -170,12 +168,12 @@ public class ITUtil {
 
   /**
    * Uploads item with path pattern to Google Cloud Storage bucket of name bucket.
+   *
    * @param itemGroup
    * @param pattern
    * @throws Exception
    */
-  static void uploadToBucket(ItemGroup itemGroup, String pattern) throws
-          Exception {
+  static void uploadToBucket(ItemGroup itemGroup, String pattern) throws Exception {
     // TODO: service client
     Storage service = getService(itemGroup, getCredentialsId());
     InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream(pattern);
@@ -213,5 +211,9 @@ public class ITUtil {
     envVars.put("PATTERN", pattern);
     jenkinsRule.jenkins.getGlobalNodeProperties().add(prop);
     return envVars;
+  }
+
+  static StorageClient getStorageClient(ItemGroup itemGroup) throws AbortException {
+    return new ClientFactory(itemGroup, getCredentialsId()).storageClient();
   }
 }
