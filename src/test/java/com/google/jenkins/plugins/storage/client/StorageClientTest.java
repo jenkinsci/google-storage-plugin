@@ -108,7 +108,6 @@ public class StorageClientTest {
           .thenReturn(insertCall);
       when(insertCall.setName(anyString())).thenReturn(insertCall);
     }
-
     if (deleteCall != null) {
       when(deleteCall.getBucket()).thenReturn(TEST_BUCKET);
       when(storage.objects().delete(anyString(), anyString())).thenReturn(deleteCall);
