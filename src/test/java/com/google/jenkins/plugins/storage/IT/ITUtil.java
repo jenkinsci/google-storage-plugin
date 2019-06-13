@@ -22,6 +22,7 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.google.api.client.http.InputStreamContent;
 import com.google.common.io.ByteStreams;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
 import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
@@ -110,12 +111,12 @@ public class ITUtil {
    *
    * @param itemGroup A handle to the Jenkins instance.
    * @param pattern Pattern to match object name to upload to bucket.
-   * @param callingClass Class with path to load the resource file.
+   * @param content InputStreamContent of desired file to upload.
    * @throws IOException If there was in issue making the upload API call to GCS.
    */
-  static void uploadToBucket(ItemGroup itemGroup, String pattern, Class callingClass)
+  static void uploadToBucket(ItemGroup itemGroup, String pattern, InputStreamContent content)
       throws IOException {
-    getStorageClient(itemGroup).uploadToBucket(pattern, bucket, callingClass);
+    getStorageClient(itemGroup).uploadToBucket(pattern, bucket, content);
   }
 
   /**

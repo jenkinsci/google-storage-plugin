@@ -24,8 +24,12 @@ import static com.google.jenkins.plugins.storage.IT.ITUtil.loadResource;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.uploadToBucket;
 import static org.junit.Assert.assertNotNull;
 
+import com.google.api.client.http.InputStreamContent;
+import com.google.jenkins.plugins.storage.DownloadStep;
 import hudson.EnvVars;
 import hudson.model.Result;
+import java.io.InputStream;
+import java.net.URLConnection;
 import java.util.logging.Logger;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -53,7 +57,10 @@ public class DownloadStepPipelineIT {
     envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
 
     // create file to download
-    uploadToBucket(jenkinsRule.jenkins.get(), pattern, DownloadStepPipelineIT.class);
+    InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream(pattern);
+    String contentType = URLConnection.guessContentTypeFromStream(stream);
+    InputStreamContent content = new InputStreamContent(contentType, stream);
+    uploadToBucket(jenkinsRule.jenkins.get(), pattern, content);
   }
 
   @Test
