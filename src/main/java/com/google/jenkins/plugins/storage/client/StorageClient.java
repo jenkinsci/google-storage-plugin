@@ -2,6 +2,7 @@ package com.google.jenkins.plugins.storage.client;
 
 import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.storage.Storage;
+import com.google.api.services.storage.model.StorageObject;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import java.io.IOException;
@@ -42,15 +43,15 @@ public class StorageClient {
    * @param content InputStreamContent of desired file to upload.
    * @throws Exception
    */
-  public void uploadToBucket(String pattern, String bucket, InputStreamContent content)
+  public StorageObject uploadToBucket(String pattern, String bucket, InputStreamContent content)
       throws IOException {
     Preconditions.checkNotNull(content);
     Preconditions.checkArgument(!Strings.isNullOrEmpty(bucket));
     Preconditions.checkArgument(!Strings.isNullOrEmpty(pattern));
-    uploadToBucket(bucket, content).setName(pattern);
+    return uploadToBucket(bucket, content).setName(pattern).execute();
   }
 
-  private Storage.Objects.Insert uploadToBucket(String bucket, InputStreamContent content)
+  public Storage.Objects.Insert uploadToBucket(String bucket, InputStreamContent content)
       throws IOException {
     return storage.objects().insert(bucket, null, content);
   }
