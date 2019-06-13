@@ -3,9 +3,8 @@ package com.google.jenkins.plugins.storage.client;
 import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.storage.Storage;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 
 public class StorageClient {
@@ -30,7 +29,9 @@ public class StorageClient {
    * @throws IOException
    */
   public void deleteFromBucket(String bucket, String pattern) throws IOException {
-    storage.objects().delete(bucket, pattern);
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(bucket));
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(pattern));
+    storage.objects().delete(bucket, pattern).execute();
   }
 
   /**
@@ -38,13 +39,19 @@ public class StorageClient {
    *
    * @param pattern Pattern to match object name to upload to bucket.
    * @param bucket Name of the bucket to upload to.
-   * @param callingClass Class with path to load the resource file.
+   * @param content InputStreamContent of desired file to upload.
    * @throws Exception
    */
-  public void uploadToBucket(String pattern, String bucket, Class callingClass) throws IOException {
-    InputStream stream = callingClass.getResourceAsStream(pattern);
-    String contentType = URLConnection.guessContentTypeFromStream(stream);
-    InputStreamContent content = new InputStreamContent(contentType, stream);
-    storage.objects().insert(bucket, null, content).setName(pattern).execute();
+  public void uploadToBucket(String pattern, String bucket, InputStreamContent content)
+      throws IOException {
+    Preconditions.checkNotNull(content);
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(bucket));
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(pattern));
+    uploadToBucket(bucket, content).setName(pattern);
+  }
+
+  private Storage.Objects.Insert uploadToBucket(String bucket, InputStreamContent content)
+      throws IOException {
+    return storage.objects().insert(bucket, null, content);
   }
 }
