@@ -59,7 +59,8 @@ public class StorageClientTest {
   @Test
   public void testInsertObjectReturnsCorrectly() throws IOException {
     StorageClient storageClient = setUpInsertClient(null);
-    Storage.Objects.Insert insert = storageClient.uploadToBucket(TEST_BUCKET, TEST_CONTENT);
+    Storage.Objects.Insert insert =
+        storageClient.uploadToBucketRequest(TEST_PATTERN, TEST_BUCKET, TEST_CONTENT);
     assertNotNull(insert);
     assertEquals(TEST_BUCKET, insert.getBucket());
   }
@@ -68,15 +69,15 @@ public class StorageClientTest {
   private static StorageClient setUpClient(
       Storage.Objects.Insert insertCall, Storage.Objects.Delete deleteCall) throws IOException {
     Storage storage = Mockito.mock(Storage.class);
-    when(insertCall.getBucket()).thenReturn(TEST_BUCKET);
     Storage.Objects objects = Mockito.mock(Storage.Objects.class);
     when(storage.objects()).thenReturn(objects);
 
-    //    // think about this more... i think we have two different kind of calls here
-    when(objects.insert(anyString(), ArgumentMatchers.isNull(), any(InputStreamContent.class)))
-        .thenReturn(insertCall);
-    //      when(insertCall.setName(anyString())).thenReturn(insertCall);
-    //      when(insertCall.execute()).thenReturn
+    if (insertCall != null) {
+      when(insertCall.getBucket()).thenReturn(TEST_BUCKET);
+      when(objects.insert(anyString(), ArgumentMatchers.isNull(), any(InputStreamContent.class)))
+              .thenReturn(insertCall);
+      when(insertCall.setName(anyString())).thenReturn(insertCall);
+    }
 
     //    if (deleteCall != null) {
     //      when(storage.objects().delete(anyString(), anyString())).thenReturn(deleteCall);
@@ -86,15 +87,20 @@ public class StorageClientTest {
   // set up object client? call is insert or delete
   // how to test something that doesn't return anything? ask joseph tmr
 
-  private static StorageClient setUpInsertClient(IOException ioException) throws IOException {
-    Storage.Objects.Insert insert = Mockito.mock(Storage.Objects.Insert.class);
-    StorageClient storage = setUpClient(insert, null);
+  private static StorageClient setUpInsertClient() throws IOException {
+    Storage.Objects.Insert insertCall = Mockito.mock(Storage.Objects.Insert
+            .class);
+    StorageClient storage = setUpClient(insertCall, null);
     //    if (ioException != null) {
     //      when(insert.execute()).thenThrow(ioException);
     //    } else {
     //      when(insert.execute()).thenReturn(new StorageObject().setBucket(TEST_BUCKET));
     //    }
     return storage;
+  }
+
+  private static StorageClient setUpDeleteClient() throws IOException {
+//    Storage.Objects.Delete delete =
   }
 
   // TODO: need another instance where i just test Storage.objects.insert

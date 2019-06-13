@@ -48,11 +48,11 @@ public class StorageClient {
     Preconditions.checkNotNull(content);
     Preconditions.checkArgument(!Strings.isNullOrEmpty(bucket));
     Preconditions.checkArgument(!Strings.isNullOrEmpty(pattern));
-    return uploadToBucket(bucket, content).setName(pattern).execute();
+    return uploadToBucketRequest(pattern, bucket, content).execute();
   }
 
-  public Storage.Objects.Insert uploadToBucket(String bucket, InputStreamContent content)
-      throws IOException {
-    return storage.objects().insert(bucket, null, content);
+  public Storage.Objects.Insert uploadToBucketRequest(
+      String pattern, String bucket, InputStreamContent content) throws IOException {
+    return storage.objects().insert(bucket, null, content).setName(pattern);
   }
 }
