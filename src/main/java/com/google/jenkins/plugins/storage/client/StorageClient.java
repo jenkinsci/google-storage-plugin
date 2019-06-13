@@ -32,9 +32,13 @@ public class StorageClient {
   public void deleteFromBucket(String bucket, String pattern) throws IOException {
     Preconditions.checkArgument(!Strings.isNullOrEmpty(bucket));
     Preconditions.checkArgument(!Strings.isNullOrEmpty(pattern));
-    storage.objects().delete(bucket, pattern).execute();
+    deleteFromBucketRequest(bucket, pattern).execute();
   }
 
+  public Storage.Objects.Delete deleteFromBucketRequest(String bucket, String pattern)
+      throws IOException {
+    return storage.objects().delete(bucket, pattern);
+  }
   /**
    * Uploads item with path pattern to Google Cloud Storage bucket of name bucket.
    *

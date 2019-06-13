@@ -26,46 +26,52 @@ public class StorageClientTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void testInsertErrorWithNullPattern() throws IOException {
-    StorageClient storageClient = setUpInsertClient(null);
+    StorageClient storageClient = setUpInsertClient();
     storageClient.uploadToBucket(null, TEST_BUCKET, TEST_CONTENT);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testInsertErrorWithNullBucket() throws IOException {
-    StorageClient storageClient = setUpInsertClient(null);
+    StorageClient storageClient = setUpInsertClient();
     storageClient.uploadToBucket(TEST_PATTERN, null, TEST_CONTENT);
   }
 
   @Test(expected = NullPointerException.class)
   public void testInsertErrorWithNullContent() throws IOException {
-    StorageClient storageClient = setUpInsertClient(null);
+    StorageClient storageClient = setUpInsertClient();
     storageClient.uploadToBucket(TEST_PATTERN, TEST_BUCKET, null);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testInsertErrorWithEmptyPattern() throws IOException {
-    StorageClient storageClient = setUpInsertClient(null);
+    StorageClient storageClient = setUpInsertClient();
     storageClient.uploadToBucket("", TEST_BUCKET, TEST_CONTENT);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testInsertErrorWithEmptyBucket() throws IOException {
-    StorageClient storageClient = setUpInsertClient(null);
+    StorageClient storageClient = setUpInsertClient();
     storageClient.uploadToBucket(TEST_PATTERN, "", TEST_CONTENT);
   }
 
-  // TODO; test insert returns correct StorageObject after setname and execute
-  // pass uploadToBucket a Storage.Objects.Insert instead so that I can mock it
   @Test
   public void testInsertObjectReturnsCorrectly() throws IOException {
-    StorageClient storageClient = setUpInsertClient(null);
-    Storage.Objects.Insert insert =
+    StorageClient storageClient = setUpInsertClient();
+    Storage.Objects.Insert insertRequest =
         storageClient.uploadToBucketRequest(TEST_PATTERN, TEST_BUCKET, TEST_CONTENT);
-    assertNotNull(insert);
-    assertEquals(TEST_BUCKET, insert.getBucket());
+    assertNotNull(insertRequest);
+    assertEquals(TEST_BUCKET, insertRequest.getBucket());
   }
 
-  // set up client
+  @Test
+  public void testDeleteObjectReturnscorrectly() throws IOException {
+    StorageClient storageClient = setUpDeleteClient();
+    Storage.Objects.Delete deleteRequest =
+        storageClient.deleteFromBucketRequest(TEST_BUCKET, TEST_PATTERN);
+    assertNotNull(deleteRequest);
+    assertEquals(TEST_BUCKET, deleteRequest.getBucket());
+  }
+
   private static StorageClient setUpClient(
       Storage.Objects.Insert insertCall, Storage.Objects.Delete deleteCall) throws IOException {
     Storage storage = Mockito.mock(Storage.class);
@@ -75,34 +81,26 @@ public class StorageClientTest {
     if (insertCall != null) {
       when(insertCall.getBucket()).thenReturn(TEST_BUCKET);
       when(objects.insert(anyString(), ArgumentMatchers.isNull(), any(InputStreamContent.class)))
-              .thenReturn(insertCall);
+          .thenReturn(insertCall);
       when(insertCall.setName(anyString())).thenReturn(insertCall);
     }
 
-    //    if (deleteCall != null) {
-    //      when(storage.objects().delete(anyString(), anyString())).thenReturn(deleteCall);
-    //    }
+    if (deleteCall != null) {
+      when(deleteCall.getBucket()).thenReturn(TEST_BUCKET);
+      when(storage.objects().delete(anyString(), anyString())).thenReturn(deleteCall);
+    }
     return new StorageClient(storage);
   }
-  // set up object client? call is insert or delete
-  // how to test something that doesn't return anything? ask joseph tmr
 
   private static StorageClient setUpInsertClient() throws IOException {
-    Storage.Objects.Insert insertCall = Mockito.mock(Storage.Objects.Insert
-            .class);
+    Storage.Objects.Insert insertCall = Mockito.mock(Storage.Objects.Insert.class);
     StorageClient storage = setUpClient(insertCall, null);
-    //    if (ioException != null) {
-    //      when(insert.execute()).thenThrow(ioException);
-    //    } else {
-    //      when(insert.execute()).thenReturn(new StorageObject().setBucket(TEST_BUCKET));
-    //    }
     return storage;
   }
 
   private static StorageClient setUpDeleteClient() throws IOException {
-//    Storage.Objects.Delete delete =
+    Storage.Objects.Delete deleteCall = Mockito.mock(Storage.Objects.Delete.class);
+    StorageClient storage = setUpClient(null, deleteCall);
+    return storage;
   }
-
-  // TODO: need another instance where i just test Storage.objects.insert
-  // .testPattern
 }
