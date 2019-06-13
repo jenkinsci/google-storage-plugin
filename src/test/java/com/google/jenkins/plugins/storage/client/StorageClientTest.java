@@ -63,8 +63,32 @@ public class StorageClientTest {
     assertEquals(TEST_BUCKET, insertRequest.getBucket());
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void testDeleteErrorWithNullPattern() throws IOException {
+    StorageClient storageClient = setUpInsertClient();
+    storageClient.deleteFromBucket(TEST_BUCKET, null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testDeleteErrorWithNullBucket() throws IOException {
+    StorageClient storageClient = setUpInsertClient();
+    storageClient.deleteFromBucket(null, TEST_PATTERN);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testDeleteErrorWithEmptyPattern() throws IOException {
+    StorageClient storageClient = setUpInsertClient();
+    storageClient.deleteFromBucket(TEST_BUCKET, "");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testDeleteErrorWithEmptyBucket() throws IOException {
+    StorageClient storageClient = setUpInsertClient();
+    storageClient.deleteFromBucket("", TEST_PATTERN);
+  }
+
   @Test
-  public void testDeleteObjectReturnscorrectly() throws IOException {
+  public void testDeleteObjectReturnsCorrectly() throws IOException {
     StorageClient storageClient = setUpDeleteClient();
     Storage.Objects.Delete deleteRequest =
         storageClient.deleteFromBucketRequest(TEST_BUCKET, TEST_PATTERN);
