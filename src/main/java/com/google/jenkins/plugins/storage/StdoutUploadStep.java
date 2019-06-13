@@ -25,7 +25,8 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
-import hudson.tasks.Builder;
+import hudson.tasks.Publisher;
+import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
 import java.io.IOException;
 import java.io.Serializable;
@@ -43,7 +44,7 @@ import org.kohsuke.stapler.StaplerRequest;
  * instead of a regular post step.
  */
 @RequiresDomain(StorageScopeRequirement.class)
-public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serializable {
+public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Serializable {
   private StdoutUpload upload;
   private final String credentialsId;
 
@@ -51,8 +52,12 @@ public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serial
   public StdoutUploadStep(String credentialsId, String bucket, String logName) {
     this(credentialsId, bucket, null, logName);
   }
-
-  /** Construct the build log upload step. */
+  /**
+   * Construct the Build log uploader to use the provided credentials to upload build artifacts.
+   *
+   * @param credentialsId The credentials to utilize for authenticating with GCS
+   * @param uploads The list of uploads the user has requested be done
+   */
   public StdoutUploadStep(
       String credentialsId, String bucket, @Nullable UploadModule module, String logName) {
     this.credentialsId = credentialsId;
@@ -134,8 +139,8 @@ public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serial
 
   /** Descriptor for {@link StdoutUploadStep} */
   @Extension
-  @Symbol("googleStorageUpload")
-  public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
+  @Symbol("googleStorageBuildLogUpload")
+  public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
     /** {@inheritDoc} */
     @Override
     public String getDisplayName() {
@@ -148,18 +153,18 @@ public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serial
       return true;
     }
 
-    @Override
-    public Builder newInstance(StaplerRequest req, JSONObject formData) throws FormException {
-      // Since the config form lists the optional parameter pathPrefix as
-      // inline, it will be passed through even if stripPathPrefix is false.
-      // This might cause problems if the user, for example, fills in the field
-      // and then unchecks the checkbox. So, explicitly remove pathPrefix
-      // whenever stripPathPrefix is false.
-      if (Boolean.FALSE.equals(formData.remove("stripPathPrefix"))) {
-        formData.remove("pathPrefix");
-      }
-      return super.newInstance(req, formData);
-    }
+    //    @Override
+    //    public Builder newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+    //      // Since the config form lists the optional parameter pathPrefix as
+    //      // inline, it will be passed through even if stripPathPrefix is false.
+    //      // This might cause problems if the user, for example, fills in the field
+    //      // and then unchecks the checkbox. So, explicitly remove pathPrefix
+    //      // whenever stripPathPrefix is false.
+    //      if (Boolean.FALSE.equals(formData.remove("stripPathPrefix"))) {
+    //        formData.remove("pathPrefix");
+    //      }
+    //      return super.newInstance(req, formData);
+    //    }
 
     /** This callback validates the {@code bucketNameWithVars} input field's values. */
     public FormValidation doCheckBucket(@QueryParameter final String bucket) throws IOException {
@@ -169,6 +174,19 @@ public class StdoutUploadStep extends Builder implements SimpleBuildStep, Serial
     public static FormValidation doCheckLogName(@QueryParameter final String logName)
         throws IOException {
       return new StdoutUpload.DescriptorImpl().doCheckLogName(logName);
+    }
+
+    @Override
+    public Publisher newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+      // Since the config form lists the optional parameter pathPrefix as
+      // inline, it will be passed through even if stripPathPrefix is false.
+      // This might cause problems if the user, for example, fills in the field
+      // and then unchecks the checkbox. So, explicitly remove pathPrefix
+      // whenever stripPathPrefix is false.
+      if (Boolean.FALSE.equals(formData.remove("stripPathPrefix"))) {
+        formData.remove("pathPrefix");
+      }
+      return super.newInstance(req, formData);
     }
   }
 }

@@ -94,7 +94,7 @@ public class StdoutUploadStepTest {
         Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
     executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(LOG_NAME));
 
-    project.getBuildersList().add(step);
+    project.getPublishersList().add(step);
 
     FreeStyleBuild build = project.scheduleBuild2(0).get();
 

@@ -10,8 +10,7 @@ import java.io.IOException;
 /**
  * Client for communicating with the Google GCS API.
  *
- * @see <a href="https://cloud.google.com/storage/docs/json_api/v1/">
- *     Cloud Storage</a>
+ * @see <a href="https://cloud.google.com/storage/docs/json_api/v1/">Cloud Storage</a>
  */
 public class StorageClient {
   private final Storage storage;
