@@ -18,9 +18,6 @@ limitations under the License.
          xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
          xmlns:a="/lib/auth">
 
-    <!-- This step is intended to be a post-build step -->
-    <h3>${%text}</h3>
-
     <a:credentials title="${%Google Credentials}" field="credentialsId" />
 
     <!-- Allow the user to specify a glob containing build variables
