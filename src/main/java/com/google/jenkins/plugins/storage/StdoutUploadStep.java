@@ -135,11 +135,6 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
   @Override
   public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
       throws IOException {
-    // setForFailedJobs was set to true in the constructor. However,
-    // some jobs might have been created before that bug fix.
-    // For those, set this here as well.
-    upload.setForFailedJobs(true);
-
     try {
       upload.perform(getCredentialsId(), run, workspace, listener);
     } catch (UploadException e) {
@@ -163,7 +158,7 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
       return true;
     }
 
-    /** This callback validates the {@code bucketNameWithVars} input field's values. */
+    /** This callback validates the {@code bucket} input field's values. */
     public FormValidation doCheckBucket(@QueryParameter final String bucket) throws IOException {
       return StdoutUpload.DescriptorImpl.staticDoCheckBucket(bucket);
     }

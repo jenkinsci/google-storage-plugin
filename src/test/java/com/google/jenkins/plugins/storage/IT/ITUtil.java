@@ -23,6 +23,8 @@ import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.google.api.client.http.InputStreamContent;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
 import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
@@ -91,6 +93,10 @@ public class ITUtil {
     return projectId;
   }
 
+  static String getBucket() {
+    return bucket;
+  }
+
   /**
    * Delete object matching pattern from Google Cloud Storage bucket of name bucket.
    *
@@ -130,6 +136,7 @@ public class ITUtil {
     String serviceAccountKeyJson = System.getenv("GOOGLE_CREDENTIALS");
     assertNotNull("GOOGLE_CREDENTIALS env var must be set", serviceAccountKeyJson);
     String credentialsId = getCredentialsId();
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(pattern));
 
     ServiceAccountConfig sac = new StringJsonServiceAccountConfig(serviceAccountKeyJson);
     Credentials c = (Credentials) new GoogleRobotPrivateKeyCredentials(credentialsId, sac, null);

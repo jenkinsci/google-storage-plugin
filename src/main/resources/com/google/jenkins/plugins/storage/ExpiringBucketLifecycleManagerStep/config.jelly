@@ -17,6 +17,7 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
          xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
          xmlns:a="/lib/auth">
+    <a:credentials title="${%Google Credentials}" field="credentialsId" />
     <!-- Allow the user to specify the name of a bucket containing build
 variables to store the uploaded files -->
     <f:entry title="${%Bucket name}" field="bucket"
