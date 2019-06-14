@@ -100,9 +100,8 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
 
   /**
    * @param pathPrefix The path prefix that will be stripped from uploaded files. May be null if no
-   *     path prefix needs to be stripped.
-   *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
-   *     automatically added if it is missing.
+   *     path prefix needs to be stripped. Filenames that do not start with this prefix will not be
+   *     modified. Trailing slash is automatically added if it is missing.
    */
   @DataBoundSetter
   public void setPathPrefix(@Nullable String pathPrefix) {
@@ -144,7 +143,7 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
     try {
       upload.perform(getCredentialsId(), run, workspace, listener);
     } catch (UploadException e) {
-      throw new IOException("Could not perform upload", e);
+      throw new IOException(Messages.StdoutUpload_FailToUpload(), e);
     }
   }
 
