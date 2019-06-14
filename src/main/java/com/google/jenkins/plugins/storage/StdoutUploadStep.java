@@ -30,6 +30,7 @@ import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
@@ -54,7 +55,7 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
    */
   @DataBoundConstructor
   public StdoutUploadStep(String credentialsId, String bucket, String logName) {
-    this(credentialsId, bucket, null, logName);
+    this(credentialsId, bucket, Optional.ofNullable(null), logName);
   }
 
   /**
@@ -65,11 +66,10 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
    * @param module Helper class for connecting to the GCS API.
    * @param logName Name of log file to store to GCS bucket.
    */
-  // TODO: make UploadModule Optional lol
   public StdoutUploadStep(
-      String credentialsId, String bucket, @Nullable UploadModule module, String logName) {
+      String credentialsId, String bucket, Optional<UploadModule> module, String logName) {
     this.credentialsId = credentialsId;
-    upload = new StdoutUpload(bucket, module, logName, null);
+    upload = new StdoutUpload(bucket, module.orElse(null), logName, null);
   }
 
   /**

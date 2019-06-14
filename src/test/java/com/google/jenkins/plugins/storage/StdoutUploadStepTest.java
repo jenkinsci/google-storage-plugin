@@ -14,6 +14,7 @@ import com.google.jenkins.plugins.util.NotFoundException;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.TaskListener;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -79,7 +80,8 @@ public class StdoutUploadStepTest {
   @Test
   public void testBuild() throws Exception {
     StdoutUploadStep step =
-        new StdoutUploadStep(CREDENTIALS_ID, BUCKET_URI, new MockUploadModule(executor), LOG_NAME);
+        new StdoutUploadStep(
+            CREDENTIALS_ID, BUCKET_URI, Optional.of(new MockUploadModule(executor)), LOG_NAME);
 
     FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
 
