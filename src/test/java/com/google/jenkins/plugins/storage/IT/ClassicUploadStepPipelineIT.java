@@ -39,9 +39,6 @@ public class ClassicUploadStepPipelineIT {
   private static final Logger LOGGER =
       Logger.getLogger(ClassicUploadStepPipelineIT.class.getName());
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
-  private static String projectId;
-  private static String credentialsId;
-  private static String bucket;
   private static String pattern = "build_environment.txt";
 
   @BeforeClass

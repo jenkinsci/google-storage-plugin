@@ -99,11 +99,7 @@ public class ITUtil {
    * @throws IOException If there was an issue making the delete API call to GCS.
    */
   static void deleteFromBucket(ItemGroup itemGroup, String pattern) throws IOException {
-    try {
-      getStorageClient(itemGroup).deleteFromBucket(bucket, pattern);
-    } catch (IOException ioe) {
-      throw new IOException(ioe);
-    }
+    getStorageClient(itemGroup).deleteFromBucket(bucket, pattern);
   }
 
   /**

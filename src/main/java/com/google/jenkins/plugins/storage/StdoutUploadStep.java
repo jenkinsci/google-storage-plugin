@@ -39,32 +39,43 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-/**
- * Build Step wrapper for StdoutUpload to be run in pipelines. Should ideally be run post build
- * instead of a regular post step.
- */
+/** Build Step wrapper for {@link StdoutUpload} to be run in pipelines. Run only in post step. */
 @RequiresDomain(StorageScopeRequirement.class)
 public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Serializable {
   private StdoutUpload upload;
   private final String credentialsId;
 
+  /**
+   * Constructs a new {@link StdoutUploadStep}.
+   *
+   * @param credentialsId The credentials to utilize for authenticating with GCS.
+   * @param bucket GCS bucket to upload build artifacts to.
+   * @param logName Name of log file to store to GCS bucket.
+   */
   @DataBoundConstructor
   public StdoutUploadStep(String credentialsId, String bucket, String logName) {
     this(credentialsId, bucket, null, logName);
   }
+
   /**
-   * Construct the Build log uploader to use the provided credentials to upload build artifacts.
+   * Construct the StdoutUpload uploader to use the provided credentials to upload build artifacts.
    *
-   * @param credentialsId The credentials to utilize for authenticating with GCS
-   * @param uploads The list of uploads the user has requested be done
+   * @param credentialsId The credentials to utilize for authenticating with GCS.
+   * @param bucket GCS bucket to upload build artifacts to.
+   * @param module Helper class for connecting to the GCS API.
+   * @param logName Name of log file to store to GCS bucket.
    */
+  // TODO: make UploadModule Optional lol
   public StdoutUploadStep(
       String credentialsId, String bucket, @Nullable UploadModule module, String logName) {
     this.credentialsId = credentialsId;
     upload = new StdoutUpload(bucket, module, logName, null);
   }
 
-  /** Whether to surface the file being uploaded to anyone with the link. */
+  /**
+   * @param sharedPublicly Whether to indicate in metadata that the file should be viewable inline
+   *     in web browsers, rather than requiring it to be downloaded first.
+   */
   @DataBoundSetter
   public void setSharedPublicly(boolean sharedPublicly) {
     upload.setSharedPublicly(sharedPublicly);
@@ -75,8 +86,8 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
   }
 
   /**
-   * Whether to indicate in metadata that the file should be viewable inline in web browsers, rather
-   * than requiring it to be downloaded first.
+   * @param showInline Whether to indicate in metadata that the file should be viewable inline in
+   *     web browsers, rather than requiring it to be downloaded first.
    */
   @DataBoundSetter
   public void setShowInline(boolean showInline) {
@@ -88,11 +99,10 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
   }
 
   /**
-   * The path prefix that will be stripped from uploaded files. May be null if no path prefix needs
-   * to be stripped.
-   *
-   * <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
-   * automatically added if it is missing.
+   * @param pathPrefix The path prefix that will be stripped from uploaded files. May be null if no
+   *     path prefix needs to be stripped.
+   *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
+   *     automatically added if it is missing.
    */
   @DataBoundSetter
   public void setPathPrefix(@Nullable String pathPrefix) {
@@ -112,16 +122,17 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
     return upload.getBucket();
   }
 
-  /** The unique ID for the credentials we are using to authenticate with GCS. */
   public String getCredentialsId() {
     return credentialsId;
   }
 
+  /** {@inheritDoc} * */
   @Override
   public BuildStepMonitor getRequiredMonitorService() {
     return BuildStepMonitor.NONE;
   }
 
+  /** {@inheritDoc} * */
   @Override
   public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
       throws IOException {
@@ -153,19 +164,6 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
       return true;
     }
 
-    //    @Override
-    //    public Builder newInstance(StaplerRequest req, JSONObject formData) throws FormException {
-    //      // Since the config form lists the optional parameter pathPrefix as
-    //      // inline, it will be passed through even if stripPathPrefix is false.
-    //      // This might cause problems if the user, for example, fills in the field
-    //      // and then unchecks the checkbox. So, explicitly remove pathPrefix
-    //      // whenever stripPathPrefix is false.
-    //      if (Boolean.FALSE.equals(formData.remove("stripPathPrefix"))) {
-    //        formData.remove("pathPrefix");
-    //      }
-    //      return super.newInstance(req, formData);
-    //    }
-
     /** This callback validates the {@code bucketNameWithVars} input field's values. */
     public FormValidation doCheckBucket(@QueryParameter final String bucket) throws IOException {
       return StdoutUpload.DescriptorImpl.staticDoCheckBucket(bucket);
@@ -176,6 +174,7 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
       return new StdoutUpload.DescriptorImpl().doCheckLogName(logName);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Publisher newInstance(StaplerRequest req, JSONObject formData) throws FormException {
       // Since the config form lists the optional parameter pathPrefix as

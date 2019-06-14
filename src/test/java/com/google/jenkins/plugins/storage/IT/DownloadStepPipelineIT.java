@@ -45,9 +45,6 @@ public class DownloadStepPipelineIT {
   private static final Logger LOGGER = Logger.getLogger(DownloadStepPipelineIT.class.getName());
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
   private static EnvVars envVars;
-  //  private static String projectId;
-  //  private static String credentialsId;
-  //  private static String bucket;
   private static String pattern = "downloadstep_test.txt";
 
   @BeforeClass
