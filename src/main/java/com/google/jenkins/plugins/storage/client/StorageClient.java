@@ -80,4 +80,26 @@ public class StorageClient {
       String pattern, String bucket, InputStreamContent content) throws IOException {
     return storage.objects().insert(bucket, null, content).setName(pattern);
   }
+
+  /**
+   * Delete bucket from GCS with name bucket. Bucket must be empty.
+   *
+   * @param bucket Name of GCS bucket to delete.
+   * @throws IOException If there was an issue calling the GCS API.
+   */
+  public void deleteBucket(String bucket) throws IOException {
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(bucket));
+    deleteBucketRequest(bucket).execute();
+  }
+
+  /**
+   * Helper method to return the delete request.
+   *
+   * @param bucket Name of GCS bucket to delete.
+   * @return Delete request.
+   * @throws IOException If there was an issue calling the GCS API.
+   */
+  public Storage.Buckets.Delete deleteBucketRequest(String bucket) throws IOException {
+    return storage.buckets().delete(bucket);
+  }
 }

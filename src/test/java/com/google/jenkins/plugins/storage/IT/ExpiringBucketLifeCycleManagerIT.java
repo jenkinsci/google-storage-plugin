@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -24,11 +25,11 @@ public class ExpiringBucketLifeCycleManagerIT {
   private static final Logger LOGGER =
       Logger.getLogger(ClassicUploadStepPipelineIT.class.getName());
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
-  public static String credentialsId;
+  private static String credentialsId;
   // This IT does not need to make explicit use of pattern.
-  public static final String pattern = "test";
-  public static String bucket;
-  public static StorageClient storageClient;
+  private static final String pattern = "test";
+  private static String bucket;
+  private static StorageClient storageClient;
   private static EnvVars envVars;
 
   @BeforeClass
@@ -38,7 +39,6 @@ public class ExpiringBucketLifeCycleManagerIT {
     envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
     credentialsId = getCredentialsId();
     storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
-
     // Create new test bucket to change lifecycle of objects on.
     // TODO: every class has dummy bucket?
     bucket = formatRandomName("test");
@@ -76,5 +76,10 @@ public class ExpiringBucketLifeCycleManagerIT {
     assertNotNull(run);
     jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
     dumpLog(LOGGER, run);
+  }
+
+  @AfterClass
+  public static void cleanUp() throws Exception {
+    storageClient.deleteBucket(bucket);
   }
 }
