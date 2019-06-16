@@ -16,16 +16,18 @@
 
 package com.google.jenkins.plugins.storage.IT;
 
-import static com.google.jenkins.plugins.storage.IT.ITUtil.deleteFromBucket;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.dumpLog;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.formatRandomName;
+import static com.google.jenkins.plugins.storage.IT.ITUtil.getBucket;
+import static com.google.jenkins.plugins.storage.IT.ITUtil.getCredentialsId;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.initializePipelineITEnvironment;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.loadResource;
-import static com.google.jenkins.plugins.storage.IT.ITUtil.uploadToBucket;
 import static org.junit.Assert.assertNotNull;
 
 import com.google.api.client.http.InputStreamContent;
 import com.google.jenkins.plugins.storage.DownloadStep;
+import com.google.jenkins.plugins.storage.client.ClientFactory;
+import com.google.jenkins.plugins.storage.client.StorageClient;
 import hudson.EnvVars;
 import hudson.model.Result;
 import java.io.InputStream;
@@ -44,20 +46,26 @@ import org.jvnet.hudson.test.JenkinsRule;
 public class DownloadStepPipelineIT {
   private static final Logger LOGGER = Logger.getLogger(DownloadStepPipelineIT.class.getName());
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
+  private static String credentialsId;
+  private static final String pattern = "downloadstep_test.txt";
+  private static String bucket;
+  private static StorageClient storageClient;
   private static EnvVars envVars;
-  private static String pattern = "downloadstep_test.txt";
 
   @BeforeClass
   public static void init() throws Exception {
     LOGGER.info("Initializing DownloadStepPipelineIT");
 
     envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
+    credentialsId = getCredentialsId();
+    storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
+    bucket = getBucket();
 
     // create file to download
     InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream(pattern);
     String contentType = URLConnection.guessContentTypeFromStream(stream);
     InputStreamContent content = new InputStreamContent(contentType, stream);
-    uploadToBucket(jenkinsRule.jenkins.get(), pattern, content);
+    storageClient.uploadToBucket(pattern, bucket, content);
   }
 
   @Test
@@ -89,6 +97,6 @@ public class DownloadStepPipelineIT {
 
   @AfterClass
   public static void cleanUp() throws Exception {
-    deleteFromBucket(jenkinsRule.jenkins.get(), pattern);
+    storageClient.deleteFromBucket(bucket, pattern);
   }
 }

@@ -40,23 +40,22 @@ public class ExpiringBucketLifeCycleManagerIT {
     credentialsId = getCredentialsId();
     storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
     // Create new test bucket to change lifecycle of objects on.
-    // TODO: every class has dummy bucket?
     bucket = formatRandomName("test");
     envVars.put("BUCKET", bucket);
   }
 
   @Test
   public void testClassicUploadStepSuccessful() throws Exception {
-      WorkflowJob testProject =
-          jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
+    WorkflowJob testProject =
+        jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
-      testProject.setDefinition(
-          new CpsFlowDefinition(
-              loadResource(getClass(), "expiringBucketLifecycleManagerStepPipeline.groovy"), true));
-      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-      assertNotNull(run);
-      jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
-      dumpLog(LOGGER, run);
+    testProject.setDefinition(
+        new CpsFlowDefinition(
+            loadResource(getClass(), "expiringBucketLifecycleManagerStepPipeline.groovy"), true));
+    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+    assertNotNull(run);
+    jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
+    dumpLog(LOGGER, run);
   }
 
   @Test

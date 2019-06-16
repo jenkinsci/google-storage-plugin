@@ -132,6 +132,7 @@ public class ITUtil {
   static EnvVars initializePipelineITEnvironment(String pattern, JenkinsRule jenkinsRule)
       throws Exception {
     assertNotNull("GOOGLE_PROJECT_ID env var must be set", projectId);
+    // This bucket is only used for DownloadStepPipelineIT to download objects from.
     assertNotNull("GOOGLE_BUCKET env var must be set", bucket);
     String serviceAccountKeyJson = System.getenv("GOOGLE_CREDENTIALS");
     assertNotNull("GOOGLE_CREDENTIALS env var must be set", serviceAccountKeyJson);

@@ -61,17 +61,16 @@ public class ClassicUploadStepPipelineIT {
 
   @Test
   public void testClassicUploadStepSuccessful() throws Exception {
-      WorkflowJob testProject =
-          jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
+    WorkflowJob testProject =
+        jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
-      testProject.setDefinition(
-          new CpsFlowDefinition(
-              loadResource(getClass(), "classicUploadStepPipeline.groovy"), true));
-      WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-      assertNotNull(run);
-      jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
-      dumpLog(LOGGER, run);
-      storageClient.deleteFromBucket(bucket, pattern);
+    testProject.setDefinition(
+        new CpsFlowDefinition(loadResource(getClass(), "classicUploadStepPipeline.groovy"), true));
+    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+    assertNotNull(run);
+    jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
+    dumpLog(LOGGER, run);
+    storageClient.deleteFromBucket(bucket, pattern);
   }
 
   @Test
