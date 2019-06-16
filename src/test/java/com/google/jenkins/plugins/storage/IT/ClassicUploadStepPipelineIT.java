@@ -43,7 +43,7 @@ public class ClassicUploadStepPipelineIT {
       Logger.getLogger(ClassicUploadStepPipelineIT.class.getName());
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
   private static String credentialsId;
-  private static String pattern = "build_environment.txt";
+  private static final String pattern = "build_environment.txt";
   private static String bucket;
   private static StorageClient storageClient;
   private static EnvVars envVars;
@@ -61,7 +61,6 @@ public class ClassicUploadStepPipelineIT {
 
   @Test
   public void testClassicUploadStepSuccessful() throws Exception {
-    try {
       WorkflowJob testProject =
           jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
@@ -73,9 +72,6 @@ public class ClassicUploadStepPipelineIT {
       jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
       dumpLog(LOGGER, run);
       storageClient.deleteFromBucket(bucket, pattern);
-    } catch (Exception e) {
-      throw e;
-    }
   }
 
   @Test
@@ -105,10 +101,6 @@ public class ClassicUploadStepPipelineIT {
     assertNotNull(run);
     jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
     dumpLog(LOGGER, run);
-  }
-
-  public void deleteUpload() throws Exception {
-    storageClient.deleteFromBucket(bucket, pattern);
   }
 
   @AfterClass

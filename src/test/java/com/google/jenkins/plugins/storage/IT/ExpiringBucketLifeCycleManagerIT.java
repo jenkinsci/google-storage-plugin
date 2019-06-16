@@ -47,7 +47,6 @@ public class ExpiringBucketLifeCycleManagerIT {
 
   @Test
   public void testClassicUploadStepSuccessful() throws Exception {
-    try {
       WorkflowJob testProject =
           jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
@@ -58,9 +57,6 @@ public class ExpiringBucketLifeCycleManagerIT {
       assertNotNull(run);
       jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
       dumpLog(LOGGER, run);
-    } catch (Exception e) {
-      throw e;
-    }
   }
 
   @Test

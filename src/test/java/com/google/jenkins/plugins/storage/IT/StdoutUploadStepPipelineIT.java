@@ -16,13 +16,16 @@
 
 package com.google.jenkins.plugins.storage.IT;
 
-import static com.google.jenkins.plugins.storage.IT.ITUtil.deleteFromBucket;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.dumpLog;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.formatRandomName;
+import static com.google.jenkins.plugins.storage.IT.ITUtil.getCredentialsId;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.initializePipelineITEnvironment;
 import static com.google.jenkins.plugins.storage.IT.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
 
+import com.google.jenkins.plugins.storage.client.ClientFactory;
+import com.google.jenkins.plugins.storage.client.StorageClient;
+import hudson.EnvVars;
 import hudson.model.Result;
 import java.util.logging.Logger;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -39,13 +42,21 @@ public class StdoutUploadStepPipelineIT {
   private static final Logger LOGGER = Logger.getLogger(StdoutUploadStepPipelineIT.class.getName());
 
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
-  private static String pattern = "build_log.txt";
+  public static String credentialsId;
+  private static final String pattern = "build_log.txt";
+  private static String bucket;
+  private static StorageClient storageClient;
+  private static EnvVars envVars;
 
   @BeforeClass
   public static void init() throws Exception {
     LOGGER.info("Initializing StdoutUploadStepPipelineIT");
 
-    initializePipelineITEnvironment(pattern, jenkinsRule);
+    envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
+    credentialsId = getCredentialsId();
+    storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
+    bucket = formatRandomName("test");
+    envVars.put("BUCKET", bucket);
   }
 
   @Test
@@ -59,6 +70,7 @@ public class StdoutUploadStepPipelineIT {
     assertNotNull(run);
     jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
     dumpLog(LOGGER, run);
+    storageClient.deleteFromBucket(bucket, pattern);
   }
 
   @Test
@@ -77,6 +89,6 @@ public class StdoutUploadStepPipelineIT {
 
   @AfterClass
   public static void cleanUp() throws Exception {
-    deleteFromBucket(jenkinsRule.jenkins.get(), pattern);
+    storageClient.deleteBucket(bucket);
   }
 }
