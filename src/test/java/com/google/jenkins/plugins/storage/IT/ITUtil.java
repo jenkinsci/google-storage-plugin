@@ -22,18 +22,13 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.google.api.client.http.InputStreamContent;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
 import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
 import com.google.jenkins.plugins.storage.StringJsonServiceAccountConfig;
-import com.google.jenkins.plugins.storage.client.ClientFactory;
-import com.google.jenkins.plugins.storage.client.StorageClient;
-import hudson.AbortException;
 import hudson.EnvVars;
-import hudson.model.ItemGroup;
 import hudson.model.Run;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import java.io.BufferedReader;
@@ -98,30 +93,6 @@ public class ITUtil {
   }
 
   /**
-   * Delete object matching pattern from Google Cloud Storage bucket of name bucket.
-   *
-   * @param itemGroup A handle to the Jenkins instance.
-   * @param pattern Pattern to match object name to delete from bucket.
-   * @throws IOException If there was an issue making the delete API call to GCS.
-   */
-  static void deleteFromBucket(ItemGroup itemGroup, String pattern) throws IOException {
-    getStorageClient(itemGroup).deleteFromBucket(bucket, pattern);
-  }
-
-  /**
-   * Uploads item with path pattern to Google Cloud Storage bucket of name bucket.
-   *
-   * @param itemGroup A handle to the Jenkins instance.
-   * @param pattern Pattern to match object name to upload to bucket.
-   * @param content InputStreamContent of desired file to upload.
-   * @throws IOException If there was in issue making the upload API call to GCS.
-   */
-  static void uploadToBucket(ItemGroup itemGroup, String pattern, InputStreamContent content)
-      throws IOException {
-    getStorageClient(itemGroup).uploadToBucket(pattern, bucket, content);
-  }
-
-  /**
    * Initializes the env variables needed to run pipeline integration tests.
    *
    * @param pattern pattern needed to run the integration test. Varies depending on which pipeline
@@ -152,16 +123,5 @@ public class ITUtil {
     envVars.put("PATTERN", pattern);
     jenkinsRule.jenkins.getGlobalNodeProperties().add(prop);
     return envVars;
-  }
-
-  /**
-   * Returns a StorageClient instance.
-   *
-   * @param itemGroup A handle to the Jenkins instance.
-   * @return StorageClient instance to make API calls to GCS API.
-   * @throws AbortException If there was an issue creating the StorageClient instance.
-   */
-  static StorageClient getStorageClient(ItemGroup itemGroup) throws AbortException {
-    return new ClientFactory(itemGroup, getCredentialsId()).storageClient();
   }
 }
