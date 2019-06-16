@@ -25,38 +25,38 @@ public class StorageClientTest {
       new InputStreamContent("", Mockito.mock(InputStream.class));
 
   @Test(expected = IllegalArgumentException.class)
-  public void testInsertErrorWithNullPattern() throws IOException {
-    StorageClient storageClient = setUpInsertClient();
+  public void testInsertObjectErrorWithNullPattern() throws IOException {
+    StorageClient storageClient = setUpObjectInsertClient();
     storageClient.uploadToBucket(null, TEST_BUCKET, TEST_CONTENT);
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testInsertErrorWithNullBucket() throws IOException {
-    StorageClient storageClient = setUpInsertClient();
+  public void testInsertObjectErrorWithNullBucket() throws IOException {
+    StorageClient storageClient = setUpObjectInsertClient();
     storageClient.uploadToBucket(TEST_PATTERN, null, TEST_CONTENT);
   }
 
   @Test(expected = NullPointerException.class)
-  public void testInsertErrorWithNullContent() throws IOException {
-    StorageClient storageClient = setUpInsertClient();
+  public void testInsertObjectErrorWithNullContent() throws IOException {
+    StorageClient storageClient = setUpObjectInsertClient();
     storageClient.uploadToBucket(TEST_PATTERN, TEST_BUCKET, null);
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testInsertErrorWithEmptyPattern() throws IOException {
-    StorageClient storageClient = setUpInsertClient();
+  public void testInsertObjectErrorWithEmptyPattern() throws IOException {
+    StorageClient storageClient = setUpObjectInsertClient();
     storageClient.uploadToBucket("", TEST_BUCKET, TEST_CONTENT);
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testInsertErrorWithEmptyBucket() throws IOException {
-    StorageClient storageClient = setUpInsertClient();
+  public void testInsertObjectErrorWithEmptyBucket() throws IOException {
+    StorageClient storageClient = setUpObjectInsertClient();
     storageClient.uploadToBucket(TEST_PATTERN, "", TEST_CONTENT);
   }
 
   @Test
   public void testInsertObjectReturnsCorrectly() throws IOException {
-    StorageClient storageClient = setUpInsertClient();
+    StorageClient storageClient = setUpObjectInsertClient();
     Storage.Objects.Insert insertRequest =
         storageClient.uploadToBucketRequest(TEST_PATTERN, TEST_BUCKET, TEST_CONTENT);
     assertNotNull(insertRequest);
@@ -64,39 +64,59 @@ public class StorageClientTest {
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testDeleteErrorWithNullPattern() throws IOException {
-    StorageClient storageClient = setUpInsertClient();
+  public void testDeleteObjectErrorWithNullPattern() throws IOException {
+    StorageClient storageClient = setUpObjectInsertClient();
     storageClient.deleteFromBucket(TEST_BUCKET, null);
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testDeleteErrorWithNullBucket() throws IOException {
-    StorageClient storageClient = setUpInsertClient();
+  public void testDeleteObjectErrorWithNullBucket() throws IOException {
+    StorageClient storageClient = setUpObjectInsertClient();
     storageClient.deleteFromBucket(null, TEST_PATTERN);
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testDeleteErrorWithEmptyPattern() throws IOException {
-    StorageClient storageClient = setUpInsertClient();
+  public void testDeleteObjectErrorWithEmptyPattern() throws IOException {
+    StorageClient storageClient = setUpObjectInsertClient();
     storageClient.deleteFromBucket(TEST_BUCKET, "");
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testDeleteErrorWithEmptyBucket() throws IOException {
-    StorageClient storageClient = setUpInsertClient();
+  public void testDeleteObjectErrorWithEmptyBucket() throws IOException {
+    StorageClient storageClient = setUpObjectInsertClient();
     storageClient.deleteFromBucket("", TEST_PATTERN);
   }
 
   @Test
   public void testDeleteObjectReturnsCorrectly() throws IOException {
-    StorageClient storageClient = setUpDeleteClient();
+    StorageClient storageClient = setUpObjectDeleteClient();
     Storage.Objects.Delete deleteRequest =
         storageClient.deleteFromBucketRequest(TEST_BUCKET, TEST_PATTERN);
     assertNotNull(deleteRequest);
     assertEquals(TEST_BUCKET, deleteRequest.getBucket());
   }
 
-  private static StorageClient setUpClient(
+  @Test(expected = IllegalArgumentException.class)
+  public void testDeleteBucketErrorWithNullBucket() throws IOException {
+    StorageClient storageClient = setUpBucketDeleteClient();
+    storageClient.deleteBucket(null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testDeleteBucketErrorWithEmptyBucket() throws IOException {
+    StorageClient storageClient = setUpBucketDeleteClient();
+    storageClient.deleteBucket("");
+  }
+
+  @Test
+  public void testDeleteBucketReturnsCorrectly() throws IOException {
+    StorageClient storageClient = setUpBucketDeleteClient();
+    Storage.Buckets.Delete deleteRequest = storageClient.deleteBucketRequest(TEST_BUCKET);
+    assertNotNull(deleteRequest);
+    assertEquals(TEST_BUCKET, deleteRequest.getBucket());
+  }
+
+  private static StorageClient setUpObjectClient(
       Storage.Objects.Insert insertCall, Storage.Objects.Delete deleteCall) throws IOException {
     Storage storage = Mockito.mock(Storage.class);
     Storage.Objects objects = Mockito.mock(Storage.Objects.class);
@@ -115,15 +135,31 @@ public class StorageClientTest {
     return new StorageClient(storage);
   }
 
-  private static StorageClient setUpInsertClient() throws IOException {
+  private static StorageClient setUpObjectInsertClient() throws IOException {
     Storage.Objects.Insert insertCall = Mockito.mock(Storage.Objects.Insert.class);
-    StorageClient storage = setUpClient(insertCall, null);
-    return storage;
+    return setUpObjectClient(insertCall, null);
   }
 
-  private static StorageClient setUpDeleteClient() throws IOException {
+  private static StorageClient setUpObjectDeleteClient() throws IOException {
     Storage.Objects.Delete deleteCall = Mockito.mock(Storage.Objects.Delete.class);
-    StorageClient storage = setUpClient(null, deleteCall);
-    return storage;
+    return setUpObjectClient(null, deleteCall);
+  }
+
+  private static StorageClient setUpBucketClient(Storage.Buckets.Delete deleteCall)
+      throws IOException {
+    Storage storage = Mockito.mock(Storage.class);
+    Storage.Buckets buckets = Mockito.mock(Storage.Buckets.class);
+    when(storage.buckets()).thenReturn(buckets);
+
+    if (deleteCall != null) {
+      when(deleteCall.getBucket()).thenReturn(TEST_BUCKET);
+      when(storage.buckets().delete(anyString())).thenReturn(deleteCall);
+    }
+    return new StorageClient(storage);
+  }
+
+  private static StorageClient setUpBucketDeleteClient() throws IOException {
+    Storage.Buckets.Delete deleteCall = Mockito.mock(Storage.Buckets.Delete.class);
+    return setUpBucketClient(deleteCall);
   }
 }
