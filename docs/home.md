@@ -59,6 +59,42 @@ If you don't want the whole path of the object to be reflected in the directory 
 ## Pipeline Step
 
 Both Classic Upload and Download functionality are available through pipelines and can be generated with Pipeline Syntax builder.
+Build Log Upload and Bucket with Expiring Elements Lifecycle are available as steps to be run in post in pipelines.
+
+### Example
+In this example, we will do a Classic Upload build step with a Build Log Upload step in post-build.
+1. Create a file named "Jenkinsfile" in the root of your project.
+1. Within your Jenkinsfile add the following:
+```groovy
+pipeline {
+    agent any
+    environment {
+        CREDENTIALS_ID ='<YOUR_CREDENTIALS_ID>'
+        BUCKET = '<YOUR_BUCKET_NAME>'
+        PATTERN = '<OBJECT_TO_UPLOAD>'
+        LOG = '<NAME_FOR_BUILD_LOG>'
+    }
+    stages{
+        stage('Store to GCS') {
+            steps{
+                sh '''
+                    env > build_environment.txt
+                '''
+                // If we name pattern build_environment.txt, this will upload build_environment.txt to our GCS bucket.
+                step([$class: 'ClassicUploadStep', credentialsId: env.CREDENTIALS_ID,  bucket: "gs://${env.BUCKET}",
+                 pattern: env.PATTERN])
+            }
+        }
+    }
+    post {
+        always {
+            // Uploads build log with name log as an object to our GCS bucket.
+            step([$class: 'StdoutUploadStep', credentialsId: env.CREDENTIALS_ID,  bucket: "gs://${env.BUCKET}",
+                logName: env.LOG])
+        }
+    }
+}
+```
 
 ## Post-build step
 
