@@ -21,7 +21,6 @@ import java.util.logging.Logger;
  * href="https://github.com/GoogleCloudPlatform/java-docs-samples/blob/master/storage/storage-transfer/src/main/java/com/google/cloud/storage/storagetransfer/samples/RetryHttpInitializerWrapper.java">RetryHttpInitializerWrapper.java</a>
  */
 public class RetryHttpInitializerWrapper implements HttpRequestInitializer {
-
   private static final Logger LOG = Logger.getLogger(RetryHttpInitializerWrapper.class.getName());
   private static final int MILLIS_PER_MINUTE = 60 * 1000;
   private final Credential wrappedCredential;
@@ -40,8 +39,7 @@ public class RetryHttpInitializerWrapper implements HttpRequestInitializer {
   /**
    * A constructor used only for testing.
    *
-   * @param wrappedCredential the credential used to authenticate with a Google Cloud Platform
-   *     project
+   * @param wrappedCredential the credential used to authenticate with a project
    * @param sleeper a user-supplied Sleeper
    */
   RetryHttpInitializerWrapper(Credential wrappedCredential, Sleeper sleeper) {
@@ -52,7 +50,7 @@ public class RetryHttpInitializerWrapper implements HttpRequestInitializer {
   /**
    * Initialize an HttpRequest.
    *
-   * @param request an HttpRequest that should be initialized
+   * @param request an HttpRequest that should be initialized.
    */
   public void initialize(HttpRequest request) {
     request.setReadTimeout(2 * MILLIS_PER_MINUTE); // 2 minutes read timeout
