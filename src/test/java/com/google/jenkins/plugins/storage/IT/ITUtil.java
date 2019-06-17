@@ -98,7 +98,7 @@ public class ITUtil {
    * @param pattern pattern needed to run the integration test. Varies depending on which pipeline
    *     integration test is being run.
    * @return Returns handle to EnvVars to change env variables as needed.
-   * @throws Exception If there was in issue initializing or storing credentials.
+   * @throws Exception If there was an issue initializing or storing credentials.
    */
   static EnvVars initializePipelineITEnvironment(String pattern, JenkinsRule jenkinsRule)
       throws Exception {

@@ -79,8 +79,7 @@ public class ExpiringBucketLifecycleManagerStep extends Recorder
     try {
       upload.perform(getCredentialsId(), run, workspace, listener);
     } catch (UploadException e) {
-      // TODO: create new message
-      throw new IOException(Messages.StdoutUpload_FailToUpload(), e);
+      throw new IOException(Messages.ExpiringBucketLifecycleManager_FailToSetExpiration(), e);
     }
   }
 
