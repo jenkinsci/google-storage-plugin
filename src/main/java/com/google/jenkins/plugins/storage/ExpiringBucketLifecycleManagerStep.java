@@ -1,5 +1,7 @@
 package com.google.jenkins.plugins.storage;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.jenkins.plugins.credentials.domains.RequiresDomain;
 import hudson.Extension;
 import hudson.FilePath;
@@ -52,14 +54,19 @@ public class ExpiringBucketLifecycleManagerStep extends Recorder
    */
   public ExpiringBucketLifecycleManagerStep(
       String credentialsId, String bucket, Optional<UploadModule> module, Integer ttl) {
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(credentialsId));
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(bucket));
+    Preconditions.checkNotNull(ttl);
     this.credentialsId = credentialsId;
     upload = new ExpiringBucketLifecycleManager(bucket, module.orElse(null), ttl, null, null);
   }
 
+  /** @return The unique ID for the credentials we are using to authenticate with GCS. */
   public String getCredentialsId() {
     return credentialsId;
   }
 
+  /** @return Name of our GCS bucket. */
   public String getBucket() {
     return upload.getBucket();
   }

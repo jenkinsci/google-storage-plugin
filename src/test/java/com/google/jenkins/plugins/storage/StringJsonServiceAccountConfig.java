@@ -40,7 +40,8 @@ import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /** Provides a means for read/writing JSON service account config files for integration tests. */
-// TODO: remove once OAuth plugin upgrades >= 0.8 https://github.com/jenkinsci/google-storage-plugin/issues/72
+// TODO: remove once OAuth plugin upgrades >= 0.8
+// https://github.com/jenkinsci/google-storage-plugin/issues/72
 public class StringJsonServiceAccountConfig extends ServiceAccountConfig {
   private static final long serialVersionUID = 6818111194672325387L;
   private static final Logger LOGGER =
