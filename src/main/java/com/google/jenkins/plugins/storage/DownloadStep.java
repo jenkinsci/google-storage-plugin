@@ -135,7 +135,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   private String pathPrefix;
 
   /** The module to use for providing dependencies. */
-  protected final UploadModule module;
+  protected final transient UploadModule module;
 
   /** The unique ID for the credentials we are using to authenticate with GCS. */
   public String getCredentialsId() {
