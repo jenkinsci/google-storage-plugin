@@ -67,7 +67,7 @@ import org.kohsuke.stapler.StaplerRequest;
 /** A step to allow Download from Google Cloud Storage as a Build step and in pipeline. */
 @RequiresDomain(value = StorageScopeRequirement.class)
 public class DownloadStep extends Builder implements SimpleBuildStep, Serializable {
-
+  private static final long serialVersionUID = 1;
   private static final Logger logger = Logger.getLogger(DownloadStep.class.getName());
 
   /** Construct the download step. */

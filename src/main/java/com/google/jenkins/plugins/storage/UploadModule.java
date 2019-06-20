@@ -25,7 +25,6 @@ import com.google.jenkins.plugins.util.Executor;
 import hudson.Plugin;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import jenkins.model.Jenkins;
 
@@ -34,7 +33,7 @@ import jenkins.model.Jenkins;
  * service.
  */
 @RequiresDomain(value = StorageScopeRequirement.class)
-public class UploadModule implements Serializable {
+public class UploadModule {
 
   /**
    * Interface for requesting the {@link Executor} for executing requests.
@@ -90,6 +89,15 @@ public class UploadModule implements Serializable {
   public InputStream executeMediaAsInputStream(Storage.Objects.Get getObject) throws IOException {
     return getObject.executeMediaAsInputStream();
   }
+
+  //  private void writeObject(java.io.ObjectOutputStream stream) throws java.io.IOException {
+  //    throw new java.io.NotSerializableException(getClass().getName());
+  //  }
+  //
+  //  private void readObject(java.io.ObjectInputStream stream)
+  //      throws java.io.IOException, ClassNotFoundException {
+  //    throw new java.io.NotSerializableException(getClass().getName());
+  //  }
 
   private static final String PLUGIN_NAME = "google-storage-plugin";
 }
