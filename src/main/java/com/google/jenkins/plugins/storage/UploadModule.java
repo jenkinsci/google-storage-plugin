@@ -90,14 +90,5 @@ public class UploadModule {
     return getObject.executeMediaAsInputStream();
   }
 
-  //  private void writeObject(java.io.ObjectOutputStream stream) throws java.io.IOException {
-  //    throw new java.io.NotSerializableException(getClass().getName());
-  //  }
-  //
-  //  private void readObject(java.io.ObjectInputStream stream)
-  //      throws java.io.IOException, ClassNotFoundException {
-  //    throw new java.io.NotSerializableException(getClass().getName());
-  //  }
-
   private static final String PLUGIN_NAME = "google-storage-plugin";
 }
