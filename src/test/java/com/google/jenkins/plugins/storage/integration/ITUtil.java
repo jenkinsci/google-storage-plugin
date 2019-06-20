@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.jenkins.plugins.storage.IT;
+package com.google.jenkins.plugins.storage.integration;
 
 import static org.junit.Assert.assertNotNull;
 

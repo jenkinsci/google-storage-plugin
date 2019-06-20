@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package com.google.jenkins.plugins.storage.IT;
+package com.google.jenkins.plugins.storage.integration;
 
-import static com.google.jenkins.plugins.storage.IT.ITUtil.dumpLog;
-import static com.google.jenkins.plugins.storage.IT.ITUtil.formatRandomName;
-import static com.google.jenkins.plugins.storage.IT.ITUtil.getBucket;
-import static com.google.jenkins.plugins.storage.IT.ITUtil.getCredentialsId;
-import static com.google.jenkins.plugins.storage.IT.ITUtil.initializePipelineITEnvironment;
-import static com.google.jenkins.plugins.storage.IT.ITUtil.loadResource;
+import static com.google.jenkins.plugins.storage.integration.ITUtil.dumpLog;
+import static com.google.jenkins.plugins.storage.integration.ITUtil.formatRandomName;
+import static com.google.jenkins.plugins.storage.integration.ITUtil.getCredentialsId;
+import static com.google.jenkins.plugins.storage.integration.ITUtil.initializePipelineITEnvironment;
+import static com.google.jenkins.plugins.storage.integration.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
 
-import com.google.api.client.http.InputStreamContent;
-import com.google.jenkins.plugins.storage.DownloadStep;
 import com.google.jenkins.plugins.storage.client.ClientFactory;
 import com.google.jenkins.plugins.storage.client.StorageClient;
 import hudson.EnvVars;
 import hudson.model.Result;
-import java.io.InputStream;
-import java.net.URLConnection;
 import java.util.logging.Logger;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -42,53 +37,65 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
-/** Tests the {@link DownloadStep} for use-cases involving the Jenkins Pipeline DSL. */
-public class DownloadStepPipelineIT {
-  private static final Logger LOGGER = Logger.getLogger(DownloadStepPipelineIT.class.getName());
+/** Tests the {@link ClassicUploadStep} for use-cases involving the Jenkins Pipeline DSL. */
+public class ClassicUploadStepPipelineIT {
+  private static final Logger LOGGER =
+      Logger.getLogger(ClassicUploadStepPipelineIT.class.getName());
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
   private static String credentialsId;
-  private static final String pattern = "downloadstep_test.txt";
+  private static final String pattern = "build_environment.txt";
   private static String bucket;
   private static StorageClient storageClient;
   private static EnvVars envVars;
 
   @BeforeClass
   public static void init() throws Exception {
-    LOGGER.info("Initializing DownloadStepPipelineIT");
+    LOGGER.info("Initializing ClassicUploadStepPipelineIT");
 
     envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
     credentialsId = getCredentialsId();
     storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
-    bucket = getBucket();
-
-    // create file to download
-    InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream(pattern);
-    String contentType = URLConnection.guessContentTypeFromStream(stream);
-    InputStreamContent content = new InputStreamContent(contentType, stream);
-    storageClient.uploadToBucket(pattern, bucket, content);
+    bucket = formatRandomName("test");
+    envVars.put("BUCKET", bucket);
   }
 
   @Test
-  public void testDownloadStepSuccessful() throws Exception {
-    String jobName = formatRandomName("test");
-    envVars.put("DIR", jobName);
-    WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
+  public void testClassicUploadStepSuccessful() throws Exception {
+    WorkflowJob testProject =
+        jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
+
     testProject.setDefinition(
-        new CpsFlowDefinition(loadResource(getClass(), "downloadStepPipeline.groovy"), true));
+        new CpsFlowDefinition(loadResource(getClass(), "classicUploadStepPipeline.groovy"), true));
     WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
     assertNotNull(run);
     jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
     dumpLog(LOGGER, run);
+    storageClient.deleteFromBucket(bucket, pattern);
   }
 
   @Test
-  public void testMalformedDownloadStepFailure() throws Exception {
-    String jobName = formatRandomName("test");
-    WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
-    envVars.put("DIR", jobName);
+  public void testClassicUploadPostStepSuccessful() throws Exception {
+    WorkflowJob testProject =
+        jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
+
     testProject.setDefinition(
         new CpsFlowDefinition(
-            loadResource(getClass(), "malformedDownloadStepPipeline.groovy"), true));
+            loadResource(getClass(), "classicUploadPostStepPipeline.groovy"), true));
+    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+    assertNotNull(run);
+    jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
+    dumpLog(LOGGER, run);
+    storageClient.deleteFromBucket(bucket, pattern);
+  }
+
+  @Test
+  public void testMalformedClassicUploadStepFailure() throws Exception {
+    WorkflowJob testProject =
+        jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
+
+    testProject.setDefinition(
+        new CpsFlowDefinition(
+            loadResource(getClass(), "malformedClassicUploadStepPipeline.groovy"), true));
     WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
     assertNotNull(run);
     jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
@@ -97,6 +104,6 @@ public class DownloadStepPipelineIT {
 
   @AfterClass
   public static void cleanUp() throws Exception {
-    storageClient.deleteFromBucket(bucket, pattern);
+    storageClient.deleteBucket(bucket);
   }
 }
