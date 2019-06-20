@@ -48,6 +48,8 @@ public class StorageClient {
    */
   public Storage.Objects.Delete deleteFromBucketRequest(String bucket, String pattern)
       throws IOException {
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(bucket));
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(pattern));
     return storage.objects().delete(bucket, pattern);
   }
 
@@ -78,6 +80,9 @@ public class StorageClient {
    */
   public Storage.Objects.Insert uploadToBucketRequest(
       String pattern, String bucket, InputStreamContent content) throws IOException {
+    Preconditions.checkNotNull(content);
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(bucket));
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(pattern));
     return storage.objects().insert(bucket, null, content).setName(pattern);
   }
 
@@ -100,6 +105,7 @@ public class StorageClient {
    * @throws IOException If there was an issue calling the GCS API.
    */
   public Storage.Buckets.Delete deleteBucketRequest(String bucket) throws IOException {
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(bucket));
     return storage.buckets().delete(bucket);
   }
 }
