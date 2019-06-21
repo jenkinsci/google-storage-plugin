@@ -90,6 +90,7 @@ import org.kohsuke.stapler.DataBoundSetter;
  *           parts of the object prior to insertion.
  *     </ul>
  */
+// TODO: Refactor to use StorageClient https://github.com/jenkinsci/google-storage-plugin/issues/71
 public abstract class AbstractUpload
     implements Describable<AbstractUpload>, ExtensionPoint, Serializable {
 
@@ -540,7 +541,11 @@ public abstract class AbstractUpload
                 new Predicate<ObjectAccessControl>() {
                   @Override
                   public boolean apply(ObjectAccessControl access) {
-                    return Objects.equal(access.getEntity(), publicEntity);
+                    if (access != null) {
+                      return Objects.equal(access.getEntity(), publicEntity);
+                    } else {
+                      throw new NullPointerException(Messages.AbstractUpload_NullAccessError());
+                    }
                   }
                 })
             .isPresent();
