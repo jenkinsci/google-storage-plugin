@@ -166,7 +166,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     return GoogleRobotCredentials.getById(getCredentialsId());
   }
 
-  /** @inheritDoc */
+  /** @{inheritDoc} */
   @Override
   public BuildStepMonitor getRequiredMonitorService() {
     return BuildStepMonitor.NONE;
