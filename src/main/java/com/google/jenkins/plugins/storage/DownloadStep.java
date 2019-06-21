@@ -113,28 +113,26 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   }
 
   /**
-   * @return The bucket uri specified by the user, which potentially contains
-   * unresolved symbols, such as $JOB_NAME and $BUILD_NUMBER.
+   * @return The bucket uri specified by the user, which potentially contains unresolved symbols,
+   *     such as $JOB_NAME and $BUILD_NUMBER.
    */
   public String getBucketUri() {
     return bucketUri;
   }
 
   /**
-   * @return The local directory in the Jenkins workspace that will receive the files. This might contain
-   * unresolved symbols, such as $JOB_NAME and $BUILD_NUMBER.
+   * @return The local directory in the Jenkins workspace that will receive the files. This might
+   *     contain unresolved symbols, such as $JOB_NAME and $BUILD_NUMBER.
    */
   public String getLocalDirectory() {
     return localDirectory;
   }
 
-
   /**
-   * @param pathPrefix The path prefix that will be stripped from downloaded files. May be null if no path prefix
-   * needs to be stripped.
-   *
-   * <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
-   * automatically added if it is missing.
+   * @param pathPrefix The path prefix that will be stripped from downloaded files. May be null if
+   *     no path prefix needs to be stripped.
+   *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
+   *     automatically added if it is missing.
    */
   @DataBoundSetter
   public void setPathPrefix(@Nullable String pathPrefix) {
@@ -145,11 +143,10 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   }
 
   /**
-   * @return The path prefix that will be stripped from downloaded files. May
-   * be null if no path prefix needs to be stripped.
-   *
-   * <p>Filenames that do not start with this prefix will not be
-   *    modified. Trailing slash is automatically added if it is missing.
+   * @return The path prefix that will be stripped from downloaded files. May be null if no path
+   *     prefix needs to be stripped.
+   *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
+   *     automatically added if it is missing.
    */
   @Nullable
   public String getPathPrefix() {
@@ -181,8 +178,8 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
    * @param launcher {@link Launcher} for this job.
    * @param listener Listener for events of this job.
    * @throws IOException If there was an issue parsing the bucket URI.
-   * @throws InterruptedException If there was an issue initiating downloads at
-   * workspace or expanding variables in the pathPrefix.
+   * @throws InterruptedException If there was an issue initiating downloads at workspace or
+   *     expanding variables in the pathPrefix.
    */
   @Override
   public void perform(
@@ -347,8 +344,9 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   /**
    * Split the string on wildcards ("*").
    *
-   * <p>String.split removes trailing empty strings, for example, "a",
-   *    "a*" and "a**" and would produce the same result, so that method is not suitable.
+   * <p>String.split removes trailing empty strings, for example, "a", "a*" and "a**" and would
+   * produce the same result, so that method is not suitable.
+   *
    * @param uri URI supplied to be split.
    * @return URI split by "*" wildcard.
    * @throws AbortException
@@ -446,9 +444,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     return result;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   public DescriptorImpl getDescriptor() {
     return (DescriptorImpl) checkNotNull(Hudson.getInstance()).getDescriptor(getClass());
   }
@@ -459,16 +455,12 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
     private final UploadModule module;
 
-    /**
-     * @return Module for the DescriptorImpl.
-     */
+    /** @return Module for the DescriptorImpl. */
     public UploadModule getModule() {
       return module;
     }
 
-    /**
-     * Constructor for {@link DownloadStep}'s DescriptorImpl.
-     */
+    /** Constructor for {@link DownloadStep}'s DescriptorImpl. */
     public DescriptorImpl() {
       this.module = new UploadModule();
     }

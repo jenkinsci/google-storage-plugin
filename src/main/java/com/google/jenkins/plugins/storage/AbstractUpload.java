@@ -107,6 +107,7 @@ public abstract class AbstractUpload
   public abstract String getDetails();
   /** NOTE: old name kept for deserialization */
   private final String bucketNameWithVars;
+
   private boolean sharedPublicly;
   private boolean forFailedJobs;
   private boolean showInline;
@@ -128,8 +129,8 @@ public abstract class AbstractUpload
   }
 
   /**
-   * This method allows the old signature for compatibility reasons. Calls {@link #perform(String, Run,
-   * FilePath, TaskListener)}
+   * This method allows the old signature for compatibility reasons. Calls {@link #perform(String,
+   * Run, FilePath, TaskListener)}
    *
    * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
    * @param build Current build being run.
@@ -265,10 +266,7 @@ public abstract class AbstractUpload
     return bucketNameWithVars;
   }
 
-  /**
-   * @param sharedPublicly Whether to surface the file being uploaded to anyone with the
-   *     link.
-   */
+  /** @param sharedPublicly Whether to surface the file being uploaded to anyone with the link. */
   @DataBoundSetter
   public void setSharedPublicly(boolean sharedPublicly) {
     this.sharedPublicly = sharedPublicly;
