@@ -128,7 +128,7 @@ public abstract class AbstractUpload
   }
 
   /**
-   * This method allows old signature for compatibility reasons. Calls {@link #perform(String, Run,
+   * This method allows the old signature for compatibility reasons. Calls {@link #perform(String, Run,
    * FilePath, TaskListener)}
    *
    * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
@@ -143,7 +143,7 @@ public abstract class AbstractUpload
   }
 
   /**
-   * The main action entrypoint of this extension. This uploads the contents included by the
+   * The main action entry point of this extension. This uploads the contents included by the
    * implementation to our resolved storage bucket.
    *
    * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
@@ -266,7 +266,7 @@ public abstract class AbstractUpload
   }
 
   /**
-   * @param sharedPublicly Returns whether to surface the file being uploaded to anyone with the
+   * @param sharedPublicly Whether to surface the file being uploaded to anyone with the
    *     link.
    */
   @DataBoundSetter
@@ -314,7 +314,7 @@ public abstract class AbstractUpload
    *     automatically added if it is missing.
    */
   @DataBoundSetter
-  public void setPathPrefix(String pathPrefix) {
+  public void setPathPrefix(@Nullable String pathPrefix) {
     if (pathPrefix != null && !pathPrefix.endsWith("/")) {
       pathPrefix += "/";
     }
@@ -327,6 +327,7 @@ public abstract class AbstractUpload
    *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
    *     automatically added if it is missing.
    */
+  @Nullable
   public String getPathPrefix() {
     return pathPrefix;
   }
