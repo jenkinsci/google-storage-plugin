@@ -107,7 +107,6 @@ public abstract class AbstractUpload
   public abstract String getDetails();
   /** NOTE: old name kept for deserialization */
   private final String bucketNameWithVars;
-
   private boolean sharedPublicly;
   private boolean forFailedJobs;
   private boolean showInline;
