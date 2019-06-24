@@ -93,7 +93,6 @@ import org.kohsuke.stapler.DataBoundSetter;
 // TODO: Refactor to use StorageClient https://github.com/jenkinsci/google-storage-plugin/issues/71
 public abstract class AbstractUpload
     implements Describable<AbstractUpload>, ExtensionPoint, Serializable {
-
   private static final Logger logger = Logger.getLogger(AbstractUpload.class.getName());
   private static final ImmutableMap<String, String> CONTENT_TYPES =
       ImmutableMap.of(
@@ -101,6 +100,16 @@ public abstract class AbstractUpload
           "js", "application/javascript",
           "svg", "image/svg+xml",
           "woff2", "font/woff2");
+  private String pathPrefix;
+  /** The module to use for providing dependencies. */
+  protected final transient UploadModule module;
+  /** Provide detail information summarizing this download for the GCS upload report. */
+  public abstract String getDetails();
+  // NOTE: old name kept for deserialization
+  private final String bucketNameWithVars;
+  private boolean sharedPublicly;
+  private boolean forFailedJobs;
+  private boolean showInline;
 
   /**
    * Construct the base upload from a handful of universal properties.
@@ -118,15 +127,31 @@ public abstract class AbstractUpload
     this.bucketNameWithVars = checkNotNull(bucket);
   }
 
-  /** Allow old signature for compatibility. */
+  /**
+   * This method allows the old signature for compatibility reasons. Calls {@link #perform(String,
+   * Run, FilePath, TaskListener)}.
+   *
+   * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
+   * @param build Current build being run.
+   * @param listener Listener for events of this job.
+   * @throws UploadException If there was an issue uploading/accessing the GCS API.
+   * @throws IOException If there was issue authenticating with credentialsId.
+   */
   public final void perform(String credentialsId, AbstractBuild<?, ?> build, TaskListener listener)
       throws UploadException, IOException {
     perform(credentialsId, build, build.getWorkspace(), listener);
   }
 
   /**
-   * The main action entrypoint of this extension. This uploads the contents included by the
+   * The main action entry point of this extension. This uploads the contents included by the
    * implementation to our resolved storage bucket.
+   *
+   * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
+   * @param run Current job being run.
+   * @param workspace Workspace of node running the job.
+   * @param listener Listener for events of this job.
+   * @throws UploadException If there was an issue uploading/accessing the GCS API.
+   * @throws IOException If there was issue authenticating with credentialsId.
    */
   public final void perform(
       String credentialsId, Run<?, ?> run, FilePath workspace, TaskListener listener)
@@ -188,9 +213,6 @@ public abstract class AbstractUpload
   protected abstract UploadSpec getInclusions(
       Run<?, ?> run, FilePath workspace, TaskListener listener) throws UploadException;
 
-  /** Provide detail information summarizing this download for the GCS upload report. */
-  public abstract String getDetails();
-
   /**
    * This hook is intended to give implementations the opportunity to further annotate the {@link
    * StorageObject} with metadata before uploading it to cloud storage.
@@ -212,7 +234,12 @@ public abstract class AbstractUpload
     return MetadataContainer.of(run).getSerializedMetadata();
   }
 
-  /** Determine whether we should upload the pattern for the given build result. */
+  /**
+   * Determine whether we should upload the pattern for the given build result.
+   *
+   * @param result Result of the build run.
+   * @return Whether we should upload the pattern for the given build result.
+   */
   public boolean forResult(Result result) {
     if (result == null) {
       // We might have unfinished builds, e.g., through pipeline of Build Step.
@@ -231,61 +258,57 @@ public abstract class AbstractUpload
   }
 
   /**
-   * The bucket name specified by the user, which potentially contains unresolved symbols, such as
-   * $JOB_NAME and $BUILD_NUMBER.
+   * @return The bucket name specified by the user, which potentially contains unresolved symbols,
+   *     such as $JOB_NAME and $BUILD_NUMBER.
    */
   public String getBucket() {
     return bucketNameWithVars;
   }
 
-  /** NOTE: old name kept for deserialization */
-  private final String bucketNameWithVars;
-
-  /** Whether to surface the file being uploaded to anyone with the link. */
+  /** @param sharedPublicly Whether to surface the file being uploaded to anyone with the link. */
   @DataBoundSetter
   public void setSharedPublicly(boolean sharedPublicly) {
     this.sharedPublicly = sharedPublicly;
   }
 
+  /** @return Whether to surface the file being uploaded to anyone with the link. */
   public boolean isSharedPublicly() {
     return sharedPublicly;
   }
 
-  private boolean sharedPublicly;
-
-  /** Whether to attempt the upload, even if the job failed. */
+  /** @param forFailedJobs Whether to attempt the upload, even if the job failed. */
   @DataBoundSetter
   public void setForFailedJobs(boolean forFailedJobs) {
     this.forFailedJobs = forFailedJobs;
   }
 
+  /** @return Whether to attempt the upload, even if the job failed. */
   public boolean isForFailedJobs() {
     return forFailedJobs;
   }
 
-  private boolean forFailedJobs;
-
   /**
-   * Whether to indicate in metadata that the file should be viewable inline in web browsers, rather
-   * than requiring it to be downloaded first.
+   * @param showInline Set whether to indicate in metadata that the file should be viewable inline
+   *     in web browsers, rather than requiring it to be downloaded first.
    */
   @DataBoundSetter
   public void setShowInline(boolean showInline) {
     this.showInline = showInline;
   }
 
+  /**
+   * @return Whether to indicate in metadata that the file should be viewable inline in web
+   *     browsers, rather than requiring it to be downloaded first.
+   */
   public boolean isShowInline() {
     return showInline;
   }
 
-  private boolean showInline;
-
   /**
-   * The path prefix that will be stripped from uploaded files. May be null if no path prefix needs
-   * to be stripped.
-   *
-   * <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
-   * automatically added if it is missing.
+   * @param pathPrefix The path prefix that will be stripped from uploaded files. May be null if no
+   *     path prefix needs to be stripped.
+   *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
+   *     automatically added if it is missing.
    */
   @DataBoundSetter
   public void setPathPrefix(@Nullable String pathPrefix) {
@@ -295,27 +318,29 @@ public abstract class AbstractUpload
     this.pathPrefix = pathPrefix;
   }
 
+  /**
+   * @return The path prefix that will be stripped from uploaded files. May be null if no path
+   *     prefix needs to be stripped.
+   *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
+   *     automatically added if it is missing.
+   */
   @Nullable
   public String getPathPrefix() {
     return pathPrefix;
   }
 
-  private String pathPrefix;
-
-  /** The module to use for providing dependencies. */
-  protected final UploadModule module;
-
   /**
-   * Boilerplate, see: https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
+   * Gives all registered {@link AbstractUpload}s.
+   * See: https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
+   *
+   * @return All registered {@link AbstractUpload}s.
    */
   public static DescriptorExtensionList<AbstractUpload, AbstractUploadDescriptor> all() {
     return checkNotNull(Hudson.getInstance())
         .<AbstractUpload, AbstractUploadDescriptor>getDescriptorList(AbstractUpload.class);
   }
 
-  /**
-   * Boilerplate, see: https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
-   */
+  /** {@inheritDoc} */
   public AbstractUploadDescriptor getDescriptor() {
     return (AbstractUploadDescriptor) checkNotNull(Hudson.getInstance()).getDescriptor(getClass());
   }
@@ -325,7 +350,7 @@ public abstract class AbstractUpload
    * storagePrefix} using the authority of {@code credentials} and logging any information to {@code
    * listener}.
    *
-   * @throws UploadException if anything goes awry
+   * @throws UploadException If there was any issue during upload.
    */
   private void initiateUploadsAtWorkspace(
       final GoogleRobotCredentials credentials,

@@ -28,7 +28,6 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import java.io.IOException;
 import java.io.Serializable;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
@@ -39,15 +38,23 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 /**
- * This upload extension implements the classical upload pattern where a user provides an Ant-style
- * glob, e.g. ** /*.java relative to the build workspace, and those files are uploaded to the
- * storage bucket.
+ * Build Step wrapper for {@link ClassicUpload}. Can be run as a build step or in pipelines during
+ * build and/or post-build.
  */
 @RequiresDomain(StorageScopeRequirement.class)
 public class ClassicUploadStep extends Builder implements SimpleBuildStep, Serializable {
+  private ClassicUpload upload;
+  private final String credentialsId;
 
-  @Nonnull private ClassicUpload upload;
-
+  /**
+   * DataBoundConstructor for the classic upload step.
+   *
+   * @see ClassicUpload#ClassicUpload
+   * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
+   * @param bucket GCS bucket to upload build artifacts to.
+   * @param pattern The glob of files to upload, which potentially contains unresolved symbols, such
+   *     as $JOB_NAME and $BUILD_NUMBER.
+   */
   @DataBoundConstructor
   public ClassicUploadStep(String credentialsId, String bucket, String pattern) {
     this(credentialsId, bucket, null, pattern);
@@ -57,6 +64,11 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
    * Construct the classic upload step.
    *
    * @see ClassicUpload#ClassicUpload
+   * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
+   * @param bucket GCS bucket to upload build artifacts to.
+   * @param module Helper class for connecting to the GCS API.
+   * @param pattern The glob of files to upload, which potentially contains unresolved symbols, such
+   *     as $JOB_NAME and $BUILD_NUMBER.
    */
   public ClassicUploadStep(
       String credentialsId, String bucket, @Nullable UploadModule module, String pattern) {
@@ -72,66 +84,93 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
     upload.setForFailedJobs(true);
   }
 
-  /** Whether to surface the file being uploaded to anyone with the link. */
+  /** @param sharedPublicly Whether to surface the file being uploaded to anyone with the link. */
   @DataBoundSetter
   public void setSharedPublicly(boolean sharedPublicly) {
     upload.setSharedPublicly(sharedPublicly);
   }
 
+  /** @return Whether to surface the file being uploaded to anyone with the link. */
   public boolean isSharedPublicly() {
     return upload.isSharedPublicly();
   }
 
   /**
-   * Whether to indicate in metadata that the file should be viewable inline in web browsers, rather
-   * than requiring it to be downloaded first.
+   * @param showInline Whether to indicate in metadata that the file should be viewable inline in
+   *     web browsers, rather than requiring it to be downloaded first.
    */
   @DataBoundSetter
   public void setShowInline(boolean showInline) {
     upload.setShowInline(showInline);
   }
 
+  /**
+   * @return Whether to indicate in metadata that the file should be viewable inline in web
+   *     browsers, rather than requiring it to be downloaded first.
+   */
   public boolean isShowInline() {
     return upload.isShowInline();
   }
 
   /**
-   * The path prefix that will be stripped from uploaded files. May be null if no path prefix needs
-   * to be stripped.
-   *
-   * <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
-   * automatically added if it is missing.
+   * @param pathPrefix The path prefix that will be stripped from uploaded files. May be null if no
+   *     path prefix needs to be stripped.
+   *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
+   *     automatically added if it is missing.
    */
   @DataBoundSetter
   public void setPathPrefix(@Nullable String pathPrefix) {
     upload.setPathPrefix(pathPrefix);
   }
 
+  /**
+   * @return pathPrefix The path prefix that will be stripped from uploaded files. May be null if no
+   *     path prefix needs to be stripped.
+   *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
+   *     automatically added if it is missing.
+   */
   @Nullable
   public String getPathPrefix() {
     return upload.getPathPrefix();
   }
 
+  /**
+   * @return The glob of files to upload, which potentially contains unresolved symbols, such as
+   *     $JOB_NAME and $BUILD_NUMBER.
+   */
   public String getPattern() {
     return upload.getPattern();
   }
 
+  /**
+   * @return The bucket name specified by the user, which potentially contains unresolved symbols,
+   *     such as $JOB_NAME and $BUILD_NUMBER.
+   */
   public String getBucket() {
     return upload.getBucket();
   }
 
-  /** The unique ID for the credentials we are using to authenticate with GCS. */
+  /** @return The unique ID for the credentials we are using to authenticate with GCS. */
   public String getCredentialsId() {
     return credentialsId;
   }
 
-  private final String credentialsId;
-
+  /** {@inheritDoc} */
   @Override
   public BuildStepMonitor getRequiredMonitorService() {
     return BuildStepMonitor.NONE;
   }
 
+  /**
+   * The main entry point of this extension. Uploads files that match an Ant-style glob, e.g. ** /
+   * *.java relative to the build workspace to a GCS bucket.
+   *
+   * @param run Current job being run.
+   * @param workspace Workspace of node running the job.
+   * @param launcher {@link Launcher} for this job.
+   * @param listener Listener for events of this job.
+   * @throws IOException If there was an issue performing the upload.
+   */
   @Override
   public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
       throws IOException {
@@ -164,6 +203,7 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
       return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Builder newInstance(StaplerRequest req, JSONObject formData) throws FormException {
       // Since the config form lists the optional parameter pathPrefix as
@@ -182,6 +222,7 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
       return ClassicUpload.DescriptorImpl.staticDoCheckBucket(bucket);
     }
 
+    /** This callback validates the {@code pattern} input field's values. */
     public static FormValidation doCheckPattern(@QueryParameter final String pattern)
         throws IOException {
       return ClassicUpload.DescriptorImpl.staticDoCheckPattern(pattern);

@@ -67,15 +67,35 @@ import org.kohsuke.stapler.StaplerRequest;
 /** A step to allow Download from Google Cloud Storage as a Build step and in pipeline. */
 @RequiresDomain(value = StorageScopeRequirement.class)
 public class DownloadStep extends Builder implements SimpleBuildStep, Serializable {
-
+  private static final long serialVersionUID = 1;
   private static final Logger logger = Logger.getLogger(DownloadStep.class.getName());
+  private final String credentialsId;
+  private final String bucketUri;
+  private final String localDirectory;
+  private String pathPrefix;
+  /** The module to use for providing dependencies. */
+  protected final transient UploadModule module;
 
-  /** Construct the download step. */
+  /**
+   * DataBoundConstructor for DownloadStep.
+   *
+   * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
+   * @param bucketUri Name of the GCS bucket. e.g. gs://MY_BUCKET_NAME
+   * @param localDirectory Path of the local directory in Jenkins to download the file to.
+   */
   @DataBoundConstructor
   public DownloadStep(String credentialsId, String bucketUri, String localDirectory) {
     this(credentialsId, bucketUri, localDirectory, null);
   }
 
+  /**
+   * Constructor for DownloadStep.
+   *
+   * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
+   * @param bucketUri Name of the GCS bucket. e.g. gs://MY_BUCKET_NAME
+   * @param localDirectory Path of the local directory in Jenkins to download the file to.
+   * @param module An {@link UploadModule} to use for execution.
+   */
   public DownloadStep(
       String credentialsId,
       String bucketUri,
@@ -93,31 +113,26 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   }
 
   /**
-   * The bucket uri specified by the user, which potentially contains unresolved symbols, such as
-   * $JOB_NAME and $BUILD_NUMBER.
+   * @return The bucket uri specified by the user, which potentially contains unresolved symbols,
+   *     such as $JOB_NAME and $BUILD_NUMBER.
    */
   public String getBucketUri() {
     return bucketUri;
   }
 
-  private final String bucketUri;
-
   /**
-   * The local directory in the Jenkins workspace that will receive the files. This might contain
-   * unresolved symbols, such as $JOB_NAME and $BUILD_NUMBER.
+   * @return The local directory in the Jenkins workspace that will receive the files. This might
+   *     contain unresolved symbols, such as $JOB_NAME and $BUILD_NUMBER.
    */
   public String getLocalDirectory() {
     return localDirectory;
   }
 
-  private final String localDirectory;
-
   /**
-   * The path prefix that will be stripped from downloaded files. May be null if no path prefix
-   * needs to be stripped.
-   *
-   * <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
-   * automatically added if it is missing.
+   * @param pathPrefix The path prefix that will be stripped from downloaded files. May be null if
+   *     no path prefix needs to be stripped.
+   *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
+   *     automatically added if it is missing.
    */
   @DataBoundSetter
   public void setPathPrefix(@Nullable String pathPrefix) {
@@ -127,33 +142,45 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     this.pathPrefix = pathPrefix;
   }
 
+  /**
+   * @return The path prefix that will be stripped from downloaded files. May be null if no path
+   *     prefix needs to be stripped.
+   *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
+   *     automatically added if it is missing.
+   */
   @Nullable
   public String getPathPrefix() {
     return pathPrefix;
   }
 
-  private String pathPrefix;
-
-  /** The module to use for providing dependencies. */
-  protected final UploadModule module;
-
-  /** The unique ID for the credentials we are using to authenticate with GCS. */
+  /** @return The unique ID for the credentials we are using to authenticate with GCS. */
   public String getCredentialsId() {
     return credentialsId;
   }
 
-  private final String credentialsId;
-
-  /** The credentials we are using to authenticate with GCS. */
+  /** @return The credentials we are using to authenticate with GCS. */
   public GoogleRobotCredentials getCredentials() {
     return GoogleRobotCredentials.getById(getCredentialsId());
   }
 
+  /** @{inheritDoc} */
   @Override
   public BuildStepMonitor getRequiredMonitorService() {
     return BuildStepMonitor.NONE;
   }
 
+  /**
+   * The main entry point of this extension. Downloads the resolved GCS objects from the resolved
+   * GCS bucket to a local directory.
+   *
+   * @param run Current job being run.
+   * @param workspace Workspace of node running the job.
+   * @param launcher {@link Launcher} for this job.
+   * @param listener Listener for events of this job.
+   * @throws IOException If there was an issue parsing the bucket URI.
+   * @throws InterruptedException If there was an issue initiating downloads at workspace or
+   *     expanding variables in the pathPrefix.
+   */
   @Override
   public void perform(
       @Nonnull Run<?, ?> run,
@@ -315,10 +342,14 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   }
 
   /**
-   * Split the string on wildcards.
+   * Split the string on wildcards ("*").
    *
    * <p>String.split removes trailing empty strings, for example, "a", "a*" and "a**" and would
-   * procude the same result, so that method is not suitable.
+   * produce the same result, so that method is not suitable.
+   *
+   * @param uri URI supplied to be split.
+   * @return URI split by "*" wildcard.
+   * @throws AbortException
    */
   public static String[] split(String uri) throws AbortException {
     int occurs = StringUtils.countMatches(uri, "*");
@@ -334,6 +365,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     int index = uri.indexOf('*');
     return new String[] {uri.substring(0, index), uri.substring(index + 1)};
   }
+
   /** Verifies that the given path is supported within current limitations */
   private static void verifySupported(BucketPath path) throws AbortException {
     if (path.getBucket().contains("*")) {
@@ -412,9 +444,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     return result;
   }
 
-  /**
-   * Boilerplate, see: https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
-   */
+  /** {@inheritDoc} */
   public DescriptorImpl getDescriptor() {
     return (DescriptorImpl) checkNotNull(Hudson.getInstance()).getDescriptor(getClass());
   }
@@ -423,13 +453,14 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   @Extension
   @Symbol("googleStorageDownload")
   public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
-
     private final UploadModule module;
 
+    /** @return Module for the DescriptorImpl. */
     public UploadModule getModule() {
       return module;
     }
 
+    /** Constructor for {@link DownloadStep}'s DescriptorImpl. */
     public DescriptorImpl() {
       this.module = new UploadModule();
     }
@@ -446,6 +477,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
       return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Builder newInstance(StaplerRequest req, JSONObject formData) throws FormException {
       if (Boolean.FALSE.equals(formData.remove("stripPathPrefix"))) {
