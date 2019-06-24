@@ -34,10 +34,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Security
  
 ### Added
- - Build step functionality for post-build actions Expiring bucket lifecycle and build log upload complete
- with integration testing.
+ - Build step functionality for post-build actions expiring bucket lifecycle and build log upload complete
+ with integration testing for all pipeline steps.
  - Pipeline model definition added in POM.
- - Automated code formatting added.
+ - Automated code formatting added in POM.
   
 ### Changed
  - Upgraded Jenkins to 2.164.2 from 1.625.3.
