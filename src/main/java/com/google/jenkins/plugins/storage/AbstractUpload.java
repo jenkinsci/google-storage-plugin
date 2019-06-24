@@ -203,6 +203,7 @@ public abstract class AbstractUpload
     public final Collection<FilePath> inclusions;
   }
 
+  //TODO: Return an optional for UploadSpec?
   /**
    * Implementations override this interface in order to surface the set of {@link FilePath}s the
    * core logic should upload.

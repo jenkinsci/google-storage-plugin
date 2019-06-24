@@ -56,6 +56,12 @@ import javax.annotation.Nullable;
  */
 public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
   /** Constructs the base bucket OLM plugin from the bucket name and module. */
+  /**
+   * Constructs the base bucket OLM plugin from the bucket name and module.
+   *
+   * @param bucket GCS Bucket in which to alter the time to live.
+   * @param module Helper class methods to use for execution.
+   */
   public AbstractBucketLifecycleManager(String bucket, @Nullable UploadModule module) {
     super(bucket, module);
   }
