@@ -330,8 +330,8 @@ public abstract class AbstractUpload
   }
 
   /**
-   * Gives all registered {@link AbstractUpload}s.
-   * See: https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
+   * Gives all registered {@link AbstractUpload}s. See:
+   * https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
    *
    * @return All registered {@link AbstractUpload}s.
    */
