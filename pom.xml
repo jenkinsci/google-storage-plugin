@@ -72,6 +72,7 @@
     <google.api.version>1.24.1</google.api.version>
     <java.level>8</java.level>
     <pipeline-model-definition.version>1.3.8</pipeline-model-definition.version>
+    <concurrency>5</concurrency>
   </properties>
 
   <dependencies>
@@ -284,6 +285,7 @@
         <version>2.20.1</version>
         <configuration>
           <skipTests>${skip.surefire.tests}</skipTests>
+          <runOrder>balanced</runOrder>
         </configuration>
       </plugin>
     </plugins>

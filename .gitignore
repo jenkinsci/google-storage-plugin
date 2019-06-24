@@ -9,3 +9,6 @@
 
 # Jenkins home directory when running "mvn hpi:run".
 /work
+
+# Maven surefire statistics file for determining test run order
+.surefire-*
