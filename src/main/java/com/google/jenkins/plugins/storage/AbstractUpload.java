@@ -105,7 +105,7 @@ public abstract class AbstractUpload
   protected final transient UploadModule module;
   /** Provide detail information summarizing this download for the GCS upload report. */
   public abstract String getDetails();
-  /** NOTE: old name kept for deserialization */
+  // NOTE: old name kept for deserialization
   private final String bucketNameWithVars;
   private boolean sharedPublicly;
   private boolean forFailedJobs;
@@ -129,7 +129,7 @@ public abstract class AbstractUpload
 
   /**
    * This method allows the old signature for compatibility reasons. Calls {@link #perform(String,
-   * Run, FilePath, TaskListener)}
+   * Run, FilePath, TaskListener)}.
    *
    * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
    * @param build Current build being run.
@@ -330,10 +330,10 @@ public abstract class AbstractUpload
   }
 
   /**
-   * Gives all registered {@link AbstractUpload}s See:
-   * https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
+   * Gives all registered {@link AbstractUpload}s.
+   * See: https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
    *
-   * @return All registered {@link AbstractUpload}s
+   * @return All registered {@link AbstractUpload}s.
    */
   public static DescriptorExtensionList<AbstractUpload, AbstractUploadDescriptor> all() {
     return checkNotNull(Hudson.getInstance())
@@ -350,7 +350,7 @@ public abstract class AbstractUpload
    * storagePrefix} using the authority of {@code credentials} and logging any information to {@code
    * listener}.
    *
-   * @throws UploadException if anything goes awry
+   * @throws UploadException If there was any issue during upload.
    */
   private void initiateUploadsAtWorkspace(
       final GoogleRobotCredentials credentials,

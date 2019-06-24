@@ -40,7 +40,7 @@ public class UploadModule {
   /**
    * Interface for requesting the {@link Executor} for executing requests.
    *
-   * @return a new {@link Executor} instance for issuing requests
+   * @return a new {@link Executor} instance for issuing requests.
    */
   public Executor newExecutor() {
     return new Executor.Default();
@@ -55,7 +55,7 @@ public class UploadModule {
     return DomainRequirementProvider.of(getClass(), StorageScopeRequirement.class);
   }
 
-  /** @return the version number of this plugin */
+  /** @return the version number of this plugin. */
   public String getVersion() {
     String version = "";
     Plugin plugin = Jenkins.getInstance().getPlugin(PLUGIN_NAME);

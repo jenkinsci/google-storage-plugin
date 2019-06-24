@@ -47,7 +47,7 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
   private final String credentialsId;
 
   /**
-   * DataBoundConstructor for the classic upload step
+   * DataBoundConstructor for the classic upload step.
    *
    * @see ClassicUpload#ClassicUpload
    * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
@@ -222,7 +222,7 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
       return ClassicUpload.DescriptorImpl.staticDoCheckBucket(bucket);
     }
 
-    /** This callback validates the {@code pattern} input field's values */
+    /** This callback validates the {@code pattern} input field's values. */
     public static FormValidation doCheckPattern(@QueryParameter final String pattern)
         throws IOException {
       return ClassicUpload.DescriptorImpl.staticDoCheckPattern(pattern);
