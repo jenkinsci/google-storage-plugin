@@ -155,9 +155,7 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
    */
   protected abstract Bucket decorateBucket(Bucket bucket);
 
-  /**
-   * Boilerplate, see: https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
-   */
+  /** {@inheritDoc} */
   public AbstractBucketLifecycleManagerDescriptor getDescriptor() {
     return (AbstractBucketLifecycleManagerDescriptor)
         checkNotNull(Hudson.getInstance()).getDescriptor(getClass());

@@ -103,7 +103,7 @@ public abstract class AbstractUpload
   private String pathPrefix;
   /** The module to use for providing dependencies. */
   protected final transient UploadModule module;
-  /** Provide detail information summarizing this download for the GCS upload report. */
+  /** @return Provide detail information summarizing this download for the GCS upload report. */
   public abstract String getDetails();
   // NOTE: old name kept for deserialization
   private final String bucketNameWithVars;
@@ -208,6 +208,11 @@ public abstract class AbstractUpload
    * core logic should upload.
    *
    * @see UploadSpec for further details.
+   * @param run Current job being run.
+   * @param workspace Workspace of node running the job.
+   * @param listener Listener for events of this job.
+   * @return Set of {@link FilePath}s to upload.
+   * @throws UploadException If there was an issue fetching the inclusions.
    */
   @Nullable
   protected abstract UploadSpec getInclusions(
@@ -219,6 +224,9 @@ public abstract class AbstractUpload
    *
    * <p>NOTE: The base implementation does not do anything, so calling {@code
    * super.annotateObject()} is unnecessary.
+   * @param object GCS object to annotate.
+   * @param listener Listener for events of this job.
+   * @throws UploadException If there was an issue annotating the object with metadata.
    */
   protected void annotateObject(StorageObject object, TaskListener listener)
       throws UploadException {
@@ -229,6 +237,8 @@ public abstract class AbstractUpload
    * Retrieves the metadata to attach to the storage object.
    *
    * <p>NOTE: This can be overriden to surface additional (or less) information.
+   * @param run Current job being run.
+   * @return Metadata in key-value form.
    */
   protected Map<String, String> getMetadata(Run<?, ?> run) {
     return MetadataContainer.of(run).getSerializedMetadata();
@@ -587,7 +597,9 @@ public abstract class AbstractUpload
    * Fetches or creates an instance of the bucket with the given name with the specified storage
    * service.
    *
+   * @param service Handle to the GCS API.
    * @param credentials The credentials with which to fetch/create the bucket
+   * @param executor Helper class to make calls to the GCS API.
    * @param bucketName The top-level bucket name to ensure exists
    * @return an instance of the named bucket, created or retrieved.
    * @throws UploadException if any issues are encountered
