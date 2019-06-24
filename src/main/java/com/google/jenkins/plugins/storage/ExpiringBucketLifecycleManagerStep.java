@@ -121,7 +121,14 @@ public class ExpiringBucketLifecycleManagerStep extends Recorder
       return true;
     }
 
-    /** This callback validates the {@code bucket} input field's values. */
+
+     /**
+     * This callback validates the {@code bucket} input field's values.
+     *
+     * @param bucket GCS Bucket in which to alter the time to live.
+     * @return Valid form validation result or error message if invalid.
+     * @throws IOException If there was an issue validating the bucket provided.
+     */
     public FormValidation doCheckBucket(@QueryParameter final String bucket) throws IOException {
       return ExpiringBucketLifecycleManager.DescriptorImpl.staticDoCheckBucket(bucket);
     }

@@ -31,6 +31,8 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
   /**
    * Create the descriptor of the Upload from it's type on associated module for instantiating
    * dependencies.
+   * @param clazz Class that extends {@link AbstractUpload}.
+   * @param module Helper class methods to use for execution.
    */
   protected AbstractUploadDescriptor(Class<? extends AbstractUpload> clazz, UploadModule module) {
     super(checkNotNull(clazz));
@@ -38,14 +40,15 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
   }
 
   /**
-   * Boilerplate, see: https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
+   * Create the descriptor of the Upload from it's type of {@link AbstractUpload}.
+   * @param clazz Class that extends {@link AbstractUpload}.
    */
   protected AbstractUploadDescriptor(Class<? extends AbstractUpload> clazz) {
     this(checkNotNull(clazz), new UploadModule());
   }
 
   /**
-   * Retrieve the module to use for instantiating dependencies for instances described by this
+   * @return Retrieve the module to use for instantiating dependencies for instances described by this
    * descriptor.
    */
   public UploadModule getModule() {
@@ -90,6 +93,13 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
     return staticDoCheckBucket(bucketNameWithVars);
   }
 
+  /**
+   * Form validation for bucket parameter.
+   *
+   * @param bucket GCS bucket.
+   * @return Valid form validation result or error message if invalid.
+   * @throws IOException If there was an issue validating the bucket.
+   */
   public FormValidation doCheckBucket(@QueryParameter final String bucket) throws IOException {
     return staticDoCheckBucket(bucket);
   }
