@@ -42,10 +42,15 @@ import org.kohsuke.stapler.QueryParameter;
  * bucket, with a specified file name. By default, the file is named "build-log.txt".
  */
 public class StdoutUpload extends AbstractUpload {
+  private final String logName;
 
   /**
    * Construct the Upload with the stock properties, and the additional information about how to
    * name the build log file.
+   * @param bucket GCS bucket to upload build artifacts to.
+   * @param module An {@link UploadModule} to use for execution.
+   * @param logName Name of log file to store to GCS bucket.
+   * @param bucketNameWithVars Deprecated format for bucket.
    */
   @DataBoundConstructor
   public StdoutUpload(
@@ -58,12 +63,10 @@ public class StdoutUpload extends AbstractUpload {
     this.logName = checkNotNull(logName);
   }
 
-  /** The name to give the file we upload for the build log. */
+  /** @return The name to give the file we upload for the build log. */
   public String getLogName() {
     return logName;
   }
-
-  private final String logName;
 
   /** {@inheritDoc} */
   @Override
@@ -132,8 +135,13 @@ public class StdoutUpload extends AbstractUpload {
       return Messages.StdoutUpload_DisplayName();
     }
 
-    /** This callback validates the {@code logName} input field's values. */
-    public FormValidation doCheckLogName(@QueryParameter final String logName) throws IOException {
+    /**
+     * This callback validates the {@code logName} input field's values.
+     *
+     * @param logName Name for the build log that will be uploaded to the GCS bucket.
+     * @return Valid form validation result or error message if invalid.
+     */
+    public FormValidation doCheckLogName(@QueryParameter final String logName) {
       String resolvedInput = Resolve.resolveBuiltin(logName);
       if (resolvedInput.isEmpty()) {
         return FormValidation.error(Messages.StdoutUpload_LogNameRequired());

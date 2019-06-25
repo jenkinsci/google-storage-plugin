@@ -73,14 +73,16 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
   }
 
   /**
-   * @param sharedPublicly Whether to indicate in metadata that the file should be viewable inline
-   *     in web browsers, rather than requiring it to be downloaded first.
+   * @param sharedPublicly Whether to surface the file being uploaded to anyone with the link.
    */
   @DataBoundSetter
   public void setSharedPublicly(boolean sharedPublicly) {
     upload.setSharedPublicly(sharedPublicly);
   }
 
+  /**
+   * @return Whether to surface the file being uploaded to anyone with the link.
+   */
   public boolean isSharedPublicly() {
     return upload.isSharedPublicly();
   }
@@ -94,6 +96,10 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
     upload.setShowInline(showInline);
   }
 
+  /**
+   * @return Whether to indicate in metadata that the file should be viewable
+   * inline in web browsers, rather than requiring it to be downloaded first.
+   */
   public boolean isShowInline() {
     return upload.isShowInline();
   }
@@ -158,13 +164,22 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
       return true;
     }
 
-    /** This callback validates the {@code bucket} input field's values. */
-    public FormValidation doCheckBucket(@QueryParameter final String bucket) throws IOException {
+    /**
+     * This callback validates the {@code bucket} input field's values.
+     *
+     * @param bucket GCS bucket to upload build logs to.
+     * @return Valid form validation result or error message if invalid.
+     */    public FormValidation doCheckBucket(@QueryParameter final String bucket) throws IOException {
       return StdoutUpload.DescriptorImpl.staticDoCheckBucket(bucket);
     }
 
-    public static FormValidation doCheckLogName(@QueryParameter final String logName)
-        throws IOException {
+    /**
+     * This callback validates the {@code logName} input field's values.
+     *
+     * @param logName Name for the build log that will be uploaded to the GCS bucket.
+     * @return Valid form validation result or error message if invalid.
+     */
+    public static FormValidation doCheckLogName(@QueryParameter final String logName) {
       return new StdoutUpload.DescriptorImpl().doCheckLogName(logName);
     }
 

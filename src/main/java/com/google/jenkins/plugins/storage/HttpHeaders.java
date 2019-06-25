@@ -21,6 +21,12 @@ import com.google.common.base.Charsets;
 public class HttpHeaders {
 
   /** Returns an RFC 6266 Content-Disposition header for the given filename. */
+  /**
+   *
+   * @param filename Name of the file to get the Content-Disposition header for.
+   * @param showInline
+   * @return
+   */
   public static String getContentDisposition(String filename, boolean showInline) {
     return String.format(
         "%s; filename=%s; filename*=%s",

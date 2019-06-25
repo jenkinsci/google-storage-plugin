@@ -35,7 +35,7 @@ public class StorageUtil {
    * Compute the relative path of the given file inclusion, relative to the given workspace. If the
    * path is absolute, it returns the root-relative path instead.
    *
-   * @param include The file whose relative path we are computing
+   * @param include The file whose relative path we are computing.
    * @param workspace The workspace containing the included file.
    * @return The unix-style relative path of file.
    * @throws UploadException when the input is malformed
@@ -56,6 +56,9 @@ public class StorageUtil {
   /**
    * If a path prefix to strip has been specified, and the input string starts with that prefix,
    * returns the portion of the input after that prefix. Otherwise, returns the unmodified input.
+   * @param filename Input string to strip.
+   * @param pathPrefix Name of the path prefix to strip on.
+   * @return Remaining portion of the input after prefix is stripped.
    */
   public static String getStrippedFilename(String filename, String pathPrefix) {
     if (pathPrefix != null && filename != null && filename.startsWith(pathPrefix)) {
@@ -71,6 +74,8 @@ public class StorageUtil {
    * @param run The current run, used to determine pipeline status and to get environment.
    * @param listener Task listener, used to get environment
    * @return The updated name, with variables resolved
+   * @throws InterruptedException If getting the environment of the run throws an InterruptedException.
+   * @throws IOException If getting the environment of the run throws an IOException.
    */
   public static String replaceMacro(String name, Run<?, ?> run, TaskListener listener)
       throws InterruptedException, IOException {
@@ -84,8 +89,8 @@ public class StorageUtil {
    * Look up credentials by name.
    *
    * @param credentials The name of the credentials to look up.
-   * @return The corresponding {@link GoogleRobotCredentials}
-   * @throws AbortException If credentials not found
+   * @return The corresponding {@link GoogleRobotCredentials}.
+   * @throws AbortException If credentials not found.
    */
   public static GoogleRobotCredentials lookupCredentials(String credentials) throws AbortException {
     GoogleRobotCredentials result = GoogleRobotCredentials.getById(credentials);

@@ -28,8 +28,9 @@ import java.util.logging.Logger;
 
 /** A class to facilitate retries on storage operations. */
 public class RetryStorageOperation {
-
   private static final Logger logger = Logger.getLogger(RetryStorageOperation.class.getName());
+  // Only attempt to refresh the remote credentials once per 401 received.
+  public static final int MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES = 1;
 
   /** An operation to be retried */
   public interface Operation {
@@ -45,6 +46,9 @@ public class RetryStorageOperation {
    * @param executor The executor to use for the operation
    * @param a The operation to execute.
    * @param attempts How many attempts to make. Must be at least 1.
+   * @throws IOException If performing the operation threw an IOException.
+   * @throws InterruptedException If performing the operation threw an InterruptedException.
+   * @throws ExecutorException If the executor threw an exception while performing the operation.
    */
   public static void performRequestWithRetry(Executor executor, Operation a, int attempts)
       throws IOException, InterruptedException, ExecutorException {
@@ -96,6 +100,10 @@ public class RetryStorageOperation {
    * @param retries How many times to attempt to refresh credentials if there is no progress. (Every
    *     time an action successfully completes, the retry budget is reset)
    * @param <Ex> An action-specific exception that might be throwns.
+   * @throws IOException If performing the operation threw an IOException.
+   * @throws InterruptedException If performing the operation threw an InterruptedException.
+   * @throws ExecutorException If the executor threw an exception while performing the operation.
+   * @throws Ex Custom exception thrown by the {@link Operation}.
    */
   public static <Ex extends Throwable> void performRequestWithReinitCredentials(
       RepeatOperation<Ex> a, int retries)
@@ -119,9 +127,6 @@ public class RetryStorageOperation {
       // Other exceptions are raised further for the client to deal with
     } while (a.moreWork());
   }
-
-  // Only attempt to refresh the remote credentials once per 401 received.
-  public static final int MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES = 1;
 
   public static <Ex extends Throwable> void performRequestWithReinitCredentials(
       RepeatOperation<Ex> a) throws IOException, InterruptedException, ExecutorException, Ex {

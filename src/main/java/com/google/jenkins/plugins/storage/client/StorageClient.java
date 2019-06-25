@@ -74,6 +74,7 @@ public class StorageClient {
    * @param pattern Pattern to match object name to upload to bucket.
    * @param bucket Name of the bucket to upload to.
    * @param content InputStreamContent of desired file to upload.
+   * @return The parsed HTTP response from the request.
    * @throws IOException If there was an issue calling the GCS API.
    */
   public StorageObject uploadToBucket(String pattern, String bucket, InputStreamContent content)
