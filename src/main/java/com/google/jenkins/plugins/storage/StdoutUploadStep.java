@@ -166,7 +166,7 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
      * @param bucket GCS bucket to upload build logs to.
      * @return Valid form validation result or error message if invalid.
      */
-    public FormValidation doCheckBucket(@QueryParameter final String bucket) throws IOException {
+    public FormValidation doCheckBucket(@QueryParameter final String bucket) {
       return StdoutUpload.DescriptorImpl.staticDoCheckBucket(bucket);
     }
 
