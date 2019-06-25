@@ -157,7 +157,8 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
   /**
    * A hook by which extensions may annotate a new or existing bucket.
    *
-   * @return bucket the bucket to annotate and return
+   * @param bucket The bucket to annotate and return.
+   * @return The bucket to annotate and return.
    */
   protected abstract Bucket decorateBucket(Bucket bucket);
 
