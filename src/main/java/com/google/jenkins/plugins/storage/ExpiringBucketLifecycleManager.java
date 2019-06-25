@@ -33,7 +33,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 public class ExpiringBucketLifecycleManager extends AbstractBucketLifecycleManager {
   private static final Logger logger =
       Logger.getLogger(ExpiringBucketLifecycleManager.class.getName());
-  /** NOTE: old name kept for deserialization */
+  // NOTE: old name kept for deserialization
   private final int bucketObjectTTL;
 
   private static final String DELETE = "Delete";
