@@ -39,6 +39,13 @@ public class ClassicUpload extends AbstractUpload {
   /**
    * Construct the classic upload implementation from the base properties and the glob for matching
    * files.
+   *
+   * @param bucket GCS bucket to upload files to.
+   * @param module Helper class for connecting to the GCS API.
+   * @param pattern The glob of files to upload, which potentially contains unresolved symbols, such
+   *     as $JOB_NAME and $BUILD_NUMBER.
+   * @param bucketNameWithVars Deprecated format for bucket.
+   * @param sourceGlobWithVars Deprecated. Old name kept for deserialization.
    */
   @DataBoundConstructor
   public ClassicUpload(
@@ -113,7 +120,7 @@ public class ClassicUpload extends AbstractUpload {
   }
 
   /**
-   * The glob of files to upload, which potentially contains unresolved symbols, such as $JOB_NAME
+   * @return The glob of files to upload, which potentially contains unresolved symbols, such as $JOB_NAME
    * and $BUILD_NUMBER.
    */
   public String getPattern() {
@@ -141,9 +148,14 @@ public class ClassicUpload extends AbstractUpload {
       return Messages.ClassicUpload_DisplayName();
     }
 
-    /** This callback validates the {@code pattern} input field's values. */
-    public static FormValidation staticDoCheckPattern(@QueryParameter final String pattern)
-        throws IOException {
+    /**
+     * This callback validates the {@code pattern} input field's values.
+     *
+     * @param pattern The glob of files to upload, which potentially contains unresolved symbols, such
+     *     as $JOB_NAME and $BUILD_NUMBER.
+     * @return Valid form validation result or error message if invalid.
+     */
+    public static FormValidation staticDoCheckPattern(@QueryParameter final String pattern) {
       String resolvedInput = Resolve.resolveBuiltin(pattern);
       if (resolvedInput.isEmpty()) {
         return FormValidation.error(Messages.ClassicUpload_EmptyGlob());
@@ -168,8 +180,14 @@ public class ClassicUpload extends AbstractUpload {
       return FormValidation.ok();
     }
 
-    /** This callback validates the {@code pattern} input field's values. */
-    public FormValidation doCheckPattern(@QueryParameter final String pattern) throws IOException {
+    /**
+     * This callback validates the {@code pattern} input field's values.
+     *
+     * @param pattern The glob of files to upload, which potentially contains unresolved symbols, such
+     *     as $JOB_NAME and $BUILD_NUMBER.
+     * @return Valid form validation result or error message if invalid.
+     */
+    public FormValidation doCheckPattern(@QueryParameter final String pattern) {
       return staticDoCheckPattern(pattern);
     }
   }

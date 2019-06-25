@@ -55,7 +55,6 @@ import javax.annotation.Nullable;
  * @see com.google.jenkins.plugins.storage.ExpiringBucketLifecycleManager
  */
 public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
-  /** Constructs the base bucket OLM plugin from the bucket name and module. */
   /**
    * Constructs the base bucket OLM plugin from the bucket name and module.
    *

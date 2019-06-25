@@ -58,8 +58,7 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
   private final UploadModule module;
 
   /** This callback validates the {@code bucketNameWithVars} input field's values. */
-  public static FormValidation staticDoCheckBucket(final String bucketNameWithVars)
-      throws IOException {
+  public static FormValidation staticDoCheckBucket(final String bucketNameWithVars) {
     String resolvedInput = Resolve.resolveBuiltin(bucketNameWithVars);
     if (!resolvedInput.startsWith(GCS_SCHEME)) {
       return FormValidation.error(
