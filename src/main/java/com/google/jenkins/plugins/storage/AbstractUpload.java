@@ -224,6 +224,7 @@ public abstract class AbstractUpload
    *
    * <p>NOTE: The base implementation does not do anything, so calling {@code
    * super.annotateObject()} is unnecessary.
+   *
    * @param object GCS object to annotate.
    * @param listener Listener for events of this job.
    * @throws UploadException If there was an issue annotating the object with metadata.
@@ -237,6 +238,7 @@ public abstract class AbstractUpload
    * Retrieves the metadata to attach to the storage object.
    *
    * <p>NOTE: This can be overriden to surface additional (or less) information.
+   *
    * @param run Current job being run.
    * @return Metadata in key-value form.
    */

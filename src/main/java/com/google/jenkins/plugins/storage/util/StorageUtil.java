@@ -56,6 +56,7 @@ public class StorageUtil {
   /**
    * If a path prefix to strip has been specified, and the input string starts with that prefix,
    * returns the portion of the input after that prefix. Otherwise, returns the unmodified input.
+   *
    * @param filename Input string to strip.
    * @param pathPrefix Name of the path prefix to strip on.
    * @return Remaining portion of the input after prefix is stripped.
@@ -74,7 +75,8 @@ public class StorageUtil {
    * @param run The current run, used to determine pipeline status and to get environment.
    * @param listener Task listener, used to get environment
    * @return The updated name, with variables resolved
-   * @throws InterruptedException If getting the environment of the run throws an InterruptedException.
+   * @throws InterruptedException If getting the environment of the run throws an
+   *     InterruptedException.
    * @throws IOException If getting the environment of the run throws an IOException.
    */
   public static String replaceMacro(String name, Run<?, ?> run, TaskListener listener)

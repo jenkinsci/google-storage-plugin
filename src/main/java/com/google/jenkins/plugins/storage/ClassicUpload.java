@@ -120,8 +120,8 @@ public class ClassicUpload extends AbstractUpload {
   }
 
   /**
-   * @return The glob of files to upload, which potentially contains unresolved symbols, such as $JOB_NAME
-   * and $BUILD_NUMBER.
+   * @return The glob of files to upload, which potentially contains unresolved symbols, such as
+   *     $JOB_NAME and $BUILD_NUMBER.
    */
   public String getPattern() {
     return sourceGlobWithVars;
@@ -151,8 +151,8 @@ public class ClassicUpload extends AbstractUpload {
     /**
      * This callback validates the {@code pattern} input field's values.
      *
-     * @param pattern The glob of files to upload, which potentially contains unresolved symbols, such
-     *     as $JOB_NAME and $BUILD_NUMBER.
+     * @param pattern The glob of files to upload, which potentially contains unresolved symbols,
+     *     such as $JOB_NAME and $BUILD_NUMBER.
      * @return Valid form validation result or error message if invalid.
      */
     public static FormValidation staticDoCheckPattern(@QueryParameter final String pattern) {
@@ -183,8 +183,8 @@ public class ClassicUpload extends AbstractUpload {
     /**
      * This callback validates the {@code pattern} input field's values.
      *
-     * @param pattern The glob of files to upload, which potentially contains unresolved symbols, such
-     *     as $JOB_NAME and $BUILD_NUMBER.
+     * @param pattern The glob of files to upload, which potentially contains unresolved symbols,
+     *     such as $JOB_NAME and $BUILD_NUMBER.
      * @return Valid form validation result or error message if invalid.
      */
     public FormValidation doCheckPattern(@QueryParameter final String pattern) {

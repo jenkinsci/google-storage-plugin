@@ -148,8 +148,9 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
    * This is intended to be an identity function that throws when the input is not adequately
    * annotated.
    *
-   * @param bucket the pre-existing bucket whose annotations to validate
-   * @throws InvalidAnnotationException if not annotated properly
+   * @param bucket the pre-existing bucket whose annotations to validate.
+   * @throws InvalidAnnotationException if not annotated properly.
+   * @return The bucket that was validated.
    */
   protected abstract Bucket checkBucket(Bucket bucket) throws InvalidAnnotationException;
 

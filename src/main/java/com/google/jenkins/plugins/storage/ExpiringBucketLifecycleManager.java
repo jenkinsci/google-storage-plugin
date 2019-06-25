@@ -35,6 +35,7 @@ public class ExpiringBucketLifecycleManager extends AbstractBucketLifecycleManag
       Logger.getLogger(ExpiringBucketLifecycleManager.class.getName());
   /** NOTE: old name kept for deserialization */
   private final int bucketObjectTTL;
+
   private static final String DELETE = "Delete";
 
   /**
@@ -134,7 +135,10 @@ public class ExpiringBucketLifecycleManager extends AbstractBucketLifecycleManag
     return bucket;
   }
 
-  /** @return Surface the TTL for objects contained within the bucket for roundtripping to the jelly UI. */
+  /**
+   * @return Surface the TTL for objects contained within the bucket for roundtripping to the jelly
+   *     UI.
+   */
   public int getTtl() {
     return bucketObjectTTL;
   }

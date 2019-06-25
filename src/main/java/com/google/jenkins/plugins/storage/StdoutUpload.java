@@ -47,6 +47,7 @@ public class StdoutUpload extends AbstractUpload {
   /**
    * Construct the Upload with the stock properties, and the additional information about how to
    * name the build log file.
+   *
    * @param bucket GCS bucket to upload build artifacts to.
    * @param module An {@link UploadModule} to use for execution.
    * @param logName Name of log file to store to GCS bucket.

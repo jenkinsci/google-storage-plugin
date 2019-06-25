@@ -121,8 +121,7 @@ public class ExpiringBucketLifecycleManagerStep extends Recorder
       return true;
     }
 
-
-     /**
+    /**
      * This callback validates the {@code bucket} input field's values.
      *
      * @param bucket GCS Bucket in which to alter the time to live.

@@ -72,17 +72,13 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
     upload = new StdoutUpload(bucket, module.orElse(null), logName, null);
   }
 
-  /**
-   * @param sharedPublicly Whether to surface the file being uploaded to anyone with the link.
-   */
+  /** @param sharedPublicly Whether to surface the file being uploaded to anyone with the link. */
   @DataBoundSetter
   public void setSharedPublicly(boolean sharedPublicly) {
     upload.setSharedPublicly(sharedPublicly);
   }
 
-  /**
-   * @return Whether to surface the file being uploaded to anyone with the link.
-   */
+  /** @return Whether to surface the file being uploaded to anyone with the link. */
   public boolean isSharedPublicly() {
     return upload.isSharedPublicly();
   }
@@ -97,8 +93,8 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
   }
 
   /**
-   * @return Whether to indicate in metadata that the file should be viewable
-   * inline in web browsers, rather than requiring it to be downloaded first.
+   * @return Whether to indicate in metadata that the file should be viewable inline in web
+   *     browsers, rather than requiring it to be downloaded first.
    */
   public boolean isShowInline() {
     return upload.isShowInline();
@@ -169,7 +165,8 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
      *
      * @param bucket GCS bucket to upload build logs to.
      * @return Valid form validation result or error message if invalid.
-     */    public FormValidation doCheckBucket(@QueryParameter final String bucket) throws IOException {
+     */
+    public FormValidation doCheckBucket(@QueryParameter final String bucket) throws IOException {
       return StdoutUpload.DescriptorImpl.staticDoCheckBucket(bucket);
     }
 

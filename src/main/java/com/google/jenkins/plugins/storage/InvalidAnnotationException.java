@@ -26,6 +26,7 @@ import com.google.api.services.storage.model.Bucket;
 public class InvalidAnnotationException extends Exception {
   /**
    * Constructor for the exception.
+   *
    * @param bucket Name of the GCS bucket.
    */
   public InvalidAnnotationException(Bucket bucket) {

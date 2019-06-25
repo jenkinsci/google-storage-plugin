@@ -31,6 +31,7 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
   /**
    * Create the descriptor of the Upload from it's type on associated module for instantiating
    * dependencies.
+   *
    * @param clazz Class that extends {@link AbstractUpload}.
    * @param module Helper class methods to use for execution.
    */
@@ -41,6 +42,7 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
 
   /**
    * Create the descriptor of the Upload from it's type of {@link AbstractUpload}.
+   *
    * @param clazz Class that extends {@link AbstractUpload}.
    */
   protected AbstractUploadDescriptor(Class<? extends AbstractUpload> clazz) {
@@ -48,8 +50,8 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
   }
 
   /**
-   * @return Retrieve the module to use for instantiating dependencies for instances described by this
-   * descriptor.
+   * @return Retrieve the module to use for instantiating dependencies for instances described by
+   *     this descriptor.
    */
   public UploadModule getModule() {
     return module;
