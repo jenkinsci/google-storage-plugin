@@ -100,7 +100,7 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
    *
    * @param bucketNameWithVars GCS bucket.
    * @return Valid form validation result or error message if invalid.
-   * @throws IOException If there was in issue validating the bucket.
+   * @throws IOException If there was an issue validating the bucket.
    */
   public FormValidation doCheckBucketNameWithVars(@QueryParameter final String bucketNameWithVars)
       throws IOException {
