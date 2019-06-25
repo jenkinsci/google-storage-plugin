@@ -23,6 +23,7 @@ public class HttpHeaders {
 
   /**
    * Returns an RFC 6266 Content-Disposition header for the given filename.
+   *
    * @param filename Name of the file to get the Content-Disposition header for.
    * @param showInline If the content should be displayed inline or as an attachment.
    * @return The RFC 6266 Content-Disposition header for the filename.
