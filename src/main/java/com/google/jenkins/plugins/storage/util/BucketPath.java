@@ -22,6 +22,8 @@ import java.io.Serializable;
 
 /** Handles cloud uris and their parsing. */
 public class BucketPath implements Serializable {
+  private final String bucket;
+  private final String object;
 
   /**
    * Prepares a new BucketPath.
@@ -52,32 +54,39 @@ public class BucketPath implements Serializable {
     this.object = (halves.length == 1) ? "" : halves[1];
   }
 
-  /** Initializes BucketPath directly, with no parsing or substitutions. */
+  /**
+   * Initializes BucketPath directly, with no parsing or substitutions.
+   *
+   * @param bucket The bucket portion of the URI.
+   * @param object The path to the object portion of the URI not including bucket.
+   */
   public BucketPath(String bucket, String object) {
     this.bucket = bucket;
     this.object = object;
   }
 
+  /**
+   * Determines if this is an invalid {@link BucketPath}.
+   *
+   * @return False if the bucket is empty.
+   */
   public boolean error() {
     // The bucket cannot be empty under normal circumstances.
     return getBucket().length() <= 0;
   }
 
-  /** Regenerate the path (without gs:// prefix) */
+  /** @return Regenerate the path (without gs:// prefix) */
   public String getPath() {
     return bucket + (object.isEmpty() ? "" : "/" + object);
   }
 
-  /** The Bucket portion of the URI */
+  /** @return The Bucket portion of the URI */
   public String getBucket() {
     return bucket;
   }
 
-  /** The object portion of the URI */
+  /** @return The object portion of the URI */
   public String getObject() {
     return object;
   }
-
-  private final String bucket;
-  private final String object;
 }

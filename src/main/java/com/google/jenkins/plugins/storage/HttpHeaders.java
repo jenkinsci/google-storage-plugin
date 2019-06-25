@@ -19,8 +19,15 @@ import com.google.common.base.Charsets;
 
 /** Utility class for building HTTP header values. */
 public class HttpHeaders {
+  private static final String RFC_5987_ATTR_CHARS = "!#$&+-.^_`|~";
 
-  /** Returns an RFC 6266 Content-Disposition header for the given filename. */
+  /**
+   * Returns an RFC 6266 Content-Disposition header for the given filename.
+   *
+   * @param filename Name of the file to get the Content-Disposition header for.
+   * @param showInline If the content should be displayed inline or as an attachment.
+   * @return The RFC 6266 Content-Disposition header for the filename.
+   */
   public static String getContentDisposition(String filename, boolean showInline) {
     return String.format(
         "%s; filename=%s; filename*=%s",
@@ -75,8 +82,6 @@ public class HttpHeaders {
     }
     return builder.toString();
   }
-
-  private static final String RFC_5987_ATTR_CHARS = "!#$&+-.^_`|~";
 
   private HttpHeaders() {}
 }

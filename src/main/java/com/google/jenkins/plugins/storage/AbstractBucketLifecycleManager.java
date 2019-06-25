@@ -55,7 +55,12 @@ import javax.annotation.Nullable;
  * @see com.google.jenkins.plugins.storage.ExpiringBucketLifecycleManager
  */
 public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
-  /** Constructs the base bucket OLM plugin from the bucket name and module. */
+  /**
+   * Constructs the base bucket OLM plugin from the bucket name and module.
+   *
+   * @param bucket GCS Bucket in which to alter the time to live.
+   * @param module Helper class methods to use for execution.
+   */
   public AbstractBucketLifecycleManager(String bucket, @Nullable UploadModule module) {
     super(bucket, module);
   }
@@ -143,21 +148,21 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
    * This is intended to be an identity function that throws when the input is not adequately
    * annotated.
    *
-   * @param bucket the pre-existing bucket whose annotations to validate
-   * @throws InvalidAnnotationException if not annotated properly
+   * @param bucket the pre-existing bucket whose annotations to validate.
+   * @throws InvalidAnnotationException if not annotated properly.
+   * @return The bucket that was validated.
    */
   protected abstract Bucket checkBucket(Bucket bucket) throws InvalidAnnotationException;
 
   /**
    * A hook by which extensions may annotate a new or existing bucket.
    *
-   * @param bucket the bucket to annotate and return
+   * @param bucket The bucket to annotate and return.
+   * @return The bucket to annotate and return.
    */
   protected abstract Bucket decorateBucket(Bucket bucket);
 
-  /**
-   * Boilerplate, see: https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
-   */
+  /** {@inheritDoc} */
   public AbstractBucketLifecycleManagerDescriptor getDescriptor() {
     return (AbstractBucketLifecycleManagerDescriptor)
         checkNotNull(Hudson.getInstance()).getDescriptor(getClass());

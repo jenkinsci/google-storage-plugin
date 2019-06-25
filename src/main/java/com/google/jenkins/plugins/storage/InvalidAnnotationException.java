@@ -24,11 +24,16 @@ import com.google.api.services.storage.model.Bucket;
  * AbstractBucketLifecycleManager#checkBucket} when a bucket is not properly annotated.
  */
 public class InvalidAnnotationException extends Exception {
+  /**
+   * Constructor for the exception.
+   *
+   * @param bucket Name of the GCS bucket.
+   */
   public InvalidAnnotationException(Bucket bucket) {
     this.bucket = checkNotNull(bucket);
   }
 
-  /** The bucket that isn't properly annotated. */
+  /** @return The bucket that isn't properly annotated. */
   public Bucket getBucket() {
     return this.bucket;
   }

@@ -217,14 +217,23 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
       return super.newInstance(req, formData);
     }
 
-    /** This callback validates the {@code bucketNameWithVars} input field's values. */
-    public FormValidation doCheckBucket(@QueryParameter final String bucket) throws IOException {
+    /**
+     * This callback validates the {@code bucket} input field's values.
+     *
+     * @param bucket GCS bucket to upload files to.
+     * @return Valid form validation result or error message if invalid.
+     */
+    public FormValidation doCheckBucket(@QueryParameter final String bucket) {
       return ClassicUpload.DescriptorImpl.staticDoCheckBucket(bucket);
     }
 
-    /** This callback validates the {@code pattern} input field's values. */
-    public static FormValidation doCheckPattern(@QueryParameter final String pattern)
-        throws IOException {
+    /**
+     * This callback validates the {@code pattern} input field's values.
+     *
+     * @param pattern GCS bucket to upload files to.
+     * @return Valid form validation result or error message if invalid.
+     */
+    public static FormValidation doCheckPattern(@QueryParameter final String pattern) {
       return ClassicUpload.DescriptorImpl.staticDoCheckPattern(pattern);
     }
   }

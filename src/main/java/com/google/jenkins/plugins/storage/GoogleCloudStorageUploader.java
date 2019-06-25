@@ -44,6 +44,8 @@ import org.kohsuke.stapler.DataBoundConstructor;
 /** A Jenkins plugin for uploading files to Google Cloud Storage (GCS). */
 @RequiresDomain(value = StorageScopeRequirement.class)
 public class GoogleCloudStorageUploader extends Recorder {
+  private final String credentialsId;
+  private final List<AbstractUpload> uploads;
 
   /**
    * Construct the GCS uploader to use the provided credentials to upload build artifacts.
@@ -62,24 +64,20 @@ public class GoogleCloudStorageUploader extends Recorder {
     }
   }
 
-  /** The unique ID for the credentials we are using to authenticate with GCS. */
+  /** @return The unique ID for the credentials we are using to authenticate with GCS. */
   public String getCredentialsId() {
     return credentialsId;
   }
 
-  private final String credentialsId;
-
-  /** The credentials we are using to authenticate with GCS. */
+  /** @return The credentials we are using to authenticate with GCS. */
   public GoogleRobotCredentials getCredentials() {
     return GoogleRobotCredentials.getById(getCredentialsId());
   }
 
-  /** The set of tuples describing the artifacts to upload, and where to upload them. */
+  /** @return The set of tuples describing the artifacts to upload, and where to upload them. */
   public Collection<AbstractUpload> getUploads() {
     return Collections.unmodifiableCollection(uploads);
   }
-
-  private final List<AbstractUpload> uploads;
 
   /** {@inheritDoc} */
   @Override
@@ -145,6 +143,7 @@ public class GoogleCloudStorageUploader extends Recorder {
       return ImmutableList.<AbstractUpload>of(upload);
     }
 
+    /** @return All registered {@link AbstractUpload}s. */
     public List<AbstractUploadDescriptor> getUploads() {
       return AbstractUpload.all();
     }

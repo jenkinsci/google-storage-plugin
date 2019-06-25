@@ -163,7 +163,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     return GoogleRobotCredentials.getById(getCredentialsId());
   }
 
-  /** @{inheritDoc} */
+  /** {@inheritDoc} */
   @Override
   public BuildStepMonitor getRequiredMonitorService() {
     return BuildStepMonitor.NONE;
@@ -349,7 +349,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
    *
    * @param uri URI supplied to be split.
    * @return URI split by "*" wildcard.
-   * @throws AbortException
+   * @throws AbortException If there is more than one wild card character in the provided string.
    */
   public static String[] split(String uri) throws AbortException {
     int occurs = StringUtils.countMatches(uri, "*");
@@ -486,9 +486,13 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
       return super.newInstance(req, formData);
     }
 
-    /** This callback validates the {@code bucketNameWithVars} input field's values. */
-    public FormValidation doCheckBucketUri(@QueryParameter final String bucketUri)
-        throws IOException {
+    /**
+     * This callback validates the {@code bucketNameWithVars} input field's values.
+     *
+     * @param bucketUri Name of the GCS bucket. e.g. gs://MY_BUCKET_NAME
+     * @return Valid form validation result or error message if invalid.
+     */
+    public FormValidation doCheckBucketUri(@QueryParameter final String bucketUri) {
       try {
         BucketPath path = new BucketPath(bucketUri);
         verifySupported(path);

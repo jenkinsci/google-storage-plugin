@@ -33,8 +33,20 @@ import org.kohsuke.stapler.DataBoundConstructor;
 public class ExpiringBucketLifecycleManager extends AbstractBucketLifecycleManager {
   private static final Logger logger =
       Logger.getLogger(ExpiringBucketLifecycleManager.class.getName());
+  // NOTE: old name kept for deserialization
+  private final int bucketObjectTTL;
 
-  /** Construct the simple lifecycle manager from a TLL and the common properties. */
+  private static final String DELETE = "Delete";
+
+  /**
+   * Construct the simple lifecycle manager from a TLL and the common properties.
+   *
+   * @param bucket GCS Bucket in which to alter the time to live.
+   * @param module Helper class methods to use for execution.
+   * @param ttl The number of days after which to delete data stored in the GCS bucket.
+   * @param bucketNameWithVars Legacy name for bucket. Deprecated.
+   * @param bucketObjectTTL Legacy name for ttl. Deprecated.
+   */
   @DataBoundConstructor
   public ExpiringBucketLifecycleManager(
       String bucket,
@@ -123,14 +135,13 @@ public class ExpiringBucketLifecycleManager extends AbstractBucketLifecycleManag
     return bucket;
   }
 
-  /** Surface the TTL for objects contained within the bucket for roundtripping to the jelly UI. */
+  /**
+   * @return Surface the TTL for objects contained within the bucket for roundtripping to the jelly
+   *     UI.
+   */
   public int getTtl() {
     return bucketObjectTTL;
   }
-  /** NOTE: old name kept for deserialization */
-  private final int bucketObjectTTL;
-
-  private static final String DELETE = "Delete";
 
   /** Denotes this is an {@link AbstractUpload} plugin */
   @Extension
