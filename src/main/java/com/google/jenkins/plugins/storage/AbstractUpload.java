@@ -101,10 +101,8 @@ public abstract class AbstractUpload
           "svg", "image/svg+xml",
           "woff2", "font/woff2");
   private String pathPrefix;
-  /** The module to use for providing dependencies. */
+  // The module to use for providing dependencies.
   protected final transient UploadModule module;
-  /** @return Provide detail information summarizing this download for the GCS upload report. */
-  public abstract String getDetails();
   // NOTE: old name kept for deserialization
   private final String bucketNameWithVars;
   private boolean sharedPublicly;
@@ -268,6 +266,9 @@ public abstract class AbstractUpload
     // else NOT_BUILT
     return false;
   }
+
+  /** @return Provide detail information summarizing this download for the GCS upload report. */
+  public abstract String getDetails();
 
   /**
    * @return The bucket name specified by the user, which potentially contains unresolved symbols,
