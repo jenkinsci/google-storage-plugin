@@ -27,6 +27,9 @@ import org.kohsuke.stapler.StaplerRequest;
 
 /** Descriptor from which Upload extensions must derive their descriptor. */
 public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload> {
+  // The URI "scheme" that prefixes GCS URIs
+  public static final String GCS_SCHEME = "gs://";
+  private final UploadModule module;
 
   /**
    * Create the descriptor of the Upload from it's type on associated module for instantiating
@@ -57,9 +60,12 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
     return module;
   }
 
-  private final UploadModule module;
-
-  /** This callback validates the {@code bucketNameWithVars} input field's values. */
+  /**
+   * This callback validates the {@code bucketNameWithVars} input field's values.
+   *
+   * @param bucketNameWithVars GCS bucket.
+   * @return Valid form validation result or error message if invalid.
+   */
   public static FormValidation staticDoCheckBucket(final String bucketNameWithVars) {
     String resolvedInput = Resolve.resolveBuiltin(bucketNameWithVars);
     if (!resolvedInput.startsWith(GCS_SCHEME)) {
@@ -89,6 +95,13 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
     return FormValidation.ok();
   }
 
+  /**
+   * This callback validates the {@code bucketNameWithVars} input field's values.
+   *
+   * @param bucketNameWithVars GCS bucket.
+   * @return Valid form validation result or error message if invalid.
+   * @throws IOException If there was in issue validating the bucket.
+   */
   public FormValidation doCheckBucketNameWithVars(@QueryParameter final String bucketNameWithVars)
       throws IOException {
     return staticDoCheckBucket(bucketNameWithVars);
@@ -105,6 +118,7 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
     return staticDoCheckBucket(bucket);
   }
 
+  /** {@inheritDoc} */
   @Override
   public AbstractUpload newInstance(StaplerRequest req, JSONObject formData) throws FormException {
     // Since the config form lists the optional parameter pathPrefix as inline,
@@ -117,7 +131,4 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
     }
     return super.newInstance(req, formData);
   }
-
-  /** The URI "scheme" that prefixes GCS URIs */
-  public static final String GCS_SCHEME = "gs://";
 }
