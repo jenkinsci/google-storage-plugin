@@ -74,7 +74,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   private final String localDirectory;
   private String pathPrefix;
   /** The module to use for providing dependencies. */
-  private transient UploadModule module;
+  private final transient UploadModule module;
 
   /**
    * DataBoundConstructor for DownloadStep.
@@ -156,7 +156,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   /** @return The UploadModule used for providing dependencies. */
   protected UploadModule getModule() {
     if (this.module == null) {
-      this.module = getDescriptor().getModule();
+      return getDescriptor().getModule();
     }
     return this.module;
   }
@@ -466,7 +466,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     /** @return Module for the DescriptorImpl. */
     public UploadModule getModule() {
       if (this.module == null) {
-        this.module = new UploadModule();
+        return new UploadModule();
       }
       return this.module;
     }

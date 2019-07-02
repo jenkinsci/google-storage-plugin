@@ -102,7 +102,7 @@ public abstract class AbstractUpload
           "woff2", "font/woff2");
   private String pathPrefix;
   // The module to use for providing dependencies.
-  private transient UploadModule module;
+  private final transient UploadModule module;
   // NOTE: old name kept for deserialization
   private final String bucketNameWithVars;
   private boolean sharedPublicly;
@@ -273,7 +273,7 @@ public abstract class AbstractUpload
   /** @return The {@link UploadModule} for providing dependencies. */
   protected UploadModule getModule() {
     if (this.module == null) {
-      this.module = getDescriptor().getModule();
+      return getDescriptor().getModule();
     }
     return this.module;
   }
