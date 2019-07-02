@@ -29,7 +29,7 @@ import org.kohsuke.stapler.StaplerRequest;
 public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload> {
   // The URI "scheme" that prefixes GCS URIs
   public static final String GCS_SCHEME = "gs://";
-  private final UploadModule module;
+  private UploadModule module;
 
   /**
    * Create the descriptor of the Upload from it's type on associated module for instantiating
@@ -57,7 +57,10 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
    *     this descriptor.
    */
   public UploadModule getModule() {
-    return module;
+    if (this.module == null) {
+      this.module = new UploadModule();
+    }
+    return this.module;
   }
 
   /**
