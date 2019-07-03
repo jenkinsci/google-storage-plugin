@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
  ### Removed
 				 
  ### Fixed
+ 
+## [1.3.1] - 2019-07-03
+### Fixed
+ - Issue #78: Upload module was not being initialized when restarting Jenkins, causing build steps
+ created prior to 1.3.0 to fail with null pointer exceptions, as well as build steps created in
+ 1.3.0 once Jenkins was restarted. Fixed with PR #79. Users that updated to 1.3.0 should not have
+ lost configuration for existing jobs and updating to 1.3.1 is sufficient to fix the issue.
 
 ## [1.3.0] - 2019-06-24 
 ### Added
