@@ -74,7 +74,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   private final String localDirectory;
   private String pathPrefix;
   /** The module to use for providing dependencies. */
-  protected final transient UploadModule module;
+  private final transient UploadModule module;
 
   /**
    * DataBoundConstructor for DownloadStep.
@@ -153,6 +153,14 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     return pathPrefix;
   }
 
+  /** @return The UploadModule used for providing dependencies. */
+  protected synchronized UploadModule getModule() {
+    if (this.module == null) {
+      return getDescriptor().getModule();
+    }
+    return this.module;
+  }
+
   /** @return The unique ID for the credentials we are using to authenticate with GCS. */
   public String getCredentialsId() {
     return credentialsId;
@@ -189,7 +197,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
       @Nonnull TaskListener listener)
       throws IOException, InterruptedException {
     try {
-      String version = module.getVersion();
+      String version = getModule().getVersion();
       String path = StorageUtil.replaceMacro(getBucketUri(), run, listener);
       BucketPath bucketPath = new BucketPath(path);
       if (bucketPath.error()) {
@@ -203,7 +211,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
 
       listener
           .getLogger()
-          .println(module.prefix(Messages.Download_FoundForPattern(objects.size(), path)));
+          .println(getModule().prefix(Messages.Download_FoundForPattern(objects.size(), path)));
 
       // TODO(agoulti): add a download report.
 
@@ -255,12 +263,12 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     RepeatOperation<IOException> a =
         new RepeatOperation<IOException>() {
           private Queue<StorageObjectId> objects = new LinkedList<StorageObjectId>(objs);
-          Executor executor = module.newExecutor();
+          Executor executor = getModule().newExecutor();
 
           Storage service;
 
           public void initCredentials() throws IOException {
-            service = module.getStorageService(credentials, version);
+            service = getModule().getStorageService(credentials, version);
           }
 
           public boolean moreWork() {
@@ -273,7 +281,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
             String addPath = StorageUtil.getStrippedFilename(obj.getName(), resolvedPrefix);
             FilePath localName = localDir.withSuffix("/" + addPath);
 
-            performDownloadWithRetry(executor, service, obj, localName, module, listener);
+            performDownloadWithRetry(executor, service, obj, localName, getModule(), listener);
             objects.remove();
           }
         };
@@ -300,7 +308,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
       // Use remotable credential to access the storage service from the
       // remote machine.
       final GoogleRobotCredentials remoteCredentials =
-          checkNotNull(credentials).forRemote(module.getRequirement());
+          checkNotNull(credentials).forRemote(getModule().getRequirement());
 
       localDir.act(
           new Callable<Void, IOException>() {
@@ -388,8 +396,8 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   private List<StorageObjectId> resolveBucketPath(
       BucketPath bucketPath, GoogleRobotCredentials credentials, String version)
       throws IOException, ExecutorException {
-    Storage service = module.getStorageService(credentials, version);
-    Executor executor = module.newExecutor();
+    Storage service = getModule().getStorageService(credentials, version);
+    Executor executor = getModule().newExecutor();
 
     List<StorageObjectId> result = new ArrayList<StorageObjectId>();
 
@@ -453,11 +461,14 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   @Extension
   @Symbol("googleStorageDownload")
   public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
-    private final UploadModule module;
+    private UploadModule module;
 
     /** @return Module for the DescriptorImpl. */
-    public UploadModule getModule() {
-      return module;
+    public synchronized UploadModule getModule() {
+      if (this.module == null) {
+        return new UploadModule();
+      }
+      return this.module;
     }
 
     /** Constructor for {@link DownloadStep}'s DescriptorImpl. */

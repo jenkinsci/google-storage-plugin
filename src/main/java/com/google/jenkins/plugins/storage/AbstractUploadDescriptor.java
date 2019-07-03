@@ -56,8 +56,11 @@ public abstract class AbstractUploadDescriptor extends Descriptor<AbstractUpload
    * @return Retrieve the module to use for instantiating dependencies for instances described by
    *     this descriptor.
    */
-  public UploadModule getModule() {
-    return module;
+  public synchronized UploadModule getModule() {
+    if (this.module == null) {
+      return new UploadModule();
+    }
+    return this.module;
   }
 
   /**

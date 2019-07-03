@@ -102,7 +102,7 @@ public abstract class AbstractUpload
           "woff2", "font/woff2");
   private String pathPrefix;
   // The module to use for providing dependencies.
-  protected final transient UploadModule module;
+  private final transient UploadModule module;
   // NOTE: old name kept for deserialization
   private final String bucketNameWithVars;
   private boolean sharedPublicly;
@@ -270,6 +270,13 @@ public abstract class AbstractUpload
   /** @return Provide detail information summarizing this download for the GCS upload report. */
   public abstract String getDetails();
 
+  /** @return The {@link UploadModule} for providing dependencies. */
+  protected synchronized UploadModule getModule() {
+    if (this.module == null) {
+      return getDescriptor().getModule();
+    }
+    return this.module;
+  }
   /**
    * @return The bucket name specified by the user, which potentially contains unresolved symbols,
    *     such as $JOB_NAME and $BUILD_NUMBER.
@@ -377,8 +384,8 @@ public abstract class AbstractUpload
         // Use remotable credential to access the storage service from the
         // remote machine.
         final GoogleRobotCredentials remoteCredentials =
-            checkNotNull(credentials).forRemote(module.getRequirement());
-        final String version = module.getVersion();
+            checkNotNull(credentials).forRemote(getModule().getRequirement());
+        final String version = getModule().getVersion();
 
         uploads.workspace.act(
             new Callable<Void, UploadException>() {
@@ -435,14 +442,14 @@ public abstract class AbstractUpload
     RepeatOperation<UploadException> a =
         new RepeatOperation<UploadException>() {
           private Queue<FilePath> paths = new LinkedList<>(uploads.inclusions);;
-          Executor executor = module.newExecutor();;
+          Executor executor = getModule().newExecutor();
 
           Storage service;
           Bucket bucket;
 
           @Override
           public void initCredentials() throws UploadException, IOException {
-            service = module.getStorageService(credentials, version);
+            service = getModule().getStorageService(credentials, version);
             // Ensure the bucket exists, fetching it regardless so that we can
             // attach its default ACLs to the objects we upload.
             bucket = getOrCreateBucket(service, credentials, executor, bucketName);
@@ -478,7 +485,7 @@ public abstract class AbstractUpload
             // Log that we are uploading the file and begin executing the upload.
             listener
                 .getLogger()
-                .println(module.prefix(Messages.AbstractUpload_Uploading(relativePath)));
+                .println(getModule().prefix(Messages.AbstractUpload_Uploading(relativePath)));
 
             performUploadWithRetry(executor, service, bucket, object, include);
             paths.remove();
@@ -552,7 +559,7 @@ public abstract class AbstractUpload
           }
         };
 
-    RetryStorageOperation.performRequestWithRetry(executor, a, module.getInsertRetryCount());
+    RetryStorageOperation.performRequestWithRetry(executor, a, getModule().getInsertRetryCount());
   }
 
   // Fetch the default object ACL for this bucket. Return an empty list if

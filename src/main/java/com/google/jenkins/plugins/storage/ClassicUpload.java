@@ -94,14 +94,14 @@ public class ClassicUpload extends AbstractUpload {
 
       FilePath[] inclusions = workspace.list(globResolvedVars);
       if (inclusions.length == 0) {
-        listener.error(module.prefix(Messages.ClassicUpload_NoArtifacts(globResolvedVars)));
+        listener.error(getModule().prefix(Messages.ClassicUpload_NoArtifacts(globResolvedVars)));
         return null;
       }
       listener
           .getLogger()
           .println(
-              module.prefix(
-                  Messages.ClassicUpload_FoundForPattern(inclusions.length, getPattern())));
+              getModule()
+                  .prefix(Messages.ClassicUpload_FoundForPattern(inclusions.length, getPattern())));
       return new UploadSpec(workspace, Arrays.asList(inclusions));
     } catch (InterruptedException e) {
       throw new UploadException(Messages.AbstractUpload_IncludeException(), e);
