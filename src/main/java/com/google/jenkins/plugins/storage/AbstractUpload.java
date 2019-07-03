@@ -271,7 +271,7 @@ public abstract class AbstractUpload
   public abstract String getDetails();
 
   /** @return The {@link UploadModule} for providing dependencies. */
-  protected UploadModule getModule() {
+  protected synchronized UploadModule getModule() {
     if (this.module == null) {
       return getDescriptor().getModule();
     }

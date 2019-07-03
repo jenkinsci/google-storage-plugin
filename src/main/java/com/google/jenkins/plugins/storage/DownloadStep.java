@@ -154,7 +154,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   }
 
   /** @return The UploadModule used for providing dependencies. */
-  protected UploadModule getModule() {
+  protected synchronized UploadModule getModule() {
     if (this.module == null) {
       return getDescriptor().getModule();
     }
@@ -464,7 +464,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     private UploadModule module;
 
     /** @return Module for the DescriptorImpl. */
-    public UploadModule getModule() {
+    public synchronized UploadModule getModule() {
       if (this.module == null) {
         return new UploadModule();
       }
