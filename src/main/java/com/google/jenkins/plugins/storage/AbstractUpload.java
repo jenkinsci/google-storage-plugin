@@ -49,7 +49,6 @@ import hudson.ExtensionPoint;
 import hudson.FilePath;
 import hudson.model.AbstractBuild;
 import hudson.model.Describable;
-import hudson.model.Hudson;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
@@ -67,6 +66,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
+import jenkins.model.Jenkins;
 import org.apache.commons.io.FilenameUtils;
 import org.jenkinsci.remoting.RoleChecker;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -120,7 +120,7 @@ public abstract class AbstractUpload
     if (module != null) {
       this.module = module;
     } else {
-      this.module = getDescriptor().getModule();
+      this.module = new UploadModule();
     }
     this.bucketNameWithVars = checkNotNull(bucket);
   }
@@ -273,7 +273,7 @@ public abstract class AbstractUpload
   /** @return The {@link UploadModule} for providing dependencies. */
   protected synchronized UploadModule getModule() {
     if (this.module == null) {
-      return getDescriptor().getModule();
+      return new UploadModule();
     }
     return this.module;
   }
@@ -356,13 +356,12 @@ public abstract class AbstractUpload
    * @return All registered {@link AbstractUpload}s.
    */
   public static DescriptorExtensionList<AbstractUpload, AbstractUploadDescriptor> all() {
-    return checkNotNull(Hudson.getInstance())
-        .<AbstractUpload, AbstractUploadDescriptor>getDescriptorList(AbstractUpload.class);
+    return checkNotNull(Jenkins.get()).getDescriptorList(AbstractUpload.class);
   }
 
   /** {@inheritDoc} */
   public AbstractUploadDescriptor getDescriptor() {
-    return (AbstractUploadDescriptor) checkNotNull(Hudson.getInstance()).getDescriptor(getClass());
+    return (AbstractUploadDescriptor) checkNotNull(Jenkins.get()).getDescriptor(getClass());
   }
 
   /**

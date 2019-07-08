@@ -58,7 +58,7 @@ public class UploadModule {
   /** @return the version number of this plugin. */
   public String getVersion() {
     String version = "";
-    Plugin plugin = Jenkins.getInstance().getPlugin(PLUGIN_NAME);
+    Plugin plugin = Jenkins.get().getPlugin(PLUGIN_NAME);
     if (plugin != null) {
       version = plugin.getWrapper().getVersion();
     }

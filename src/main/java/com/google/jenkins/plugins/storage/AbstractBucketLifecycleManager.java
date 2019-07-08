@@ -26,11 +26,11 @@ import com.google.jenkins.plugins.util.Executor;
 import com.google.jenkins.plugins.util.ExecutorException;
 import com.google.jenkins.plugins.util.NotFoundException;
 import hudson.FilePath;
-import hudson.model.Hudson;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import java.io.IOException;
 import javax.annotation.Nullable;
+import jenkins.model.Jenkins;
 
 /**
  * This extension point may be implemented to surface the object lifecycle options available on
@@ -165,6 +165,6 @@ public abstract class AbstractBucketLifecycleManager extends AbstractUpload {
   /** {@inheritDoc} */
   public AbstractBucketLifecycleManagerDescriptor getDescriptor() {
     return (AbstractBucketLifecycleManagerDescriptor)
-        checkNotNull(Hudson.getInstance()).getDescriptor(getClass());
+        checkNotNull(Jenkins.get()).getDescriptor(getClass());
   }
 }
