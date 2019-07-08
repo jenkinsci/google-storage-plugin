@@ -35,7 +35,6 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractProject;
-import hudson.model.Hudson;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.remoting.Callable;
@@ -54,6 +53,7 @@ import java.util.Queue;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
@@ -104,7 +104,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     if (module != null) {
       this.module = module;
     } else {
-      this.module = getDescriptor().getModule();
+      this.module = new UploadModule();
     }
 
     this.bucketUri = bucketUri;
@@ -156,7 +156,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   /** @return The UploadModule used for providing dependencies. */
   protected synchronized UploadModule getModule() {
     if (this.module == null) {
-      return getDescriptor().getModule();
+      return new UploadModule();
     }
     return this.module;
   }
@@ -454,7 +454,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
 
   /** {@inheritDoc} */
   public DescriptorImpl getDescriptor() {
-    return (DescriptorImpl) checkNotNull(Hudson.getInstance()).getDescriptor(getClass());
+    return (DescriptorImpl) checkNotNull(Jenkins.get()).getDescriptor(getClass());
   }
 
   /** Descriptor for the DownloadStep */
