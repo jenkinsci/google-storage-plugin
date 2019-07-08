@@ -29,6 +29,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 				 
  ### Fixed
  
+ ## [1.3.2] - 2019-07-08
+### Fixed
+ - Issue #82: Resolved IllegalStateException resulting from outdated use of Hudson.instance().
+ 
 ## [1.3.1] - 2019-07-03
 ### Fixed
  - Issue #78: Upload module was not being initialized when restarting Jenkins, causing build steps
