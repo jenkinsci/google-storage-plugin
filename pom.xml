@@ -27,7 +27,7 @@
       Lots of boilerplate from: https://wiki.jenkins-ci.org/display/JENKINS/Hosting+Plugins
   -->
   <artifactId>google-storage-plugin</artifactId>
-  <version>1.3.3-SNAPSHOT</version>
+  <version>1.3.2-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Google Cloud Storage plugin</name>
