@@ -29,6 +29,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 				 
  ### Fixed
  
+ ## [1.3.3] - 2019-08-07
+### Security
+ - Updated jackson-databind to 2.9.9.2 to address security issues:
+   * https://www.cvedetails.com/cve/CVE-2019-14439/
+   * https://www.cvedetails.com/cve/CVE-2019-14379/
+
  ## [1.3.2] - 2019-07-08
 ### Fixed
  - Issue #82: Resolved IllegalStateException resulting from outdated use of Hudson.instance().
