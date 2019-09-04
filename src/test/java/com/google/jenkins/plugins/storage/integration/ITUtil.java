@@ -20,19 +20,20 @@ import static org.junit.Assert.assertNotNull;
 
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsStore;
+import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
-import com.google.jenkins.plugins.credentials.oauth.ServiceAccountConfig;
-import com.google.jenkins.plugins.storage.StringJsonServiceAccountConfig;
+import com.google.jenkins.plugins.credentials.oauth.JsonServiceAccountConfig;
 import hudson.EnvVars;
 import hudson.model.Run;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.logging.Logger;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -110,8 +111,11 @@ public class ITUtil {
     String credentialsId = getCredentialsId();
     Preconditions.checkArgument(!Strings.isNullOrEmpty(pattern));
 
-    ServiceAccountConfig sac = new StringJsonServiceAccountConfig(serviceAccountKeyJson);
-    Credentials c = (Credentials) new GoogleRobotPrivateKeyCredentials(credentialsId, sac, null);
+    SecretBytes secretBytes =
+        SecretBytes.fromBytes(serviceAccountKeyJson.getBytes(StandardCharsets.UTF_8));
+    JsonServiceAccountConfig sac = new JsonServiceAccountConfig();
+    sac.setSecretJsonKey(secretBytes);
+    Credentials c = new GoogleRobotPrivateKeyCredentials(credentialsId, sac, null);
     CredentialsStore store =
         new SystemCredentialsProvider.ProviderImpl().getStore(jenkinsRule.jenkins);
     store.addCredentials(Domain.global(), c);
