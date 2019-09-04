@@ -16,7 +16,7 @@
 package com.google.jenkins.plugins.storage;
 
 import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson.JacksonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.storage.Storage;
 import com.google.jenkins.plugins.credentials.domains.DomainRequirementProvider;
 import com.google.jenkins.plugins.credentials.domains.RequiresDomain;

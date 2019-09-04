@@ -29,7 +29,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 				 
  ### Fixed
  
- ## [1.3.3] - 2019-08-07
+## [1.4.0] - 2019-09-04
+ ### Changed
+ - org.jenkins-ci.plugins:google-oauth-plugin version changed: 0.7 to 0.9
+ - org.jenkins-ci.plugins:credentials version changed: 2.1.16 to 2.2.0
+ - org.jenkins-ci.plugins:ssh-credentials version changed: 1.13 to 1.16
+ 
+ ### Removed
+ - StringJsonServiceAccountConfig for tests.
+ 
+ ### Fixed
+ - Incompatiblity with version 0.9 of google-oauth-plugin.
+ 
+## [1.3.3] - 2019-08-07
 ### Security
  - Updated jackson-databind to 2.9.9.2 to address security issues:
    * https://www.cvedetails.com/cve/CVE-2019-14439/
