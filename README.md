@@ -14,7 +14,8 @@
 Jenkins Google Cloud Storage Plugin
 ===================================
 
-This plugin provides functionality to communicate with Google Cloud Storage, as build steps, post-build steps, or pipeline steps.
+This plugin provides functionality to communicate with Google Cloud Storage, as build steps,
+post-build steps, or pipeline steps.
 
 ## Documentation
 Please see [Google Storage Plugin](docs/home.md) for complete documentation.
@@ -24,16 +25,22 @@ Please see [Google Storage Plugin](docs/home.md) for complete documentation.
 1. (Optional) Make sure the plugin manager has updated data by clicking the **Check now** button.
 1. In the Plugin Manager, click the **Available** tab and look for the "Google OAuth Plugin".
 1. Check the box under the **Install** column and click the **Install without restart** button.
-1. If the plugin does not appear under **Available**, make sure it appears under **Installed** and is enabled.
+1. If the plugin does not appear under **Available**, make sure it appears under **Installed** and
+is enabled.
  
 ## Plugin Source Build Installation
-See [Plugin Source Build Installation](docs/source_build_installation.md) to build and install from source.
+See [Plugin Source Build Installation](docs/source_build_installation.md) to build and install from
+source.
 
 ## Feature requests and bug reports
 Please file feature requests and bug reports as [GitHub Issues](https://github.com/jenkinsci/google-storage-plugin/issues).
 
-## Community
+**NOTE**: Versions 1.4.0 and above for this plugin are incompatible with version 0.8 or lower of the
+[Google OAuth Credentials Plugin](https://github.com/jenkinsci/google-oauth-plugin). Likewise,
+versions 1.3.3 and below for this plugin are incompatible with versions 0.9 and above of the OAuth
+plugin. Please verify you are using the correct versions before filing a bug report.
 
+## Community
 The GCP Jenkins community uses the **#gcp-jenkins** slack channel on
 [https://googlecloud-community.slack.com](https://googlecloud-community.slack.com)
 to ask questions and share feedback. Invitation link available
