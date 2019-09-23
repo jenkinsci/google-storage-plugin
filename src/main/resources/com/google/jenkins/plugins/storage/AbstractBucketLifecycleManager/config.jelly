@@ -20,7 +20,7 @@
 
   <!-- Allow the user to specify the name of a bucket containing build
   variables to store the uploaded files -->
-  <f:entry title="${%Bucket name}" field="bucketNameWithVars">
+  <f:entry title="${%Bucket name}" field="bucket">
     <f:textbox default="gs://" />
   </f:entry>
 
