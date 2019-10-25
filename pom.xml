@@ -66,8 +66,10 @@
     <jenkins.version>2.164.2</jenkins.version>
     <hpi.compatibleSinceVersion>1.5.0</hpi.compatibleSinceVersion>
     <google.api.version>1.25.0</google.api.version>
+    <google.http.version>1.21.0</google.http.version>
     <google.guava.version>20.0</google.guava.version>
     <google-oauth.version>1.0.0-SNAPSHOT</google-oauth.version>
+    <storage.revision>158</storage.revision>
     <java.level>8</java.level>
     <pipeline-model-definition.version>1.3.8</pipeline-model-definition.version>
     <concurrency>5</concurrency>
@@ -126,6 +128,39 @@
       <artifactId>jackson-databind</artifactId>
       <version>${fasterxml.jackson.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.google.api-client</groupId>
+      <artifactId>google-api-client</artifactId>
+      <version>${google.api.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.http-client</groupId>
+          <artifactId>google-http-client</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.google.http-client</groupId>
+      <artifactId>google-http-client</artifactId>
+      <version>${google.http.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.google.http-client</groupId>
+      <artifactId>google-http-client-jackson2</artifactId>
+      <version>${google.api.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.http-client</groupId>
+          <artifactId>google-http-client</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <!-- com.google.guava -->
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -175,7 +210,7 @@
     <dependency>
       <groupId>com.google.apis</groupId>
       <artifactId>google-api-services-storage</artifactId>
-      <version>v1-rev158-${google.api.version}</version>
+      <version>v1-rev${storage.revision}-${google.api.version}</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.http-client</groupId>
