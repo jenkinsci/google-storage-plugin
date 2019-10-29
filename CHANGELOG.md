@@ -29,6 +29,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 				 
  ### Fixed
  
+## [1.5.0] - 2019-10-30
+ ### Changed
+ - org.jenkins-ci.plugins:google-oauth-plugin version changed: 0.9 to 1.0.0
+ - com.google.guava:guava version changed: 14.0.1 to 20.0
+ - com.google.api-client:google-api-client version changed: 1.24.1 to 1.25.0
+ - com.google.oauth-client:google-oauth-client version changed: 1.24.1 to 1.25.0
+ - com.google.http-client:google-http-client version changed: 1.24.1 to 1.21.0
+ - com.google.http-client:google-http-client-jackson2 version changed: 1.24.1 to 1.25.0
+ - com.google.apis:google-api-services-storage version changed: v1-rev155-1.24.1 to v1-rev158-1.25.0
+
+ ### Fixed
+ - Replaced usages of deprecated `Objects::firstNonNull` with `MoreObjects::firstNonNull` 
+ 
 ## [1.4.0] - 2019-09-04
  ### Changed
  - org.jenkins-ci.plugins:google-oauth-plugin version changed: 0.7 to 0.9
