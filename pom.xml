@@ -68,7 +68,7 @@
     <google.api.version>1.25.0</google.api.version>
     <google.http.version>1.21.0</google.http.version>
     <google.guava.version>20.0</google.guava.version>
-    <google-oauth.version>1.0.0-SNAPSHOT</google-oauth.version>
+    <google-oauth.version>1.0.0</google-oauth.version>
     <storage.revision>158</storage.revision>
     <java.level>8</java.level>
     <pipeline-model-definition.version>1.3.8</pipeline-model-definition.version>
