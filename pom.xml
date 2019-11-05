@@ -73,7 +73,7 @@
     <java.level>8</java.level>
     <pipeline-model-definition.version>1.3.8</pipeline-model-definition.version>
     <concurrency>5</concurrency>
-    <fasterxml.jackson.version>2.9.10</fasterxml.jackson.version>
+    <fasterxml.jackson.version>2.10.0</fasterxml.jackson.version>
   </properties>
 
   <dependencies>
