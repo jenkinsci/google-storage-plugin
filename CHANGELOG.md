@@ -29,6 +29,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 				 
  ### Fixed
  
+## [1.5.1] - 2019-11-11
+ ### Security
+ - fasterxml.jackson.version changed: 2.9.10 to 2.10.0
+
 ## [1.5.0] - 2019-10-30
  ### Changed
  - org.jenkins-ci.plugins:google-oauth-plugin version changed: 0.9 to 1.0.0
