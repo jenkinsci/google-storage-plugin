@@ -24,21 +24,18 @@ pipeline {
 
     stages {
         stage("Build and test") {
-	    agent {
-    	    	kubernetes {
-      		    cloud 'kubernetes'
-      		    label 'maven-pod'
-      		    yamlFile 'jenkins/maven-pod.yaml'
-		}
-	    }
-	    steps {
-	    	container('maven') {
+            agent {
+                kubernetes {
+                    cloud 'kubernetes'
+                    label 'maven-pod'
+                    yamlFile 'jenkins/maven-pod.yaml'
+                }
+            }
+            steps {
+                container('maven') {
                     withCredentials([[$class: 'StringBinding', credentialsId: env.GCS_IT_CRED_ID, variable: 'GOOGLE_CREDENTIALS']]) {
-		        // build
-	    	        sh "mvn clean package -ntp"
-
-		        // run tests
-		        sh "mvn verify -ntp"
+                        // build
+                        sh "mvn verify -ntp -DskipIts=false"
                     }
                 }
             }

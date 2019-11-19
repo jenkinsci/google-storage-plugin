@@ -73,6 +73,7 @@
     <java.level>8</java.level>
     <pipeline-model-definition.version>1.3.8</pipeline-model-definition.version>
     <concurrency>5</concurrency>
+    <skipIts>true</skipIts>
     <fasterxml.jackson.version>2.10.0</fasterxml.jackson.version>
   </properties>
 
@@ -334,6 +335,7 @@
           </execution>
         </executions>
         <configuration>
+          <skipITs>${skipIts}</skipITs>
           <disableXmlReport>true</disableXmlReport>
           <useFile>false</useFile>
         </configuration>
