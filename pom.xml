@@ -344,6 +344,7 @@
         <configuration>
           <skipTests>${skip.surefire.tests}</skipTests>
           <runOrder>balanced</runOrder>
+          <reuseForks>false</reuseForks>
         </configuration>
       </plugin>
     </plugins>
