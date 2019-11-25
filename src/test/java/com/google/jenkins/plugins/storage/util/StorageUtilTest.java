@@ -16,11 +16,14 @@
 package com.google.jenkins.plugins.storage.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeFalse;
 
 import hudson.FilePath;
 import java.io.File;
 import java.io.IOException;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -32,6 +35,11 @@ public class StorageUtilTest {
   private FilePath nonWorkspace;
 
   @Rule public TemporaryFolder tempDir = new TemporaryFolder();
+
+  @BeforeClass
+  public static void init() {
+    assumeFalse(SystemUtils.IS_OS_WINDOWS);
+  }
 
   @Before
   public void setUp() throws Exception {
@@ -56,8 +64,8 @@ public class StorageUtilTest {
   public void getRelativeNegativeTest() throws Exception {
     FilePath one = workspace.child(FIRST_NAME);
 
-    assertEquals(workspace.toString(), "/" + StorageUtil.getRelative(workspace, one));
-    assertEquals(nonWorkspace.toString(), "/" + StorageUtil.getRelative(nonWorkspace, workspace));
+    assertEquals(workspace.getRemote(), "/" + StorageUtil.getRelative(workspace, one));
+    assertEquals(nonWorkspace.getRemote(), "/" + StorageUtil.getRelative(nonWorkspace, workspace));
   }
 
   private File makeTempDir(String name) throws IOException {

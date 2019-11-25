@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -51,7 +52,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Verifier;
@@ -139,6 +142,11 @@ public class GoogleCloudStorageUploaderTest {
           return true;
         }
       };
+
+  @BeforeClass
+  public static void init() {
+    assumeFalse(SystemUtils.IS_OS_WINDOWS);
+  }
 
   @Before
   public void setUp() throws Exception {
