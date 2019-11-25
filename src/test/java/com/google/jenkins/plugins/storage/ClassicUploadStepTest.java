@@ -16,6 +16,7 @@
 package com.google.jenkins.plugins.storage;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -31,6 +32,7 @@ import hudson.AbortException;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.TaskListener;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -79,6 +81,7 @@ public class ClassicUploadStepTest {
 
   @Test
   public void testRoundtrip() throws Exception {
+    assumeFalse(SystemUtils.IS_OS_WINDOWS);
     ClassicUploadStep step = new ClassicUploadStep(CREDENTIALS_ID, "bucket", "pattern");
     ConfigurationRoundTripTest(step);
 
