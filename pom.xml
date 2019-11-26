@@ -215,7 +215,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>google-metadata-plugin</artifactId>
-      <version>0.3</version>
+      <version>0.3.1</version>
     </dependency>
     <!-- com.google.apis -->
     <!-- https://developers.google.com/api-client-library/java/apis/storage/v1 -->
