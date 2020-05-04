@@ -295,10 +295,10 @@ public class DownloadStepTest {
     tryWildcards("*", new String[] {"a", "b.txt", "l_a_b_d_f"}, new String[] {"a/b.txt", "/b"});
   }
 
-	@Test
-	public void testBuildDoubleWildcardsOnly() throws Exception {
-		tryWildcards("**", new String[] {"a.txt", "a/a.txt", "a/log", "a/b/c.txt"}, new String[] {});
-	}
+  @Test
+  public void testBuildDoubleWildcardsOnly() throws Exception {
+    tryWildcards("**", new String[] {"a.txt", "a/a.txt", "a/log", "a/b/c.txt"}, new String[] {});
+  }
 
   @Test
   public void testBuildWildcardEnd() throws Exception {
@@ -310,8 +310,8 @@ public class DownloadStepTest {
     tryWildcards("a/**", new String[] {"a/a.txt", "a/b.txt", "a/log", "a/b/c.txt"}, new String[] {});
   }
 
-	@Test
-	public void testBuildWildcardsWithoutNestedFolders() throws Exception {
+  @Test
+  public void testBuildWildcardsWithoutNestedFolders() throws Exception {
     tryWildcards("a/b*c*", new String[] {"a/bc.txt", "a/bbcc"}, new String[] {"a/b/c"});
   }
 

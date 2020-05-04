@@ -416,7 +416,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
 
     // Supported wildcards:
     // - Single wildcard, of the form pre/fix/log_*_some.txt
-    // - Multiple wildcards, of the form pre/fix/**
+    // - Multiple wildcards, of the form pre/fix/** and pre/*fix/**
 
     String bucketPathPrefix = pieces[0];
 
