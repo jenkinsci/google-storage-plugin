@@ -369,11 +369,12 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
       return new String[] {uri};
     }
 
-    if (occurs > 1 && !uri.contains("**")) {
-      throw new AbortException(Messages.Download_UnsupportedMultipleAsterisks(uri));
+    int index = uri.indexOf('*');
+
+    if (occurs > 1 && index > 1 && uri.substring(index + 1).contains("/")) {
+      throw new AbortException(Messages.Download_UnsupportedDirSuffix(uri));
     }
 
-    int index = uri.indexOf('*');
     return new String[] {uri.substring(0, index), uri.substring(index + 1)};
   }
 

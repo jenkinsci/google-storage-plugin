@@ -186,7 +186,7 @@ public class DownloadStepTest {
     try {
       DownloadStep.split(s);
     } catch (AbortException e) {
-      assertTrue(e.getMessage().contains("Multiple asterisks"));
+      assertTrue(e.getMessage().contains("Slashes after wildcards"));
       return;
     }
     fail("Expected split to fail on input " + s);
@@ -206,10 +206,10 @@ public class DownloadStepTest {
     assertArrayEquals(DownloadStep.split("pre-*-post"), new String[] {"pre-", "-post"});
     assertArrayEquals(DownloadStep.split("a/**"), new String[] {"a/", "*"});
 		assertArrayEquals(DownloadStep.split("a**"), new String[] {"a", "*"});
-		assertArrayEquals(DownloadStep.split("**"), new String[] {"", "*"});
+    assertArrayEquals(DownloadStep.split("**"), new String[] {"", "*"});
+    assertArrayEquals(DownloadStep.split("a*b*c*"), new String[] {"a", "b*c*"});
 
     // Not yet supported
-    checkSplitException("a*b*c*");
     checkSplitException("a/*b/*c");
   }
 
@@ -309,6 +309,11 @@ public class DownloadStepTest {
     tryWildcards("*", new String[] {"a", "b.txt", "l_a_b_d_f"}, new String[] {"a/b.txt", "/b"});
   }
 
+	@Test
+	public void testBuildDoubleWildcardsOnly() throws Exception {
+		tryWildcards("**", new String[] {"a.txt", "a/a.txt", "a/log", "a/b/c.txt"}, new String[] {});
+	}
+
   @Test
   public void testBuildWildcardEnd() throws Exception {
     tryWildcards("a/*", new String[] {"a/a.txt", "a/b.txt", "a/log"}, new String[] {"a/b/c.txt"});
@@ -319,9 +324,9 @@ public class DownloadStepTest {
     tryWildcards("a/**", new String[] {"a/a.txt", "a/b.txt", "a/log", "a/b/c.txt"}, new String[] {});
   }
 
-  @Test
-  public void testBuildDoubleWildcardsBegin() throws Exception {
-    tryWildcards("**", new String[] {"a.txt", "a/a.txt", "a/log", "a/b/c.txt"}, new String[] {});
+	@Test
+	public void testBuildWildcardsWithoutNestedFolders() throws Exception {
+    tryWildcards("a/b*c*", new String[] {"a/bc.txt", "a/bbcc"}, new String[] {"a/b/c"});
   }
 
   private static final String PROJECT_ID = "foo.com:bar-baz";
