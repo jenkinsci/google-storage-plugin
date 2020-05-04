@@ -370,11 +370,6 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     }
 
     int index = uri.indexOf('*');
-
-    if (occurs > 1 && index > 1 && uri.substring(index + 1).contains("/")) {
-      throw new AbortException(Messages.Download_UnsupportedDirSuffix(uri));
-    }
-
     return new String[] {uri.substring(0, index), uri.substring(index + 1)};
   }
 
@@ -382,12 +377,6 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   private static void verifySupported(BucketPath path) throws AbortException {
     if (path.getBucket().contains("*")) {
       throw new AbortException(Messages.Download_UnsupportedAsteriskInBucket(path.getBucket()));
-    }
-    String[] pieces = split(path.getObject());
-    if (pieces.length == 2) {
-      if (pieces[1].contains("/")) {
-        throw new AbortException(Messages.Download_UnsupportedDirSuffix(path.getObject()));
-      }
     }
   }
 

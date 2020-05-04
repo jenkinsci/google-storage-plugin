@@ -19,7 +19,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -32,7 +31,6 @@ import com.google.jenkins.plugins.credentials.oauth.AbstractGoogleRobotCredentia
 import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.util.MockExecutor;
-import hudson.AbortException;
 import hudson.FilePath;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
@@ -182,16 +180,6 @@ public class DownloadStepTest {
     assertEquals("contents 1", result.readToString());
   }
 
-  private void checkSplitException(String s) {
-    try {
-      DownloadStep.split(s);
-    } catch (AbortException e) {
-      assertTrue(e.getMessage().contains("Slashes after wildcards"));
-      return;
-    }
-    fail("Expected split to fail on input " + s);
-  }
-
   @Test
   @WithoutJenkins
   public void testSplit() throws Exception {
@@ -205,12 +193,10 @@ public class DownloadStepTest {
 
     assertArrayEquals(DownloadStep.split("pre-*-post"), new String[] {"pre-", "-post"});
     assertArrayEquals(DownloadStep.split("a/**"), new String[] {"a/", "*"});
-		assertArrayEquals(DownloadStep.split("a**"), new String[] {"a", "*"});
+    assertArrayEquals(DownloadStep.split("a**"), new String[] {"a", "*"});
     assertArrayEquals(DownloadStep.split("**"), new String[] {"", "*"});
     assertArrayEquals(DownloadStep.split("a*b*c*"), new String[] {"a", "b*c*"});
-
-    // Not yet supported
-    checkSplitException("a/*b/*c");
+    assertArrayEquals(DownloadStep.split("a/*b/*c"), new String[] {"a/", "b/*c"});
   }
 
   /**
@@ -327,6 +313,11 @@ public class DownloadStepTest {
 	@Test
 	public void testBuildWildcardsWithoutNestedFolders() throws Exception {
     tryWildcards("a/b*c*", new String[] {"a/bc.txt", "a/bbcc"}, new String[] {"a/b/c"});
+  }
+
+  @Test
+  public void testBuildWildcardsWithNestedFolders() throws Exception {
+    tryWildcards("a/b/*c", new String[] {"a/b/c", "a/b/cc"}, new String[] {"a/b/cd"});
   }
 
   private static final String PROJECT_ID = "foo.com:bar-baz";
