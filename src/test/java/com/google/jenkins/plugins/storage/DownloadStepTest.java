@@ -204,11 +204,12 @@ public class DownloadStepTest {
     assertArrayEquals(DownloadStep.split("*"), new String[] {"", ""});
 
     assertArrayEquals(DownloadStep.split("pre-*-post"), new String[] {"pre-", "-post"});
+    assertArrayEquals(DownloadStep.split("a/**"), new String[] {"a/", "*"});
+		assertArrayEquals(DownloadStep.split("a**"), new String[] {"a", "*"});
+		assertArrayEquals(DownloadStep.split("**"), new String[] {"", "*"});
 
     // Not yet supported
-    checkSplitException("**");
-    checkSplitException("a**");
-    checkSplitException("a*b*c");
+    checkSplitException("a*b*c*");
     checkSplitException("a/*b/*c");
   }
 
@@ -227,17 +228,11 @@ public class DownloadStepTest {
         continue;
       }
 
-      String subdirectory[] = s.substring(prefix.length()).split("/");
-      if (subdirectory.length > 1) {
-        // This object is nested deeper. Add a subdirectory
-        prefixes.add(prefix + subdirectory[0]);
-      } else {
-        // Add the object
-        StorageObject objToGet = new StorageObject();
-        objToGet.setBucket("bucket");
-        objToGet.setName(s);
-        items.add(objToGet);
-      }
+      // Add the object
+      StorageObject objToGet = new StorageObject();
+      objToGet.setBucket("bucket");
+      objToGet.setName(s);
+      items.add(objToGet);
     }
     o.setItems(items);
     o.setPrefixes(new ArrayList<String>(prefixes));
@@ -317,6 +312,16 @@ public class DownloadStepTest {
   @Test
   public void testBuildWildcardEnd() throws Exception {
     tryWildcards("a/*", new String[] {"a/a.txt", "a/b.txt", "a/log"}, new String[] {"a/b/c.txt"});
+  }
+
+  @Test
+  public void testBuildDoubleWildcardsEnd() throws Exception {
+    tryWildcards("a/**", new String[] {"a/a.txt", "a/b.txt", "a/log", "a/b/c.txt"}, new String[] {});
+  }
+
+  @Test
+  public void testBuildDoubleWildcardsBegin() throws Exception {
+    tryWildcards("**", new String[] {"a.txt", "a/a.txt", "a/log", "a/b/c.txt"}, new String[] {});
   }
 
   private static final String PROJECT_ID = "foo.com:bar-baz";

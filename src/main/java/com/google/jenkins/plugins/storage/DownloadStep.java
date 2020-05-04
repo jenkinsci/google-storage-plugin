@@ -45,6 +45,9 @@ import hudson.util.FormValidation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -366,7 +369,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
       return new String[] {uri};
     }
 
-    if (occurs > 1) {
+    if (occurs > 1 && !uri.contains("**")) {
       throw new AbortException(Messages.Download_UnsupportedMultipleAsterisks(uri));
     }
 
@@ -421,10 +424,11 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
       return result;
     }
 
-    // Single wildcard, of the form pre/fix/log_*_some.txt
+    // Supported wildcards:
+    // - Single wildcard, of the form pre/fix/log_*_some.txt
+    // - Multiple wildcards, of the form pre/fix/**
 
     String bucketPathPrefix = pieces[0];
-    String bucketPathSuffix = pieces[1];
 
     String pageToken = "";
     do {
@@ -441,9 +445,10 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
       Objects objects = executor.execute(list);
       pageToken = objects.getNextPageToken();
 
-      // Collect the items that match the suffix
+      // Glob path matcher
+      PathMatcher m = FileSystems.getDefault().getPathMatcher("glob:" + bucketPath.getObject());
       for (StorageObject o : objects.getItems()) {
-        if (o.getName().endsWith(bucketPathSuffix)) {
+        if (m.matches(Paths.get(o.getName()))) {
           result.add(new StorageObjectId(o));
         }
       }
