@@ -16,26 +16,12 @@
 
 package com.google.jenkins.plugins.storage.integration;
 
-import static com.google.jenkins.plugins.storage.integration.ITUtil.dumpLog;
-import static com.google.jenkins.plugins.storage.integration.ITUtil.formatRandomName;
-import static com.google.jenkins.plugins.storage.integration.ITUtil.getBucket;
-import static com.google.jenkins.plugins.storage.integration.ITUtil.getCredentialsId;
-import static com.google.jenkins.plugins.storage.integration.ITUtil.initializePipelineITEnvironment;
-import static com.google.jenkins.plugins.storage.integration.ITUtil.loadResource;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.google.api.client.http.InputStreamContent;
 import com.google.jenkins.plugins.storage.DownloadStep;
 import com.google.jenkins.plugins.storage.client.ClientFactory;
 import com.google.jenkins.plugins.storage.client.StorageClient;
 import hudson.EnvVars;
 import hudson.model.Result;
-import java.io.InputStream;
-import java.net.URLConnection;
-import java.util.logging.Logger;
-
 import jenkins.util.VirtualFile;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -46,31 +32,40 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
-/** Tests the {@link DownloadStep} for use-cases involving the Jenkins Pipeline DSL. */
-public class DownloadStepPipelineIT {
-  private static final Logger LOGGER = Logger.getLogger(DownloadStepPipelineIT.class.getName());
+import java.io.InputStream;
+import java.net.URLConnection;
+import java.util.logging.Logger;
+
+import static com.google.jenkins.plugins.storage.integration.ITUtil.*;
+import static org.junit.Assert.*;
+
+/** Tests the {@link DownloadStep} with multiples wildcards for use-cases involving the Jenkins Pipeline DSL. */
+public class DownloadWildcardsStepPipelineIT {
+  private static final Logger LOGGER = Logger.getLogger(DownloadWildcardsStepPipelineIT.class.getName());
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
   private static String credentialsId;
-  private static final String pattern = "downloadstep_test.txt";
+  private static final String pattern = "folder/**/*.txt";
   private static String bucket;
   private static StorageClient storageClient;
   private static EnvVars envVars;
 
   @BeforeClass
   public static void init() throws Exception {
-    LOGGER.info("Initializing DownloadStepPipelineIT");
+    LOGGER.info("Initializing DownloadWildcardsStepPipelineIT");
 
     envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
     credentialsId = getCredentialsId();
     storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
     bucket = getBucket();
 
-    // create file to download
-    InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream(pattern);
+    // create files to download
+    InputStream stream = DownloadWildcardsStepPipelineIT.class.getResourceAsStream("downloadstep_test.txt");
     String contentType = URLConnection.guessContentTypeFromStream(stream);
     InputStreamContent content = new InputStreamContent(contentType, stream);
-    storageClient.uploadToBucket(pattern, bucket, content);
     storageClient.uploadToBucket("foo.txt", bucket, content);
+    storageClient.uploadToBucket("folder/bar.txt", bucket, content);
+    storageClient.uploadToBucket("folder/nestedfolder/foo.txt", bucket, content);
+    storageClient.uploadToBucket("folder/nestedfolder/foo.bar", bucket, content);
   }
 
   @Test
@@ -85,9 +80,14 @@ public class DownloadStepPipelineIT {
     jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
     dumpLog(LOGGER, run);
 
-    VirtualFile archivedFile = run.getArtifactManager().root().child(pattern);
+    VirtualFile archivedFile = run.getArtifactManager().root().child("folder/bar.txt");
     assertTrue(archivedFile.exists());
+    archivedFile = run.getArtifactManager().root().child("folder/nestedfolder/foo.txt");
+    assertTrue(archivedFile.exists());
+
     archivedFile = run.getArtifactManager().root().child("foo.txt");
+    assertFalse(archivedFile.exists());
+    archivedFile = run.getArtifactManager().root().child("folder/nestedfolder/foo.bar");
     assertFalse(archivedFile.exists());
   }
 

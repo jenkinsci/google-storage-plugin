@@ -22,6 +22,7 @@ pipeline {
                 step([$class: 'DownloadStep', credentialsId: env
                         .CREDENTIALS_ID,  bucketUri: "gs://${env.BUCKET}/${env.PATTERN}",
                       localDirectory: "${env.DIR}/**/*"])
+				archiveArtifacts "${env.DIR}/**/*"
             }
         }
     }
