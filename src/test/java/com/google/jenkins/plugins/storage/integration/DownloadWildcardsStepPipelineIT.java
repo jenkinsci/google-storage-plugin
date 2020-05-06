@@ -44,7 +44,7 @@ public class DownloadWildcardsStepPipelineIT {
   private static final Logger LOGGER = Logger.getLogger(DownloadWildcardsStepPipelineIT.class.getName());
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
   private static String credentialsId;
-  private static final String pattern = "folder/**/*.txt";
+  private static final String pattern = "folder/**";
   private static String bucket;
   private static StorageClient storageClient;
   private static EnvVars envVars;
@@ -62,10 +62,7 @@ public class DownloadWildcardsStepPipelineIT {
     InputStream stream = DownloadWildcardsStepPipelineIT.class.getResourceAsStream("downloadstep_test.txt");
     String contentType = URLConnection.guessContentTypeFromStream(stream);
     InputStreamContent content = new InputStreamContent(contentType, stream);
-    storageClient.uploadToBucket("foo.txt", bucket, content);
-    storageClient.uploadToBucket("folder/bar.txt", bucket, content);
-    storageClient.uploadToBucket("folder/nestedfolder/foo.txt", bucket, content);
-    storageClient.uploadToBucket("folder/nestedfolder/foo.bar", bucket, content);
+    storageClient.uploadToBucket("folder/foo.txt", bucket, content);
   }
 
   @Test
@@ -80,15 +77,8 @@ public class DownloadWildcardsStepPipelineIT {
     jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
     dumpLog(LOGGER, run);
 
-    VirtualFile archivedFile = run.getArtifactManager().root().child("folder/bar.txt");
+    VirtualFile archivedFile = run.getArtifactManager().root().child("folder/foo.txt");
     assertTrue(archivedFile.exists());
-    archivedFile = run.getArtifactManager().root().child("folder/nestedfolder/foo.txt");
-    assertTrue(archivedFile.exists());
-
-    archivedFile = run.getArtifactManager().root().child("foo.txt");
-    assertFalse(archivedFile.exists());
-    archivedFile = run.getArtifactManager().root().child("folder/nestedfolder/foo.bar");
-    assertFalse(archivedFile.exists());
   }
 
   @Test
