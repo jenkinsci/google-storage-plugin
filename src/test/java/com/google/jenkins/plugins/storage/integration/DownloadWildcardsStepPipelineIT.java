@@ -16,12 +16,18 @@
 
 package com.google.jenkins.plugins.storage.integration;
 
+import static com.google.jenkins.plugins.storage.integration.ITUtil.*;
+import static org.junit.Assert.*;
+
 import com.google.api.client.http.InputStreamContent;
 import com.google.jenkins.plugins.storage.DownloadStep;
 import com.google.jenkins.plugins.storage.client.ClientFactory;
 import com.google.jenkins.plugins.storage.client.StorageClient;
 import hudson.EnvVars;
 import hudson.model.Result;
+import java.io.InputStream;
+import java.net.URLConnection;
+import java.util.logging.Logger;
 import jenkins.util.VirtualFile;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -32,16 +38,13 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
-import java.io.InputStream;
-import java.net.URLConnection;
-import java.util.logging.Logger;
-
-import static com.google.jenkins.plugins.storage.integration.ITUtil.*;
-import static org.junit.Assert.*;
-
-/** Tests the {@link DownloadStep} with multiples wildcards for use-cases involving the Jenkins Pipeline DSL. */
+/**
+ * Tests the {@link DownloadStep} with multiples wildcards for use-cases involving the Jenkins
+ * Pipeline DSL.
+ */
 public class DownloadWildcardsStepPipelineIT {
-  private static final Logger LOGGER = Logger.getLogger(DownloadWildcardsStepPipelineIT.class.getName());
+  private static final Logger LOGGER =
+      Logger.getLogger(DownloadWildcardsStepPipelineIT.class.getName());
   @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
   private static String credentialsId;
   private static final String pattern = "folder/**";
@@ -59,7 +62,8 @@ public class DownloadWildcardsStepPipelineIT {
     bucket = getBucket();
 
     // create files to download
-    InputStream stream = DownloadWildcardsStepPipelineIT.class.getResourceAsStream("downloadstep_test.txt");
+    InputStream stream =
+        DownloadWildcardsStepPipelineIT.class.getResourceAsStream("downloadstep_test.txt");
     String contentType = URLConnection.guessContentTypeFromStream(stream);
     InputStreamContent content = new InputStreamContent(contentType, stream);
     storageClient.uploadToBucket("folder/foo.txt", bucket, content);

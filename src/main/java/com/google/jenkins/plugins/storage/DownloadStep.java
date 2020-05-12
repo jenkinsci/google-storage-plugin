@@ -42,6 +42,8 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -53,6 +55,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -358,19 +361,19 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
    * <p>String.split removes trailing empty strings, for example, "a", "a*" and "a**" and would
    * produce the same result, so that method is not suitable.
    *
-   * @param uri URI supplied to be split.
-   * @return URI split by "*" wildcard.
+   * @param object bucket object supplied to be tranformed.
+   * @return dirbase
    * @throws AbortException If there is more than one wild card character in the provided string.
    */
-  public static String[] split(String uri) throws AbortException {
-    int occurs = StringUtils.countMatches(uri, "*");
+  public static String getPathPrefix(String object) {
+    // TODO: how to get the prefix path for different patterns:
+    //   bar / baz / blah.log  -> bar / baz
+    //   bar / ** / *l         -> bar
+    //   bar / ** / *          -> bar
+    //   ba* / ** / *          ->
+    //   *a* / ** / *          ->
 
-    if (occurs == 0) {
-      return new String[] {uri};
-    }
-
-    int index = uri.indexOf('*');
-    return new String[] {uri.substring(0, index), uri.substring(index + 1)};
+    return "Beats/beats-beats-mbp/PR-18037-4/AuditbeatWindows";
   }
 
   /** Verifies that the given path is supported within current limitations */
@@ -396,15 +399,8 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
 
     verifySupported(bucketPath);
 
-    // Allow a single asterisk in the object name for now.
-    // Let the behavior be consistent with
-    // https://cloud.google.com/storage/docs/gsutil/addlhelp/WildcardNames
-    //
-    // Support for richer constructs will be added as needed.
-
-    String[] pieces = split(bucketPath.getObject());
-
-    if (pieces.length == 1) {
+    int occurs = StringUtils.countMatches(bucketPath.getObject(), "*");
+    if (occurs == 0) {
       // No wildcards. Do simple lookup
       Storage.Objects.Get obj =
           service.objects().get(bucketPath.getBucket(), bucketPath.getObject());
@@ -414,20 +410,19 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
       return result;
     }
 
-    // Supported wildcards:
-    // - Single wildcard, of the form pre/fix/log_*_some.txt
-    // - Multiple wildcards, of the form pre/fix/** and pre/*fix/**
+    String bucketPathPrefix = getPathPrefix(bucketPath.getObject());
 
-    String bucketPathPrefix = pieces[0];
-
+    // Glob path matcher
+    PathMatcher m = FileSystems.getDefault().getPathMatcher("glob:" + bucketPath.getObject());
     String pageToken = "";
     do {
       Storage.Objects.List list =
-          service
-              .objects()
-              .list(bucketPath.getBucket())
-              .setPrefix(bucketPathPrefix)
-              .setDelimiter("/");
+        service
+          .objects()
+          .list(bucketPath.getBucket())
+          .setPrefix(bucketPathPrefix)
+          .setDelimiter("/");
+
       if (pageToken.length() > 0) {
         list.setPageToken(pageToken);
       }
@@ -435,8 +430,6 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
       Objects objects = executor.execute(list);
       pageToken = objects.getNextPageToken();
 
-      // Glob path matcher
-      PathMatcher m = FileSystems.getDefault().getPathMatcher("glob:" + bucketPath.getObject());
       for (StorageObject o : objects.getItems()) {
         if (m.matches(Paths.get(o.getName()))) {
           result.add(new StorageObjectId(o));

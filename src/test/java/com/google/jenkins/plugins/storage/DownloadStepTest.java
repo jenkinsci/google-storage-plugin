@@ -15,7 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,7 +44,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.WithoutJenkins;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -180,25 +178,6 @@ public class DownloadStepTest {
     assertEquals("contents 1", result.readToString());
   }
 
-  @Test
-  @WithoutJenkins
-  public void testSplit() throws Exception {
-    assertArrayEquals(DownloadStep.split("a"), new String[] {"a"});
-    assertArrayEquals(
-        DownloadStep.split("asdjfkl2358/9/8024@#$@%^$#^#"),
-        new String[] {"asdjfkl2358/9/8024@#$@%^$#^#"});
-
-    assertArrayEquals(DownloadStep.split("a*"), new String[] {"a", ""});
-    assertArrayEquals(DownloadStep.split("*"), new String[] {"", ""});
-
-    assertArrayEquals(DownloadStep.split("pre-*-post"), new String[] {"pre-", "-post"});
-    assertArrayEquals(DownloadStep.split("a/**"), new String[] {"a/", "*"});
-    assertArrayEquals(DownloadStep.split("a**"), new String[] {"a", "*"});
-    assertArrayEquals(DownloadStep.split("**"), new String[] {"", "*"});
-    assertArrayEquals(DownloadStep.split("a*b*c*"), new String[] {"a", "b*c*"});
-    assertArrayEquals(DownloadStep.split("a/*b/*c"), new String[] {"a/", "b/*c"});
-  }
-
   /**
    * Create the Objects object that would have been returned from the Cloud.
    *
@@ -307,7 +286,8 @@ public class DownloadStepTest {
 
   @Test
   public void testBuildDoubleWildcardsEnd() throws Exception {
-    tryWildcards("a/**", new String[] {"a/a.txt", "a/b.txt", "a/log", "a/b/c.txt"}, new String[] {});
+    tryWildcards(
+        "a/**", new String[] {"a/a.txt", "a/b.txt", "a/log", "a/b/c.txt"}, new String[] {});
   }
 
   @Test

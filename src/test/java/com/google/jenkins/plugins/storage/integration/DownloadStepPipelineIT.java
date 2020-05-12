@@ -35,7 +35,6 @@ import hudson.model.Result;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.util.logging.Logger;
-
 import jenkins.util.VirtualFile;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
