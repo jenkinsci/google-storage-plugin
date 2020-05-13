@@ -69,7 +69,6 @@ public class DownloadStepPipelineIT {
     String contentType = URLConnection.guessContentTypeFromStream(stream);
     InputStreamContent content = new InputStreamContent(contentType, stream);
     storageClient.uploadToBucket(pattern, bucket, content);
-    storageClient.uploadToBucket("foo.txt", bucket, content);
   }
 
   @Test
@@ -86,8 +85,6 @@ public class DownloadStepPipelineIT {
 
     VirtualFile archivedFile = run.getArtifactManager().root().child(pattern);
     assertTrue(archivedFile.exists());
-    archivedFile = run.getArtifactManager().root().child("foo.txt");
-    assertFalse(archivedFile.exists());
   }
 
   @Test
