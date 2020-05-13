@@ -42,7 +42,6 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,7 +54,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -356,24 +354,29 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   }
 
   /**
-   * Split the string on wildcards ("*").
+   * Returns a parent directory's path for the given URI that might or might not contain
+   * wildcards.
    *
-   * <p>String.split removes trailing empty strings, for example, "a", "a*" and "a**" and would
-   * produce the same result, so that method is not suitable.
-   *
-   * @param object bucket object supplied to be tranformed.
-   * @return dirbase
-   * @throws AbortException If there is more than one wild card character in the provided string.
+   * @param uri bucket object supplied to look for its parent directory's path.
+   * @return String
    */
-  public static String getPathPrefix(String object) {
-    // TODO: how to get the prefix path for different patterns:
-    //   bar / baz / blah.log  -> bar / baz
-    //   bar / ** / *l         -> bar
-    //   bar / ** / *          -> bar
-    //   ba* / ** / *          ->
-    //   *a* / ** / *          ->
+  public static String getPathPrefix(String uri) {
+    int occurs = StringUtils.countMatches(uri, "*");
+    if (occurs == 0) {
+      File file = new File(uri);
+      if (file.getParentFile() != null) {
+        return file.getParentFile().getPath();
+      }
+      return "";
+    }
 
-    return "Beats/beats-beats-mbp/PR-18037-4/AuditbeatWindows";
+    int index = uri.indexOf("*");
+    // x is just the way to return foo if foo/bar*, otherwise it won't have any parent.
+    File file = new File(uri.substring(0, index) + "x");
+    if (file.getParentFile() != null) {
+      return file.getParentFile().getPath();
+    }
+    return "";
   }
 
   /** Verifies that the given path is supported within current limitations */
@@ -417,11 +420,11 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     String pageToken = "";
     do {
       Storage.Objects.List list =
-        service
-          .objects()
-          .list(bucketPath.getBucket())
-          .setPrefix(bucketPathPrefix)
-          .setDelimiter("/");
+          service
+            .objects()
+            .list(bucketPath.getBucket())
+            .setPrefix(bucketPathPrefix);
+            // .setDelimiter("/");   // This produces java.lang.NullPointerException in L436
 
       if (pageToken.length() > 0) {
         list.setPageToken(pageToken);

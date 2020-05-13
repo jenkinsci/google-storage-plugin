@@ -44,6 +44,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.WithoutJenkins;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -176,6 +177,23 @@ public class DownloadStepTest {
     FilePath result = build.getWorkspace().withSuffix("/output/path/1/test_1.txt");
     assertTrue(result.exists());
     assertEquals("contents 1", result.readToString());
+  }
+
+  @Test
+  @WithoutJenkins
+  public void testGetPathPrefix() throws Exception {
+    assertEquals(DownloadStep.getPathPrefix("a"), "");
+    assertEquals(DownloadStep.getPathPrefix("asdjfkl2358/9/8024@#$@%^$#^#"), "asdjfkl2358/9");
+
+    assertEquals(DownloadStep.getPathPrefix("pre-*-post"), "");
+    assertEquals(DownloadStep.getPathPrefix("a/b/c"), "a/b");
+    assertEquals(DownloadStep.getPathPrefix("a/**"), "a");
+    assertEquals(DownloadStep.getPathPrefix("a*"), "");
+    assertEquals(DownloadStep.getPathPrefix("a**"), "");
+    assertEquals(DownloadStep.getPathPrefix("*"), "");
+    assertEquals(DownloadStep.getPathPrefix("**"), "");
+    assertEquals(DownloadStep.getPathPrefix("a*b*c*"), "");
+    assertEquals(DownloadStep.getPathPrefix("a/*b/*c"), "a");
   }
 
   /**
