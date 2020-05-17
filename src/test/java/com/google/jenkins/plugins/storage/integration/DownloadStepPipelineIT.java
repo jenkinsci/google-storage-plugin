@@ -22,7 +22,6 @@ import static com.google.jenkins.plugins.storage.integration.ITUtil.getBucket;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.getCredentialsId;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.initializePipelineITEnvironment;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.loadResource;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
