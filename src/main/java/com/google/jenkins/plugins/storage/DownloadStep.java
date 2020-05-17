@@ -354,8 +354,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   }
 
   /**
-   * Returns a parent directory's path for the given URI that might or might not contain
-   * wildcards.
+   * Returns a parent directory's path for the given URI that might or might not contain wildcards.
    *
    * @param uri bucket object supplied to look for its parent directory's path.
    * @return String
@@ -420,11 +419,8 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     String pageToken = "";
     do {
       Storage.Objects.List list =
-          service
-            .objects()
-            .list(bucketPath.getBucket())
-            .setPrefix(bucketPathPrefix);
-            // .setDelimiter("/");   // This produces java.lang.NullPointerException in L436
+          service.objects().list(bucketPath.getBucket()).setPrefix(bucketPathPrefix);
+      // .setDelimiter("/");   // This produces java.lang.NullPointerException in L436
 
       if (pageToken.length() > 0) {
         list.setPageToken(pageToken);
