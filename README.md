@@ -11,6 +11,12 @@
  implied. See the License for the specific language governing permissions and limitations under the
  License.
 -->
+[![Build Status](https://ci.jenkins.io/job/Plugins/job/google-storage-plugin/job/master/badge/icon)](https://ci.jenkins.io/job/Plugins/job/google-storage-plugin/job/develop/)
+[![Contributors](https://img.shields.io/github/contributors/jenkinsci/google-storage-plugin.svg)](https://github.com/jenkinsci/google-storage-plugin/graphs/contributors)
+[![Jenkins Plugin](https://img.shields.io/jenkins/plugin/v/google-storage.svg)](https://plugins.jenkins.io/google-storage-plugin)
+[![GitHub release](https://img.shields.io/github/v/tag/jenkinsci/google-storage-plugin?label=changelog)](https://github.com/jenkinsci/google-storage-plugin/blob/develop/CHANGELOG.md)
+[![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/google-storage.svg?color=blue)](https://plugins.jenkins.io/google-storage-plugin)
+
 Jenkins Google Cloud Storage Plugin
 ===================================
 

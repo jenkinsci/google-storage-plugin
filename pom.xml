@@ -32,7 +32,7 @@
 
   <name>Google Cloud Storage plugin</name>
   <description>This plugin provides the “Google Cloud Storage Uploader” post-build step for publishing build artifacts to Google Cloud Storage.</description>
-  <url>http://wiki.jenkins-ci.org/display/JENKINS/Google+Cloud+Storage+Plugin</url>
+  <url>https://github.com/jenkinsci/google-storage-plugin/blob/develop/docs/home.md</url>
   <licenses>
     <license>
       <name>The Apache V2 License</name>
