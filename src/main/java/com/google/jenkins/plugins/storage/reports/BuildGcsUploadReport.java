@@ -86,7 +86,9 @@ public class BuildGcsUploadReport extends AbstractGcsUploadReport {
    * @param bucket the directory location in the cloud
    */
   public void addUpload(String relativePath, BucketPath bucket) {
-    files.add(bucket.getPath() + "/" + relativePath);
+    synchronized (files) {
+      files.add(bucket.getPath() + "/" + relativePath);
+    }
   }
 
   /** {@inheritDoc} */
