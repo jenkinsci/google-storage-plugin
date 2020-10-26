@@ -15,7 +15,7 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
-import com.google.api.client.util.Sets;
+import com.google.common.collect.Sets;
 import com.google.jenkins.plugins.storage.util.BucketPath;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
@@ -35,8 +35,8 @@ public class BuildGcsUploadReport extends AbstractGcsUploadReport {
 
   public BuildGcsUploadReport(Run<?, ?> run) {
     super(run);
-    this.buckets = Sets.newHashSet();
-    this.files = Sets.newHashSet();
+    this.buckets = Sets.newConcurrentHashSet();
+    this.files = Sets.newConcurrentHashSet();
   }
 
   /**
