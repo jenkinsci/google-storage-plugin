@@ -38,7 +38,8 @@ Please file feature requests and bug reports as [GitHub Issues](https://github.c
 **NOTE**: Versions 1.4.0 and above for this plugin are incompatible with version 0.8 or lower of the
 [Google OAuth Credentials Plugin](https://github.com/jenkinsci/google-oauth-plugin). Likewise,
 versions 1.3.3 and below for this plugin are incompatible with versions 0.9 and above of the OAuth
-plugin. Please verify you are using the correct versions before filing a bug report.
+plugin. 
+Please verify you are using the correct versions before filing a bug report.
 
 ## Community
 The GCP Jenkins community uses the **#gcp-jenkins** slack channel on
