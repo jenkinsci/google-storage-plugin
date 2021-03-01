@@ -18,7 +18,6 @@ package com.google.jenkins.plugins.storage;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.api.client.googleapis.media.MediaHttpUploader;
-import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Bucket;
@@ -54,6 +53,7 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.remoting.Callable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.URLConnection;
@@ -440,11 +440,11 @@ public abstract class AbstractUpload
       throws UploadException {
     RepeatOperation<UploadException> a =
         new RepeatOperation<UploadException>() {
-          private Queue<FilePath> paths = new LinkedList<>(uploads.inclusions);;
-          Executor executor = getModule().newExecutor();
+          private final Queue<FilePath> paths = new LinkedList<>(uploads.inclusions);
+          private final Executor executor = getModule().newExecutor();
 
-          Storage service;
-          Bucket bucket;
+          private Storage service;
+          private Bucket bucket;
 
           @Override
           public void initCredentials() throws UploadException, IOException {
@@ -456,9 +456,11 @@ public abstract class AbstractUpload
 
           @Override
           public void act()
-              throws HttpResponseException, UploadException, IOException, InterruptedException,
-                  ExecutorException {
+              throws UploadException, IOException, InterruptedException, ExecutorException {
             FilePath include = paths.peek();
+            if (include == null) {
+              return;
+            }
             String relativePath = StorageUtil.getRelative(include, uploads.workspace);
             String uploadedFileName = StorageUtil.getStrippedFilename(relativePath, pathPrefix);
             String finalName =
@@ -487,7 +489,7 @@ public abstract class AbstractUpload
                 .println(getModule().prefix(Messages.AbstractUpload_Uploading(relativePath)));
 
             performUploadWithRetry(executor, service, bucket, object, include);
-            paths.remove();
+            paths.remove(include);
           }
 
           @Override
@@ -539,22 +541,23 @@ public abstract class AbstractUpload
           public void act() throws IOException, InterruptedException, ExecutorException {
             // Create the insertion operation with the decorated object and
             // an input stream of the file contents.
-            Storage.Objects.Insert insertion =
-                service
-                    .objects()
-                    .insert(
-                        bucket.getName(),
-                        object,
-                        new InputStreamContent(object.getContentType(), include.read()));
+            try (InputStream is = include.read()) {
+              Storage.Objects.Insert insertion =
+                  service
+                      .objects()
+                      .insert(
+                          bucket.getName(),
+                          object,
+                          new InputStreamContent(object.getContentType(), is));
 
-            // Make the operation non-resumable because we have seen a dramatic
-            // (e.g. 1000x) speedup from this.
-            MediaHttpUploader mediaUploader = insertion.getMediaHttpUploader();
-            if (mediaUploader != null) {
-              mediaUploader.setDirectUploadEnabled(true);
+              // Make the operation non-resumable because we have seen a dramatic
+              // (e.g. 1000x) speedup from this.
+              MediaHttpUploader mediaUploader = insertion.getMediaHttpUploader();
+              if (mediaUploader != null) {
+                mediaUploader.setDirectUploadEnabled(true);
+              }
+              executor.execute(insertion);
             }
-
-            executor.execute(insertion);
           }
         };
 
