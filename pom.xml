@@ -67,7 +67,7 @@
     <hpi.compatibleSinceVersion>1.5.0</hpi.compatibleSinceVersion>
     <google.api.version>1.25.0</google.api.version>
     <google.http.version>1.21.0</google.http.version>
-    <google.guava.version>30.0-jre</google.guava.version>
+    <google.guava.version>30.1.1-jre</google.guava.version>
     <google-oauth.version>1.0.0</google-oauth.version>
     <storage.revision>158</storage.revision>
     <java.level>8</java.level>
