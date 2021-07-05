@@ -69,7 +69,7 @@
     <google.http.version>1.21.0</google.http.version>
     <google.guava.version>30.0-jre</google.guava.version>
     <google-oauth.version>1.0.0</google-oauth.version>
-    <storage.revision>158</storage.revision>
+    <storage.revision>v1-rev20210127-1.32.1</storage.revision>
     <java.level>8</java.level>
     <concurrency>5</concurrency>
     <skipIts>true</skipIts>
@@ -219,7 +219,7 @@
     <dependency>
       <groupId>com.google.apis</groupId>
       <artifactId>google-api-services-storage</artifactId>
-      <version>v1-rev${storage.revision}-${google.api.version}</version>
+      <version>v1-rev${storage.revision}</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.http-client</groupId>
