@@ -37,7 +37,6 @@ import hudson.Launcher;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.remoting.Callable;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
@@ -54,6 +53,7 @@ import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import jenkins.model.Jenkins;
+import jenkins.security.MasterToSlaveCallable;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
@@ -218,7 +218,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
       String resolvedPrefix = StorageUtil.replaceMacro(pathPrefix, run, listener);
 
       initiateDownloadsAtWorkspace(
-          getCredentials(), run, objects, dirPath, listener, version, resolvedPrefix);
+          getCredentials(), objects, dirPath, listener, version, resolvedPrefix);
     } catch (ExecutorException e) {
       throw new IOException(Messages.Download_DownloadException(), e);
     }
@@ -297,7 +297,6 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
 
   private void initiateDownloadsAtWorkspace(
       final GoogleRobotCredentials credentials,
-      final Run run,
       final List<StorageObjectId> objects,
       final FilePath localDir,
       final TaskListener listener,
@@ -311,18 +310,12 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
           checkNotNull(credentials).forRemote(getModule().getRequirement());
 
       localDir.act(
-          new Callable<Void, IOException>() {
+          new MasterToSlaveCallable<Void, IOException>() {
             @Override
             public Void call() throws IOException {
               performDownloads(
                   remoteCredentials, localDir, objects, listener, version, resolvedPrefix);
               return (Void) null;
-            }
-
-            @Override
-            public void checkRoles(RoleChecker checker) throws SecurityException {
-              // We know by definition that this is the correct role;
-              // the callable exists only in this method context.
             }
           });
     } catch (GeneralSecurityException e) {
