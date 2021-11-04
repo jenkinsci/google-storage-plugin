@@ -51,7 +51,6 @@ import hudson.model.Describable;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.remoting.Callable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -67,8 +66,8 @@ import java.util.Queue;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import jenkins.model.Jenkins;
+import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.io.FilenameUtils;
-import org.jenkinsci.remoting.RoleChecker;
 import org.kohsuke.stapler.DataBoundSetter;
 
 /**
@@ -387,7 +386,7 @@ public abstract class AbstractUpload
         final String version = getModule().getVersion();
 
         uploads.workspace.act(
-            new Callable<Void, UploadException>() {
+            new MasterToSlaveCallable<Void, UploadException>() {
               @Override
               public Void call() throws UploadException {
                 performUploads(
@@ -398,12 +397,6 @@ public abstract class AbstractUpload
                     listener,
                     version);
                 return (Void) null;
-              }
-
-              @Override
-              public void checkRoles(RoleChecker checker) throws SecurityException {
-                // We know by definition that this is the correct role;
-                // the callable exists only in this method context.
               }
             });
       } catch (GeneralSecurityException e) {
