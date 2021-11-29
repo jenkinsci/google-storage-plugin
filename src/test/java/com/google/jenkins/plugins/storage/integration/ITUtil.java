@@ -25,7 +25,6 @@ import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.io.ByteStreams;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
 import com.google.jenkins.plugins.credentials.oauth.JsonServiceAccountConfig;
 import hudson.EnvVars;
@@ -36,6 +35,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.logging.Logger;
+import org.apache.commons.io.IOUtils;
 import org.jvnet.hudson.test.JenkinsRule;
 
 /** Provides a library of utility functions for integration tests. */
@@ -62,7 +62,7 @@ public class ITUtil {
    * @throws IOException If an error occurred during loading.
    */
   static String loadResource(Class testClass, String name) throws IOException {
-    return new String(ByteStreams.toByteArray(testClass.getResourceAsStream(name)));
+    return new String(IOUtils.toByteArray(testClass.getResourceAsStream(name)));
   }
 
   /**
