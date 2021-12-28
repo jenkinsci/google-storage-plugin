@@ -15,6 +15,8 @@
  */
 package com.google.jenkins.plugins.storage;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -26,9 +28,17 @@ import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.util.MockExecutor;
 import com.google.jenkins.plugins.util.NotFoundException;
+import hudson.Launcher;
+import hudson.model.AbstractBuild;
+import hudson.model.BuildListener;
+import hudson.model.Descriptor;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
+import hudson.model.Result;
 import hudson.model.TaskListener;
+import hudson.tasks.BuildStepMonitor;
+import hudson.tasks.Publisher;
+import java.util.Collections;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Rule;
@@ -100,25 +110,79 @@ public class StdoutUploadStepTest {
 
     FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
 
-    // Perform is run twice: one from scheduleBuild2, one from step.perform
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(LOG_NAME));
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(LOG_NAME));
-
     project.getPublishersList().add(step);
 
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
+    // Perform is run twice: one from scheduleBuild2, one from step.perform.
+
+    // Check behavior of scheduleBuild2.
+    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+    executor.passThruWhen(
+        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+    executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(LOG_NAME));
+
+    FreeStyleBuild build = jenkins.buildAndAssertSuccess(project);
+
+    assertTrue(executor.sawAll());
+    assertFalse(executor.sawUnexpected());
+
+    // Check behavior of step.perform called directly.
+    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+    executor.passThruWhen(
+        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+    executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(LOG_NAME));
 
     step.perform(
         build,
         build.getWorkspace(),
         build.getWorkspace().createLauncher(TaskListener.NULL),
         TaskListener.NULL);
+
+    assertTrue(executor.sawAll());
+    assertFalse(executor.sawUnexpected());
+  }
+
+  @Test
+  public void testFailedBuild() throws Exception {
+    StdoutUploadStep step =
+        new StdoutUploadStep(
+            CREDENTIALS_ID, BUCKET_URI, Optional.of(new MockUploadModule(executor)), LOG_NAME);
+
+    FreeStyleProject project = jenkins.createFreeStyleProject("testFailedBuild");
+    project.getPublishersList().replaceBy(Collections.singleton(new FailureResultPublisher()));
+
+    FreeStyleBuild build = jenkins.buildAndAssertStatus(Result.FAILURE, project);
+
+    // Expect the step to still run if the build failed.
+    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+    executor.passThruWhen(
+        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+    executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(LOG_NAME));
+
+    step.perform(
+        build,
+        build.getWorkspace(),
+        build.getWorkspace().createLauncher(TaskListener.NULL),
+        TaskListener.NULL);
+
+    assertTrue(executor.sawAll());
+    assertFalse(executor.sawUnexpected());
+  }
+
+  static class FailureResultPublisher extends Publisher {
+    @Override
+    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
+      build.setResult(Result.FAILURE);
+      return true;
+    }
+
+    @Override
+    public BuildStepMonitor getRequiredMonitorService() {
+      return BuildStepMonitor.NONE;
+    }
+
+    @Override
+    public Descriptor<Publisher> getDescriptor() {
+      return new Descriptor<Publisher>(FailureResultPublisher.class) {};
+    }
   }
 }
