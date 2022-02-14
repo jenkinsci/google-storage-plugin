@@ -15,7 +15,6 @@
  */
 package com.google.jenkins.plugins.storage.util;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.UploadException;
@@ -50,7 +49,7 @@ public class StorageUtil {
         break;
       }
     }
-    return Joiner.on("/").join(segments);
+    return String.join("/", segments);
   }
 
   /**

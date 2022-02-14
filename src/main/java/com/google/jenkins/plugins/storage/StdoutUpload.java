@@ -16,7 +16,6 @@
 package com.google.jenkins.plugins.storage;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.io.ByteStreams.copy;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
@@ -34,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import javax.annotation.Nullable;
+import org.apache.commons.io.IOUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -104,7 +104,7 @@ public class StdoutUpload extends AbstractUpload {
         outputStream = new PlainTextConsoleOutputStream(logFile.write());
 
         inputStream = run.getLogInputStream();
-        copy(inputStream, outputStream);
+        IOUtils.copy(inputStream, outputStream);
 
         return new UploadSpec(logDir, ImmutableList.of(logFile));
       } finally {
