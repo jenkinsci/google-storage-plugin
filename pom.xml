@@ -20,12 +20,10 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.15</version>
+    <version>4.34</version>
+    <relativePath/>
   </parent>
 
-  <!--
-      Lots of boilerplate from: https://wiki.jenkins-ci.org/display/JENKINS/Hosting+Plugins
-  -->
   <artifactId>google-storage-plugin</artifactId>
   <version>1.5.7-SNAPSHOT</version>
   <packaging>hpi</packaging>
