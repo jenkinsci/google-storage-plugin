@@ -63,13 +63,11 @@
     <java.level>8</java.level>
     <jenkins.version>2.319.1</jenkins.version>
     <hpi.compatibleSinceVersion>1.5.0</hpi.compatibleSinceVersion>
-
-    <google.api.version>1.25.0</google.api.version>
-    <google.http.version>1.21.0</google.http.version>
-    <google.guava.version>31.0.1-jre</google.guava.version>
-    <google-oauth.version>1.0.0</google-oauth.version>
-    <storage.revision>158</storage.revision>
-
+    <google-api.version>1.33.2</google-api.version>
+    <google-http.version>1.41.4</google-http.version>
+    <google-oauth.version>1.33.1</google-oauth.version>
+    <google-storage.revision>v1-rev20211201-1.32.1</google-storage.revision>
+    <guava.version>31.0-jre</guava.version>
     <skipIts>true</skipIts>
   </properties>
 
@@ -115,7 +113,6 @@
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
       <artifactId>workflow-step-api</artifactId>
     </dependency>
-
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
@@ -124,7 +121,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>${google.guava.version}</version>
+      <version>${guava.version}</version>
     </dependency>
     <!-- org.joda.time -->
     <dependency>
@@ -137,13 +134,12 @@
       <artifactId>commons-lang3</artifactId>
       <version>3.7</version>
     </dependency>
-
     <!-- com.google.apis -->
     <!-- https://developers.google.com/api-client-library/java/apis/storage/v1 -->
     <dependency>
       <groupId>com.google.apis</groupId>
       <artifactId>google-api-services-storage</artifactId>
-      <version>v1-rev${storage.revision}-${google.api.version}</version>
+      <version>${google-storage.revision}</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.http-client</groupId>
@@ -154,7 +150,7 @@
     <dependency>
       <groupId>com.google.api-client</groupId>
       <artifactId>google-api-client</artifactId>
-      <version>${google.api.version}</version>
+      <version>${google-api.version}</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.http-client</groupId>
@@ -165,7 +161,7 @@
     <dependency>
       <groupId>com.google.http-client</groupId>
       <artifactId>google-http-client</artifactId>
-      <version>${google.http.version}</version>
+      <version>${google-http.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
@@ -176,7 +172,7 @@
     <dependency>
       <groupId>com.google.http-client</groupId>
       <artifactId>google-http-client-jackson2</artifactId>
-      <version>${google.api.version}</version>
+      <version>${google-http.version}</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.http-client</groupId>
@@ -187,7 +183,7 @@
     <dependency>
       <groupId>com.google.oauth-client</groupId>
       <artifactId>google-oauth-client</artifactId>
-      <version>${google.api.version}</version>
+      <version>${google-oauth.version}</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.http-client</groupId>
@@ -195,7 +191,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-
     <!-- Test dependencies -->
     <dependency>
       <groupId>org.jenkinsci.plugins</groupId>
