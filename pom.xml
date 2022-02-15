@@ -25,7 +25,7 @@
   </parent>
 
   <artifactId>google-storage-plugin</artifactId>
-  <version>1.5.7-SNAPSHOT</version>
+  <version>${revision}${changelist}</version>
   <packaging>hpi</packaging>
 
   <name>Google Cloud Storage plugin</name>
@@ -53,13 +53,16 @@
   </developers>
 
   <scm>
-    <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}.git</connection>
-    <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}.git</developerConnection>
-    <url>https://github.com/jenkinsci/${project.artifactId}</url>
-    <tag>HEAD</tag>
+    <connection>scm:git:git://github.com/${gitHubRepo}.git</connection>
+    <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
+    <url>https://github.com/${gitHubRepo}</url>
+    <tag>${scmTag}</tag>
   </scm>
 
   <properties>
+    <revision>1.5.7</revision>
+    <changelist>-SNAPSHOT</changelist>
+    <gitHubRepo>jenkinsci/google-storage-plugin</gitHubRepo>
     <java.level>8</java.level>
     <jenkins.version>2.319.1</jenkins.version>
     <hpi.compatibleSinceVersion>1.5.0</hpi.compatibleSinceVersion>
