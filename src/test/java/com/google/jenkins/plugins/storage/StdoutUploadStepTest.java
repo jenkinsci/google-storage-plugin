@@ -15,7 +15,7 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
