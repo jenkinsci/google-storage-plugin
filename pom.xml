@@ -25,7 +25,7 @@
   </parent>
 
   <artifactId>google-storage-plugin</artifactId>
-  <version>${revision}${changelist}</version>
+  <version>${changelist}</version>
   <packaging>hpi</packaging>
 
   <name>Google Cloud Storage plugin</name>
@@ -60,8 +60,7 @@
   </scm>
 
   <properties>
-    <revision>1.5.7</revision>
-    <changelist>-SNAPSHOT</changelist>
+    <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/google-storage-plugin</gitHubRepo>
     <java.level>8</java.level>
     <jenkins.version>2.319.1</jenkins.version>
