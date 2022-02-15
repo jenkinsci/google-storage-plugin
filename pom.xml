@@ -71,7 +71,7 @@
     <google-oauth.version>1.33.1</google-oauth.version>
     <google-storage.revision>v1-rev20211201-1.32.1</google-storage.revision>
     <guava.version>31.0-jre</guava.version>
-    <skipIts>true</skipIts>
+    <skipITs>true</skipITs>
   </properties>
 
   <dependencyManagement>
@@ -79,7 +79,7 @@
         <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-2.319.x</artifactId>
-        <version>1148.v7261f385f859</version>
+        <version>1135.va_4eeca_ea_21c1</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -115,10 +115,6 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
       <artifactId>workflow-step-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
     </dependency>
     <!-- com.google.guava -->
     <dependency>
@@ -323,6 +319,14 @@
         <configuration>
           <disableXmlReport>true</disableXmlReport>
           <useFile>false</useFile>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.jenkins-ci.tools</groupId>
+        <artifactId>maven-hpi-plugin</artifactId>
+        <configuration>
+          <compatibleSinceVersion>${hpi.compatibleSinceVersion}</compatibleSinceVersion>
+          <maskClasses>com.google.common.</maskClasses>
         </configuration>
       </plugin>
     </plugins>
