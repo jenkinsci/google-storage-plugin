@@ -63,12 +63,13 @@
     <java.level>8</java.level>
     <jenkins.version>2.319.1</jenkins.version>
     <hpi.compatibleSinceVersion>1.5.0</hpi.compatibleSinceVersion>
+
     <google.api.version>1.25.0</google.api.version>
     <google.http.version>1.21.0</google.http.version>
     <google.guava.version>31.0.1-jre</google.guava.version>
     <google-oauth.version>1.0.0</google-oauth.version>
     <storage.revision>158</storage.revision>
-    <concurrency>5</concurrency>
+
     <skipIts>true</skipIts>
   </properties>
 
@@ -307,6 +308,7 @@
             <format>html</format>
             <format>xml</format>
           </formats>
+          <check/>
         </configuration>
       </plugin>
       <plugin>
@@ -321,24 +323,8 @@
           </execution>
         </executions>
         <configuration>
-          <skipITs>${skipIts}</skipITs>
           <disableXmlReport>true</disableXmlReport>
           <useFile>false</useFile>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <skipTests>${skip.surefire.tests}</skipTests>
-          <runOrder>balanced</runOrder>
-          <reuseForks>false</reuseForks>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.jenkins-ci.tools</groupId>
-        <artifactId>maven-hpi-plugin</artifactId>
-        <configuration>
-          <maskClasses>com.google.common.</maskClasses>
         </configuration>
       </plugin>
     </plugins>
