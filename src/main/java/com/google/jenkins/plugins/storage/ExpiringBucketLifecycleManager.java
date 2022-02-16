@@ -18,7 +18,6 @@ package com.google.jenkins.plugins.storage;
 import static java.util.logging.Level.WARNING;
 
 import com.google.api.services.storage.model.Bucket;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import hudson.Extension;
 import java.util.List;
@@ -55,9 +54,8 @@ public class ExpiringBucketLifecycleManager extends AbstractBucketLifecycleManag
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars,
       @Deprecated @Nullable Integer bucketObjectTTL) {
-    super(MoreObjects.firstNonNull(bucket, bucketNameWithVars), module);
-
-    this.bucketObjectTTL = MoreObjects.firstNonNull(ttl, bucketObjectTTL);
+    super(bucket != null ? bucket : bucketNameWithVars, module);
+    this.bucketObjectTTL = ttl != null ? ttl : bucketObjectTTL;
   }
 
   /** {@inheritDoc} */
