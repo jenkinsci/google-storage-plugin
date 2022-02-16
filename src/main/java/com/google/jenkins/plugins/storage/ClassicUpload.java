@@ -24,6 +24,7 @@ import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 import javax.annotation.Nullable;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -56,6 +57,7 @@ public class ClassicUpload extends AbstractUpload {
       @Deprecated @Nullable String sourceGlobWithVars) {
     super(bucket != null ? bucket : bucketNameWithVars, module);
     this.sourceGlobWithVars = pattern != null ? pattern : sourceGlobWithVars;
+    Objects.requireNonNull(this.sourceGlobWithVars);
   }
 
   /** {@inheritDoc} */
