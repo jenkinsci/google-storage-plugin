@@ -55,12 +55,12 @@ public class StdoutUpload extends AbstractUpload {
    */
   @DataBoundConstructor
   public StdoutUpload(
-      @Nullable String bucket,
+      String bucket,
       @Nullable UploadModule module,
       String logName,
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars) {
-    super(MoreObjects.firstNonNull(bucket, bucketNameWithVars), module);
+    super(MoreObjects.firstNonNull(bucketNameWithVars, bucket), module);
     this.logName = checkNotNull(logName);
   }
 

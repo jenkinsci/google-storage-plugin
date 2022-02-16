@@ -55,9 +55,8 @@ public class ExpiringBucketLifecycleManager extends AbstractBucketLifecycleManag
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars,
       @Deprecated @Nullable Integer bucketObjectTTL) {
-    super(MoreObjects.firstNonNull(bucket, bucketNameWithVars), module);
-
-    this.bucketObjectTTL = MoreObjects.firstNonNull(ttl, bucketObjectTTL);
+    super(MoreObjects.firstNonNull(bucketNameWithVars, bucket), module);
+    this.bucketObjectTTL = MoreObjects.firstNonNull(bucketObjectTTL, ttl);
   }
 
   /** {@inheritDoc} */

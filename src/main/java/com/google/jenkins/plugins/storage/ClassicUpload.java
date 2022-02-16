@@ -55,8 +55,8 @@ public class ClassicUpload extends AbstractUpload {
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars,
       @Deprecated @Nullable String sourceGlobWithVars) {
-    super(MoreObjects.firstNonNull(bucket, bucketNameWithVars), module);
-    this.sourceGlobWithVars = MoreObjects.firstNonNull(pattern, sourceGlobWithVars);
+    super(MoreObjects.firstNonNull(bucketNameWithVars, bucket), module);
+    this.sourceGlobWithVars = MoreObjects.firstNonNull(sourceGlobWithVars, pattern);
   }
 
   /** {@inheritDoc} */
