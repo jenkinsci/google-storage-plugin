@@ -17,7 +17,6 @@ package com.google.jenkins.plugins.storage;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Closeables;
 import com.google.jenkins.plugins.storage.util.StorageUtil;
@@ -55,12 +54,12 @@ public class StdoutUpload extends AbstractUpload {
    */
   @DataBoundConstructor
   public StdoutUpload(
-      String bucket,
+      @Nullable String bucket,
       @Nullable UploadModule module,
       String logName,
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars) {
-    super(MoreObjects.firstNonNull(bucketNameWithVars, bucket), module);
+    super(bucket != null ? bucket : bucketNameWithVars, module);
     this.logName = checkNotNull(logName);
   }
 

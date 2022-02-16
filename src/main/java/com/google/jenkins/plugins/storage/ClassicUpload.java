@@ -15,7 +15,6 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import com.google.common.base.MoreObjects;
 import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.Resolve;
 import hudson.Extension;
@@ -55,8 +54,8 @@ public class ClassicUpload extends AbstractUpload {
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars,
       @Deprecated @Nullable String sourceGlobWithVars) {
-    super(MoreObjects.firstNonNull(bucketNameWithVars, bucket), module);
-    this.sourceGlobWithVars = MoreObjects.firstNonNull(sourceGlobWithVars, pattern);
+    super(bucket != null ? bucket : bucketNameWithVars, module);
+    this.sourceGlobWithVars = pattern != null ? pattern : sourceGlobWithVars;
   }
 
   /** {@inheritDoc} */
