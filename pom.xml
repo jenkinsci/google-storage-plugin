@@ -75,7 +75,7 @@
 
   <dependencyManagement>
     <dependencies>
-        <dependency>
+      <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-2.319.x</artifactId>
         <version>1135.va_4eeca_ea_21c1</version>
