@@ -104,9 +104,7 @@ public class ClassicUpload extends AbstractUpload {
               getModule()
                   .prefix(Messages.ClassicUpload_FoundForPattern(inclusions.length, getPattern())));
       return new UploadSpec(workspace, Arrays.asList(inclusions));
-    } catch (InterruptedException e) {
-      throw new UploadException(Messages.AbstractUpload_IncludeException(), e);
-    } catch (IOException e) {
+    } catch (InterruptedException | IOException e) {
       throw new UploadException(Messages.AbstractUpload_IncludeException(), e);
     }
   }
@@ -114,7 +112,7 @@ public class ClassicUpload extends AbstractUpload {
   /** Iterate from the workspace through parent directories to its root. */
   private FilePath getRoot(final FilePath workspace) {
     FilePath iter = workspace;
-    while (iter.getParent() != null) {
+    while (iter != null && iter.getParent() != null) {
       iter = iter.getParent();
     }
     return iter;

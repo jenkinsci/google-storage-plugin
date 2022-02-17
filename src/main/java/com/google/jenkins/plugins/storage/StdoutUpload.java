@@ -96,6 +96,9 @@ public class StdoutUpload extends AbstractUpload {
       InputStream inputStream = null;
       try {
         FilePath logDir = new FilePath(run.getLogFile()).getParent();
+        if (logDir == null) {
+          throw new UploadException(Messages.AbstractUpload_IncludeException());
+        }
 
         String resolvedLogName = StorageUtil.replaceMacro(getLogName(), run, listener);
         FilePath logFile = new FilePath(logDir, resolvedLogName);
