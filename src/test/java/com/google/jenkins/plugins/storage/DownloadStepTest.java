@@ -15,11 +15,9 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -32,7 +30,6 @@ import com.google.jenkins.plugins.credentials.oauth.AbstractGoogleRobotCredentia
 import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.util.MockExecutor;
-import hudson.AbortException;
 import hudson.FilePath;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
@@ -182,34 +179,21 @@ public class DownloadStepTest {
     assertEquals("contents 1", result.readToString());
   }
 
-  private void checkSplitException(String s) {
-    try {
-      DownloadStep.split(s);
-    } catch (AbortException e) {
-      assertTrue(e.getMessage().contains("Multiple asterisks"));
-      return;
-    }
-    fail("Expected split to fail on input " + s);
-  }
-
   @Test
   @WithoutJenkins
-  public void testSplit() throws Exception {
-    assertArrayEquals(DownloadStep.split("a"), new String[] {"a"});
-    assertArrayEquals(
-        DownloadStep.split("asdjfkl2358/9/8024@#$@%^$#^#"),
-        new String[] {"asdjfkl2358/9/8024@#$@%^$#^#"});
+  public void testGetPathPrefix() throws Exception {
+    assertEquals(DownloadStep.getPathPrefix("a"), "");
+    assertEquals(DownloadStep.getPathPrefix("asdjfkl2358/9/8024@#$@%^$#^#"), "asdjfkl2358/9");
 
-    assertArrayEquals(DownloadStep.split("a*"), new String[] {"a", ""});
-    assertArrayEquals(DownloadStep.split("*"), new String[] {"", ""});
-
-    assertArrayEquals(DownloadStep.split("pre-*-post"), new String[] {"pre-", "-post"});
-
-    // Not yet supported
-    checkSplitException("**");
-    checkSplitException("a**");
-    checkSplitException("a*b*c");
-    checkSplitException("a/*b/*c");
+    assertEquals(DownloadStep.getPathPrefix("pre-*-post"), "");
+    assertEquals(DownloadStep.getPathPrefix("a/b/c"), "a/b");
+    assertEquals(DownloadStep.getPathPrefix("a/**"), "a");
+    assertEquals(DownloadStep.getPathPrefix("a*"), "");
+    assertEquals(DownloadStep.getPathPrefix("a**"), "");
+    assertEquals(DownloadStep.getPathPrefix("*"), "");
+    assertEquals(DownloadStep.getPathPrefix("**"), "");
+    assertEquals(DownloadStep.getPathPrefix("a*b*c*"), "");
+    assertEquals(DownloadStep.getPathPrefix("a/*b/*c"), "a");
   }
 
   /**
@@ -227,17 +211,11 @@ public class DownloadStepTest {
         continue;
       }
 
-      String subdirectory[] = s.substring(prefix.length()).split("/");
-      if (subdirectory.length > 1) {
-        // This object is nested deeper. Add a subdirectory
-        prefixes.add(prefix + subdirectory[0]);
-      } else {
-        // Add the object
-        StorageObject objToGet = new StorageObject();
-        objToGet.setBucket("bucket");
-        objToGet.setName(s);
-        items.add(objToGet);
-      }
+      // Add the object
+      StorageObject objToGet = new StorageObject();
+      objToGet.setBucket("bucket");
+      objToGet.setName(s);
+      items.add(objToGet);
     }
     o.setItems(items);
     o.setPrefixes(new ArrayList<String>(prefixes));
@@ -315,8 +293,29 @@ public class DownloadStepTest {
   }
 
   @Test
+  public void testBuildDoubleWildcardsOnly() throws Exception {
+    tryWildcards("**", new String[] {"a.txt", "a/a.txt", "a/log", "a/b/c.txt"}, new String[] {});
+  }
+
+  @Test
   public void testBuildWildcardEnd() throws Exception {
     tryWildcards("a/*", new String[] {"a/a.txt", "a/b.txt", "a/log"}, new String[] {"a/b/c.txt"});
+  }
+
+  @Test
+  public void testBuildDoubleWildcardsEnd() throws Exception {
+    tryWildcards(
+        "a/**", new String[] {"a/a.txt", "a/b.txt", "a/log", "a/b/c.txt"}, new String[] {});
+  }
+
+  @Test
+  public void testBuildWildcardsWithoutNestedFolders() throws Exception {
+    tryWildcards("a/b*c*", new String[] {"a/bc.txt", "a/bbcc"}, new String[] {"a/b/c"});
+  }
+
+  @Test
+  public void testBuildWildcardsWithNestedFolders() throws Exception {
+    tryWildcards("a/b/*c", new String[] {"a/b/c", "a/b/cc"}, new String[] {"a/b/cd"});
   }
 
   private static final String PROJECT_ID = "foo.com:bar-baz";
