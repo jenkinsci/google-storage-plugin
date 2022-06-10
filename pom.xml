@@ -65,7 +65,7 @@
   <properties>
     <jenkins.version>2.222.4</jenkins.version>
     <hpi.compatibleSinceVersion>1.5.0</hpi.compatibleSinceVersion>
-    <google.api.version>1.25.0</google.api.version>
+    <google.api.version>1.33.3</google.api.version>
     <google.http.version>1.21.0</google.http.version>
     <google.guava.version>31.0.1-jre</google.guava.version>
     <google-oauth.version>1.0.0</google-oauth.version>
