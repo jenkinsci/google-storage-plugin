@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.jenkins.plugins.credentials.domains.RequiresDomain;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.reports.ProjectGcsUploadReport;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -38,7 +39,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /** A Jenkins plugin for uploading files to Google Cloud Storage (GCS). */

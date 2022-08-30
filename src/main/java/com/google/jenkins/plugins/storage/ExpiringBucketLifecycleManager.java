@@ -19,10 +19,10 @@ import static java.util.logging.Level.WARNING;
 
 import com.google.api.services.storage.model.Bucket;
 import com.google.common.collect.Lists;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import java.util.List;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
