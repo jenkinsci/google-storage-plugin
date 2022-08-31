@@ -17,6 +17,7 @@ package com.google.jenkins.plugins.storage;
 
 import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.Resolve;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Run;
@@ -25,7 +26,6 @@ import hudson.util.FormValidation;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
-import javax.annotation.Nullable;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 

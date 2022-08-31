@@ -25,11 +25,11 @@ import com.google.jenkins.plugins.util.ConflictException;
 import com.google.jenkins.plugins.util.Executor;
 import com.google.jenkins.plugins.util.ExecutorException;
 import com.google.jenkins.plugins.util.NotFoundException;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.FilePath;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import java.io.IOException;
-import javax.annotation.Nullable;
 import jenkins.model.Jenkins;
 
 /**
