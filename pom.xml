@@ -71,7 +71,7 @@
     <google.api.version>1.25.0</google.api.version>
     <google.http.version>1.42.2</google.http.version>
     <google.guava.version>31.0.1-jre</google.guava.version>
-    <google-oauth.version>1.0.0</google-oauth.version>
+    <google-oauth.version>1.0.6</google-oauth.version>
     <storage.revision>158</storage.revision>
     <concurrency>5</concurrency>
     <skipIts>true</skipIts>
