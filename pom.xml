@@ -220,7 +220,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>google-oauth-plugin</artifactId>
-      <version>1.0.7-SNAPSHOT</version> <!-- TODO https://github.com/jenkinsci/google-oauth-plugin/pull/162 -->
+      <version>1.0.7</version>
       <exclusions>
         <exclusion>
           <groupId>net.sourceforge.findbugs</groupId>
