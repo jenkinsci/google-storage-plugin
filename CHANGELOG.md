@@ -12,23 +12,12 @@
  License.
 -->
 # Changelog
-All notable changes to this project will be documented in this file.
+All notable changes to this project before 1.5.6 are documented here.
+Since 1.5.6, the changes are documented on https://github.com/jenkinsci/google-storage-plugin/releases.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unresolved]
-
- ### Security
- 
- ### Added
-  
- ### Changed
-				
- ### Removed
-				 
- ### Fixed
- 
 ## [1.5.1] - 2019-11-11
  ### Security
  - fasterxml.jackson.version changed: 2.9.10 to 2.10.0

@@ -16,13 +16,12 @@
 package com.google.jenkins.plugins.storage;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.io.ByteStreams.copy;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Closeables;
 import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.Resolve;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.console.PlainTextConsoleOutputStream;
@@ -33,7 +32,7 @@ import hudson.util.FormValidation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import javax.annotation.Nullable;
+import org.apache.commons.io.IOUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -60,7 +59,7 @@ public class StdoutUpload extends AbstractUpload {
       String logName,
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars) {
-    super(MoreObjects.firstNonNull(bucket, bucketNameWithVars), module);
+    super(bucket != null ? bucket : bucketNameWithVars, module);
     this.logName = checkNotNull(logName);
   }
 
@@ -104,7 +103,7 @@ public class StdoutUpload extends AbstractUpload {
         outputStream = new PlainTextConsoleOutputStream(logFile.write());
 
         inputStream = run.getLogInputStream();
-        copy(inputStream, outputStream);
+        IOUtils.copy(inputStream, outputStream);
 
         return new UploadSpec(logDir, ImmutableList.of(logFile));
       } finally {

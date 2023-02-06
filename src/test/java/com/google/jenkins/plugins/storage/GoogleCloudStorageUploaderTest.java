@@ -25,7 +25,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
@@ -34,7 +34,6 @@ import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.CharStreams;
 import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.storage.GoogleCloudStorageUploader.DescriptorImpl;
@@ -52,6 +51,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -235,7 +235,7 @@ public class GoogleCloudStorageUploaderTest {
 
     assertEquals(Result.FAILURE, build.getResult());
     assertThat(
-        CharStreams.toString(new InputStreamReader(build.getLogInputStream())),
+        IOUtils.toString(new InputStreamReader(build.getLogInputStream())),
         containsString("Forbidden"));
   }
 
@@ -273,7 +273,7 @@ public class GoogleCloudStorageUploaderTest {
 
     dumpLog(build);
     assertThat(
-        CharStreams.toString(new InputStreamReader(build.getLogInputStream())),
+        IOUtils.toString(new InputStreamReader(build.getLogInputStream())),
         containsString(Messages.ClassicUpload_NoArtifacts(glob)));
   }
 

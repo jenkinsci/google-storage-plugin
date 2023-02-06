@@ -15,9 +15,9 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import com.google.common.base.MoreObjects;
 import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.Resolve;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Run;
@@ -25,7 +25,7 @@ import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 import java.io.IOException;
 import java.util.Arrays;
-import javax.annotation.Nullable;
+import java.util.Objects;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -55,8 +55,9 @@ public class ClassicUpload extends AbstractUpload {
       // Legacy arguments for backwards compatibility
       @Deprecated @Nullable String bucketNameWithVars,
       @Deprecated @Nullable String sourceGlobWithVars) {
-    super(MoreObjects.firstNonNull(bucket, bucketNameWithVars), module);
-    this.sourceGlobWithVars = MoreObjects.firstNonNull(pattern, sourceGlobWithVars);
+    super(bucket != null ? bucket : bucketNameWithVars, module);
+    this.sourceGlobWithVars = pattern != null ? pattern : sourceGlobWithVars;
+    Objects.requireNonNull(this.sourceGlobWithVars);
   }
 
   /** {@inheritDoc} */

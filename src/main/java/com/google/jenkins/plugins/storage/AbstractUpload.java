@@ -26,7 +26,6 @@ import com.google.api.services.storage.model.StorageObject;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -43,6 +42,7 @@ import com.google.jenkins.plugins.util.Executor;
 import com.google.jenkins.plugins.util.ExecutorException;
 import com.google.jenkins.plugins.util.ForbiddenException;
 import com.google.jenkins.plugins.util.NotFoundException;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionPoint;
 import hudson.FilePath;
@@ -64,7 +64,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jenkins.model.Jenkins;
 import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.io.FilenameUtils;
@@ -93,12 +94,18 @@ import org.kohsuke.stapler.DataBoundSetter;
 public abstract class AbstractUpload
     implements Describable<AbstractUpload>, ExtensionPoint, Serializable {
   private static final Logger logger = Logger.getLogger(AbstractUpload.class.getName());
-  private static final ImmutableMap<String, String> CONTENT_TYPES =
-      ImmutableMap.of(
-          "css", "text/css",
-          "js", "application/javascript",
-          "svg", "image/svg+xml",
-          "woff2", "font/woff2");
+  private static final Map<String, String> CONTENT_TYPES =
+      Stream.of(
+              new String[][] {
+                {"css", "text/css"},
+                {"js", "application/javascript"},
+                {"svg", "image/svg+xml"},
+                {"woff2", "font/woff2"}
+              })
+          .collect(
+              Collectors.collectingAndThen(
+                  Collectors.toMap(data -> data[0], data -> data[1]),
+                  Collections::<String, String>unmodifiableMap));
   private String pathPrefix;
   // The module to use for providing dependencies.
   private final transient UploadModule module;
