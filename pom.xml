@@ -72,7 +72,7 @@
     <google.http.version>1.42.2</google.http.version>
     <google.guava.version>31.0.1-jre</google.guava.version>
     <google-oauth.version>1.34.1</google-oauth.version>
-    <google-oauth-plugin.version>1.0.8-rc251.d290e26c7b_fb_</google-oauth-plugin.version>
+    <google-oauth-plugin.version>1.0.8</google-oauth-plugin.version>
     <storage.revision>20220705</storage.revision>
     <concurrency>5</concurrency>
     <skipIts>true</skipIts>
@@ -254,10 +254,6 @@
     <repository>
       <id>repo.jenkins-ci.org</id>
       <url>https://repo.jenkins-ci.org/public/</url>
-    </repository>
-    <repository>
-      <id>incrementals.jenkins-ci.org</id>
-      <url>https://repo.jenkins-ci.org/incrementals</url>
     </repository>
   </repositories>
   <pluginRepositories>
