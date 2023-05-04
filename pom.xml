@@ -14,13 +14,13 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.47</version>
+    <version>4.62</version>
     <relativePath/>
   </parent>
 
@@ -65,7 +65,7 @@
   <properties>
     <revision>1.5.7</revision>
     <changelist>-SNAPSHOT</changelist>
-    <jenkins.version>2.319.3</jenkins.version>
+    <jenkins.version>2.361.4</jenkins.version>
     <gitHubRepo>jenkinsci/${project.artifactId}</gitHubRepo>
     <hpi.compatibleSinceVersion>1.5.0</hpi.compatibleSinceVersion>
     <google.api.version>1.35.2</google.api.version>
