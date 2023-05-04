@@ -283,15 +283,11 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>com.coveo</groupId>
+        <groupId>com.spotify.fmt</groupId>
         <artifactId>fmt-maven-plugin</artifactId>
         <version>2.13</version>
         <configuration>
-          <sourceDirectory>src/main/java</sourceDirectory>
-          <testSourceDirectory>src/test/java</testSourceDirectory>
           <verbose>true</verbose>
-          <filesNamePattern>.*\.java</filesNamePattern>
-          <skip>false</skip>
           <skipSortingImports>false</skipSortingImports>
           <style>google</style>
         </configuration>
