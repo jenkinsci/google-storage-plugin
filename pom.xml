@@ -28,7 +28,7 @@
       Lots of boilerplate from: https://wiki.jenkins-ci.org/display/JENKINS/Hosting+Plugins
   -->
   <artifactId>google-storage-plugin</artifactId>
-  <version>1.5.9-SNAPSHOT</version>
+  <version>${revision}.${changelist}</version>
   <packaging>hpi</packaging>
 
   <name>Google Cloud Storage plugin</name>
@@ -63,8 +63,8 @@
 
   <!-- Bring some sanity to version numbering... -->
   <properties>
-    <revision>1.5.7</revision>
-    <changelist>-SNAPSHOT</changelist>
+    <revision>1</revision>
+    <changelist>999999-SNAPSHOT</changelist>
     <jenkins.version>2.361.4</jenkins.version>
     <gitHubRepo>jenkinsci/${project.artifactId}</gitHubRepo>
     <hpi.compatibleSinceVersion>1.5.0</hpi.compatibleSinceVersion>
@@ -295,13 +295,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-release-plugin</artifactId>
-        <configuration>
-          <completionGoals>xml-format:xml-format tidy:pom</completionGoals>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>com.spotify.fmt</groupId>
