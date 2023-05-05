@@ -76,7 +76,9 @@ public class BuildGcsUploadReport extends AbstractGcsUploadReport {
     return links;
   }
 
-  /** @param bucketName the name of the destination bucket. */
+  /**
+   * @param bucketName the name of the destination bucket.
+   */
   public void addBucket(String bucketName) {
     buckets.add(bucketName);
   }

@@ -55,7 +55,9 @@ public class UploadModule {
     return DomainRequirementProvider.of(getClass(), StorageScopeRequirement.class);
   }
 
-  /** @return the version number of this plugin. */
+  /**
+   * @return the version number of this plugin.
+   */
   public String getVersion() {
     String version = "";
     Plugin plugin = Jenkins.get().getPlugin(PLUGIN_NAME);
@@ -93,7 +95,9 @@ public class UploadModule {
     }
   }
 
-  /** @return Controls the number of object insertion retries. */
+  /**
+   * @return Controls the number of object insertion retries.
+   */
   public int getInsertRetryCount() {
     return 5;
   }

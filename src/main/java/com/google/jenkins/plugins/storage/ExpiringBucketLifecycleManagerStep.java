@@ -76,12 +76,16 @@ public class ExpiringBucketLifecycleManagerStep extends Recorder
     upload = new ExpiringBucketLifecycleManager(bucket, module.orElse(null), ttl, null, null);
   }
 
-  /** @return The unique ID for the credentials we are using to authenticate with GCS. */
+  /**
+   * @return The unique ID for the credentials we are using to authenticate with GCS.
+   */
   public String getCredentialsId() {
     return credentialsId;
   }
 
-  /** @return Name of our GCS bucket. */
+  /**
+   * @return Name of our GCS bucket.
+   */
   public String getBucket() {
     return upload.getBucket();
   }

@@ -64,17 +64,23 @@ public class GoogleCloudStorageUploader extends Recorder {
     }
   }
 
-  /** @return The unique ID for the credentials we are using to authenticate with GCS. */
+  /**
+   * @return The unique ID for the credentials we are using to authenticate with GCS.
+   */
   public String getCredentialsId() {
     return credentialsId;
   }
 
-  /** @return The credentials we are using to authenticate with GCS. */
+  /**
+   * @return The credentials we are using to authenticate with GCS.
+   */
   public GoogleRobotCredentials getCredentials() {
     return GoogleRobotCredentials.getById(getCredentialsId());
   }
 
-  /** @return The set of tuples describing the artifacts to upload, and where to upload them. */
+  /**
+   * @return The set of tuples describing the artifacts to upload, and where to upload them.
+   */
   public Collection<AbstractUpload> getUploads() {
     return Collections.unmodifiableCollection(uploads);
   }
@@ -143,7 +149,9 @@ public class GoogleCloudStorageUploader extends Recorder {
       return ImmutableList.<AbstractUpload>of(upload);
     }
 
-    /** @return All registered {@link AbstractUpload}s. */
+    /**
+     * @return All registered {@link AbstractUpload}s.
+     */
     public List<AbstractUploadDescriptor> getUploads() {
       return AbstractUpload.all();
     }

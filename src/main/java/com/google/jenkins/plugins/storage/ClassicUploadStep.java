@@ -84,13 +84,17 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
     upload.setForFailedJobs(true);
   }
 
-  /** @param sharedPublicly Whether to surface the file being uploaded to anyone with the link. */
+  /**
+   * @param sharedPublicly Whether to surface the file being uploaded to anyone with the link.
+   */
   @DataBoundSetter
   public void setSharedPublicly(boolean sharedPublicly) {
     upload.setSharedPublicly(sharedPublicly);
   }
 
-  /** @return Whether to surface the file being uploaded to anyone with the link. */
+  /**
+   * @return Whether to surface the file being uploaded to anyone with the link.
+   */
   public boolean isSharedPublicly() {
     return upload.isSharedPublicly();
   }
@@ -150,7 +154,9 @@ public class ClassicUploadStep extends Builder implements SimpleBuildStep, Seria
     return upload.getBucket();
   }
 
-  /** @return The unique ID for the credentials we are using to authenticate with GCS. */
+  /**
+   * @return The unique ID for the credentials we are using to authenticate with GCS.
+   */
   public String getCredentialsId() {
     return credentialsId;
   }

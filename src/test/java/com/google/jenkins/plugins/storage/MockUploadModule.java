@@ -96,4 +96,5 @@ public class MockUploadModule extends UploadModule {
     }
     return mediaStreams.remove(0);
   }
-};
+}
+;

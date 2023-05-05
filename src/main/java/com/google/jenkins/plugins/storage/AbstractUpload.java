@@ -273,10 +273,14 @@ public abstract class AbstractUpload
     return false;
   }
 
-  /** @return Provide detail information summarizing this download for the GCS upload report. */
+  /**
+   * @return Provide detail information summarizing this download for the GCS upload report.
+   */
   public abstract String getDetails();
 
-  /** @return The {@link UploadModule} for providing dependencies. */
+  /**
+   * @return The {@link UploadModule} for providing dependencies.
+   */
   protected synchronized UploadModule getModule() {
     if (this.module == null) {
       return new UploadModule();
@@ -291,24 +295,32 @@ public abstract class AbstractUpload
     return bucketNameWithVars;
   }
 
-  /** @param sharedPublicly Whether to surface the file being uploaded to anyone with the link. */
+  /**
+   * @param sharedPublicly Whether to surface the file being uploaded to anyone with the link.
+   */
   @DataBoundSetter
   public void setSharedPublicly(boolean sharedPublicly) {
     this.sharedPublicly = sharedPublicly;
   }
 
-  /** @return Whether to surface the file being uploaded to anyone with the link. */
+  /**
+   * @return Whether to surface the file being uploaded to anyone with the link.
+   */
   public boolean isSharedPublicly() {
     return sharedPublicly;
   }
 
-  /** @param forFailedJobs Whether to attempt the upload, even if the job failed. */
+  /**
+   * @param forFailedJobs Whether to attempt the upload, even if the job failed.
+   */
   @DataBoundSetter
   public void setForFailedJobs(boolean forFailedJobs) {
     this.forFailedJobs = forFailedJobs;
   }
 
-  /** @return Whether to attempt the upload, even if the job failed. */
+  /**
+   * @return Whether to attempt the upload, even if the job failed.
+   */
   public boolean isForFailedJobs() {
     return forFailedJobs;
   }

@@ -37,7 +37,9 @@ public class ProjectGcsUploadReport extends AbstractGcsUploadReport {
     super(project);
   }
 
-  /** @return the project that this {@link ProjectGcsUploadReport} belongs to. */
+  /**
+   * @return the project that this {@link ProjectGcsUploadReport} belongs to.
+   */
   public AbstractProject<?, ?> getProject() {
     return (AbstractProject<?, ?>) getParent();
   }

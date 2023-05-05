@@ -152,7 +152,9 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     return pathPrefix;
   }
 
-  /** @return The UploadModule used for providing dependencies. */
+  /**
+   * @return The UploadModule used for providing dependencies.
+   */
   protected synchronized UploadModule getModule() {
     if (this.module == null) {
       return new UploadModule();
@@ -160,12 +162,16 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
     return this.module;
   }
 
-  /** @return The unique ID for the credentials we are using to authenticate with GCS. */
+  /**
+   * @return The unique ID for the credentials we are using to authenticate with GCS.
+   */
   public String getCredentialsId() {
     return credentialsId;
   }
 
-  /** @return The credentials we are using to authenticate with GCS. */
+  /**
+   * @return The credentials we are using to authenticate with GCS.
+   */
   public GoogleRobotCredentials getCredentials() {
     return GoogleRobotCredentials.getById(getCredentialsId());
   }
@@ -455,7 +461,9 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
   public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
     private UploadModule module;
 
-    /** @return Module for the DescriptorImpl. */
+    /**
+     * @return Module for the DescriptorImpl.
+     */
     public synchronized UploadModule getModule() {
       if (this.module == null) {
         return new UploadModule();

@@ -63,7 +63,9 @@ public class StdoutUpload extends AbstractUpload {
     this.logName = checkNotNull(logName);
   }
 
-  /** @return The name to give the file we upload for the build log. */
+  /**
+   * @return The name to give the file we upload for the build log.
+   */
   public String getLogName() {
     return logName;
   }

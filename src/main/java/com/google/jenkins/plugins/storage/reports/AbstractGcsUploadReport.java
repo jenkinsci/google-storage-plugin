@@ -31,7 +31,9 @@ import java.util.Set;
  */
 public abstract class AbstractGcsUploadReport implements Action {
 
-  /** @see #getParent(). */
+  /**
+   * @see #getParent().
+   */
   private Actionable parent;
 
   /**
@@ -69,13 +71,19 @@ public abstract class AbstractGcsUploadReport implements Action {
     return parent;
   }
 
-  /** @return the build number of this report. */
+  /**
+   * @return the build number of this report.
+   */
   @Nullable
   public abstract Integer getBuildNumber();
 
-  /** @return the uploaded objects (qualified with bucket name). */
+  /**
+   * @return the uploaded objects (qualified with bucket name).
+   */
   public abstract Set<String> getStorageObjects();
 
-  /** @return the buckets that were used as upload destinations. */
+  /**
+   * @return the buckets that were used as upload destinations.
+   */
   public abstract Set<String> getBuckets();
 }

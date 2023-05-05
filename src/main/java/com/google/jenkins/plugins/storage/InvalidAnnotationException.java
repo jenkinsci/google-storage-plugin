@@ -33,7 +33,9 @@ public class InvalidAnnotationException extends Exception {
     this.bucket = checkNotNull(bucket);
   }
 
-  /** @return The bucket that isn't properly annotated. */
+  /**
+   * @return The bucket that isn't properly annotated.
+   */
   public Bucket getBucket() {
     return this.bucket;
   }

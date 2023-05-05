@@ -75,17 +75,23 @@ public class BucketPath implements Serializable {
     return getBucket().length() <= 0;
   }
 
-  /** @return Regenerate the path (without gs:// prefix) */
+  /**
+   * @return Regenerate the path (without gs:// prefix)
+   */
   public String getPath() {
     return bucket + (object.isEmpty() ? "" : "/" + object);
   }
 
-  /** @return The Bucket portion of the URI */
+  /**
+   * @return The Bucket portion of the URI
+   */
   public String getBucket() {
     return bucket;
   }
 
-  /** @return The object portion of the URI */
+  /**
+   * @return The object portion of the URI
+   */
   public String getObject() {
     return object;
   }

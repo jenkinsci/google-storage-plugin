@@ -107,12 +107,16 @@ public class ClientFactory {
             .build());
   }
 
-  /** @return The default Project ID associated with this ClientFactory's credentials. */
+  /**
+   * @return The default Project ID associated with this ClientFactory's credentials.
+   */
   public String getDefaultProjectId() {
     return this.defaultProjectId;
   }
 
-  /** @return The Credentials ID for this ClientFactory. */
+  /**
+   * @return The Credentials ID for this ClientFactory.
+   */
   public String getCredentialsId() {
     return this.credentialsId;
   }
