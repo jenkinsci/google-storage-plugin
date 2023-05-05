@@ -30,6 +30,8 @@ import com.google.jenkins.plugins.storage.util.RetryStorageOperation.RepeatOpera
 import com.google.jenkins.plugins.storage.util.StorageUtil;
 import com.google.jenkins.plugins.util.Executor;
 import com.google.jenkins.plugins.util.ExecutorException;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
@@ -50,8 +52,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.logging.Logger;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import jenkins.model.Jenkins;
 import jenkins.security.MasterToSlaveCallable;
 import jenkins.tasks.SimpleBuildStep;
@@ -190,10 +190,10 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
    */
   @Override
   public void perform(
-      @Nonnull Run<?, ?> run,
-      @Nonnull FilePath workspace,
-      @Nonnull Launcher launcher,
-      @Nonnull TaskListener listener)
+      @NonNull Run<?, ?> run,
+      @NonNull FilePath workspace,
+      @NonNull Launcher launcher,
+      @NonNull TaskListener listener)
       throws IOException, InterruptedException {
     try {
       String version = getModule().getVersion();

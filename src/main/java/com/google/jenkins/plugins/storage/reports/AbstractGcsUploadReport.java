@@ -17,10 +17,10 @@ package com.google.jenkins.plugins.storage.reports;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.model.Action;
 import hudson.model.Actionable;
 import java.util.Set;
-import javax.annotation.Nullable;
 
 /**
  * Common functionalities for {@link BuildGcsUploadReport} and {@link ProjectGcsUploadReport}. See

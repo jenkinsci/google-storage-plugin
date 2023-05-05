@@ -17,6 +17,7 @@
 package com.google.jenkins.plugins.storage;
 
 import com.google.jenkins.plugins.credentials.domains.RequiresDomain;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -31,7 +32,6 @@ import hudson.util.FormValidation;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
 import org.jenkinsci.Symbol;
