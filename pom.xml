@@ -307,8 +307,9 @@
         </configuration>
         <executions>
           <execution>
+            <id>check-source-format</id>
             <goals>
-              <goal>format</goal>
+              <goal>check</goal>
             </goals>
           </execution>
         </executions>
