@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.62</version>
+    <version>4.72</version>
     <relativePath/>
   </parent>
 
@@ -84,8 +84,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.319.x</artifactId>
-        <version>1607.va_c1576527071</version>
+        <artifactId>bom-2.361.x</artifactId>
+        <version>2102.v854b_fec19c92</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -143,6 +143,10 @@
       <artifactId>jackson2-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>apache-httpcomponents-client-4-api</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.google.api-client</groupId>
       <artifactId>google-api-client</artifactId>
       <version>${google.api.version}</version>
@@ -154,6 +158,14 @@
         <exclusion>
           <groupId>com.google.http-client</groupId>
           <artifactId>google-http-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpcore</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -184,6 +196,10 @@
         <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpcore</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
