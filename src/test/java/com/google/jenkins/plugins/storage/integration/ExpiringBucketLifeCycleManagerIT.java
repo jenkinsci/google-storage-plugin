@@ -17,7 +17,7 @@ package com.google.jenkins.plugins.storage.integration;
 
 import static com.google.jenkins.plugins.storage.integration.ITUtil.dumpLog;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.formatRandomName;
-import static com.google.jenkins.plugins.storage.integration.ITUtil.getCredentialsId;
+import static com.google.jenkins.plugins.storage.integration.ITUtil.getProjectId;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.initializePipelineITEnvironment;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
@@ -52,7 +52,7 @@ public class ExpiringBucketLifeCycleManagerIT {
     LOGGER.info("Initializing ExpiringBucketLifeCycleManagerIT");
 
     envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
-    credentialsId = getCredentialsId();
+    credentialsId = envVars.get("CREDENTIALS_ID");
     storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
     // Create new test bucket to change lifecycle of objects on.
     bucket = formatRandomName("test");
