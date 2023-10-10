@@ -19,7 +19,6 @@ package com.google.jenkins.plugins.storage.integration;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.dumpLog;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.formatRandomName;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.getBucket;
-import static com.google.jenkins.plugins.storage.integration.ITUtil.getProjectId;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.initializePipelineITEnvironment;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
