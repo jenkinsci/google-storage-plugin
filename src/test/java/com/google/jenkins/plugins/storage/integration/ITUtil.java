@@ -44,10 +44,12 @@ public class ITUtil {
   private static String bucket = System.getenv("GOOGLE_BUCKET");
 
   // DEV MEMO:
-  // In previous versions of google-oauth-plugin, the credentialId was actually the projectId, making it impossible to have several credentials for
+  // In previous versions of google-oauth-plugin, the credentialId was actually the projectId,
+  // making it impossible to have several credentials for
   // the same project.
   // This property will allow to override the credentialId to use for the tests.
-  // If it is not set, it will default to the projectId for the tests to match with the former behavior.
+  // If it is not set, it will default to the projectId for the tests to match with the former
+  // behavior.
   private static String credentialId = System.getenv("GOOGLE_CREDENTIAL_ID");
 
   /**
@@ -117,7 +119,9 @@ public class ITUtil {
     JsonServiceAccountConfig sac = new JsonServiceAccountConfig();
     sac.setSecretJsonKey(secretBytes);
 
-    GoogleRobotPrivateKeyCredentials c = new GoogleRobotPrivateKeyCredentials(CredentialsScope.GLOBAL, credentialId, projectId, sac, null);
+    GoogleRobotPrivateKeyCredentials c =
+        new GoogleRobotPrivateKeyCredentials(
+            CredentialsScope.GLOBAL, credentialId, projectId, sac, null);
     CredentialsStore store =
         new SystemCredentialsProvider.ProviderImpl().getStore(jenkinsRule.jenkins);
     assertNotNull(store);

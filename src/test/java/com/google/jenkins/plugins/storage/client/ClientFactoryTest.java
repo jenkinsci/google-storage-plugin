@@ -49,7 +49,9 @@ public class ClientFactoryTest {
     serviceAccountConfig.setSecretJsonKey(bytes);
     assertNotNull(serviceAccountConfig.getAccountId());
 
-    GoogleRobotPrivateKeyCredentials c = new GoogleRobotPrivateKeyCredentials(CredentialsScope.GLOBAL, credentialId, ACCOUNT_ID, serviceAccountConfig, null);
+    GoogleRobotPrivateKeyCredentials c =
+        new GoogleRobotPrivateKeyCredentials(
+            CredentialsScope.GLOBAL, credentialId, ACCOUNT_ID, serviceAccountConfig, null);
     CredentialsStore store = new SystemCredentialsProvider.ProviderImpl().getStore(r.jenkins);
     assertNotNull(store);
     store.addCredentials(Domain.global(), c);
