@@ -241,6 +241,8 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>google-oauth-plugin</artifactId>
+      <!-- TODO: Remove this version when it is integrated in Jenkins BOM -->
+      <version>1.318.vb_39c5db_e3041</version>
       <exclusions>
         <exclusion>
           <groupId>net.sourceforge.findbugs</groupId>
