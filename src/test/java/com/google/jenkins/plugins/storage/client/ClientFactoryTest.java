@@ -18,7 +18,7 @@ package com.google.jenkins.plugins.storage.client;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
-import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
@@ -42,18 +42,23 @@ public class ClientFactoryTest {
 
   @Test
   public void defaultTransport() throws Exception {
+    final String credentialId = "my-google-credential";
+
     SecretBytes bytes = SecretBytes.fromBytes(PK_BYTES);
     JsonServiceAccountConfig serviceAccountConfig = new JsonServiceAccountConfig();
     serviceAccountConfig.setSecretJsonKey(bytes);
     assertNotNull(serviceAccountConfig.getAccountId());
-    Credentials c =
-        (Credentials) new GoogleRobotPrivateKeyCredentials(ACCOUNT_ID, serviceAccountConfig, null);
+
+    GoogleRobotPrivateKeyCredentials c =
+        new GoogleRobotPrivateKeyCredentials(
+            CredentialsScope.GLOBAL, credentialId, ACCOUNT_ID, serviceAccountConfig, null);
     CredentialsStore store = new SystemCredentialsProvider.ProviderImpl().getStore(r.jenkins);
+    assertNotNull(store);
     store.addCredentials(Domain.global(), c);
 
     // Ensure correct exception is thrown
     assertThrows(
         GoogleRobotPrivateKeyCredentials.PrivateKeyNotSetException.class,
-        () -> new ClientFactory(r.jenkins, ImmutableList.of(), ACCOUNT_ID, Optional.empty()));
+        () -> new ClientFactory(r.jenkins, ImmutableList.of(), credentialId, Optional.empty()));
   }
 }

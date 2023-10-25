@@ -18,7 +18,6 @@ package com.google.jenkins.plugins.storage.integration;
 
 import static com.google.jenkins.plugins.storage.integration.ITUtil.dumpLog;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.formatRandomName;
-import static com.google.jenkins.plugins.storage.integration.ITUtil.getCredentialsId;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.initializePipelineITEnvironment;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.loadResource;
 import static org.junit.Assert.assertNotNull;
@@ -53,7 +52,7 @@ public class ClassicUploadStepPipelineIT {
     LOGGER.info("Initializing ClassicUploadStepPipelineIT");
 
     envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
-    credentialsId = getCredentialsId();
+    credentialsId = envVars.get("CREDENTIALS_ID");
     storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
     bucket = formatRandomName("test");
     envVars.put("BUCKET", bucket);

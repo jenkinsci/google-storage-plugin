@@ -18,7 +18,7 @@ package com.google.jenkins.plugins.storage.integration;
 
 import static org.junit.Assert.assertNotNull;
 
-import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
@@ -42,6 +42,15 @@ import org.jvnet.hudson.test.JenkinsRule;
 public class ITUtil {
   private static String projectId = System.getenv("GOOGLE_PROJECT_ID");
   private static String bucket = System.getenv("GOOGLE_BUCKET");
+
+  // DEV MEMO:
+  // In previous versions of google-oauth-plugin, the credentialId was actually the projectId,
+  // making it impossible to have several credentials for
+  // the same project.
+  // This property will allow to override the credentialId to use for the tests.
+  // If it is not set, it will default to the projectId for the tests to match with the former
+  // behavior.
+  private static String credentialId = System.getenv("GOOGLE_CREDENTIAL_ID");
 
   /**
    * Formats a random name using the given prefix.
@@ -80,15 +89,6 @@ public class ITUtil {
     }
   }
 
-  /**
-   * Returns the credentialsId, which is the same as the projectId.
-   *
-   * @return the credentialsId
-   */
-  static String getCredentialsId() {
-    return projectId;
-  }
-
   static String getBucket() {
     return bucket;
   }
@@ -108,21 +108,28 @@ public class ITUtil {
     assertNotNull("GOOGLE_BUCKET env var must be set", bucket);
     String serviceAccountKeyJson = System.getenv("GOOGLE_CREDENTIALS");
     assertNotNull("GOOGLE_CREDENTIALS env var must be set", serviceAccountKeyJson);
-    String credentialsId = getCredentialsId();
     Preconditions.checkArgument(!Strings.isNullOrEmpty(pattern));
+
+    if (credentialId == null || credentialId.isEmpty()) {
+      credentialId = projectId;
+    }
 
     SecretBytes secretBytes =
         SecretBytes.fromBytes(serviceAccountKeyJson.getBytes(StandardCharsets.UTF_8));
     JsonServiceAccountConfig sac = new JsonServiceAccountConfig();
     sac.setSecretJsonKey(secretBytes);
-    Credentials c = new GoogleRobotPrivateKeyCredentials(credentialsId, sac, null);
+
+    GoogleRobotPrivateKeyCredentials c =
+        new GoogleRobotPrivateKeyCredentials(
+            CredentialsScope.GLOBAL, credentialId, projectId, sac, null);
     CredentialsStore store =
         new SystemCredentialsProvider.ProviderImpl().getStore(jenkinsRule.jenkins);
+    assertNotNull(store);
     store.addCredentials(Domain.global(), c);
 
     EnvironmentVariablesNodeProperty prop = new EnvironmentVariablesNodeProperty();
     EnvVars envVars = prop.getEnvVars();
-    envVars.put("CREDENTIALS_ID", credentialsId);
+    envVars.put("CREDENTIALS_ID", credentialId);
     envVars.put("BUCKET", bucket);
     envVars.put("PATTERN", pattern);
     jenkinsRule.jenkins.getGlobalNodeProperties().add(prop);
