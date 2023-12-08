@@ -70,6 +70,11 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
       String credentialsId, String bucket, Optional<UploadModule> module, String logName) {
     this.credentialsId = credentialsId;
     upload = new StdoutUpload(bucket, module.orElse(null), logName, null);
+
+    // Since this is a pipeline step, perform() will only be called on job failure when the
+    // pipeline definition indicates that it should be (e.g., in a "post" block), so ensure this
+    // unconditionally uploads if called.
+    upload.setForFailedJobs(true);
   }
 
   /**
@@ -141,6 +146,10 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
   @Override
   public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
       throws IOException {
+    // Ensure that jobs will upload as intended, even if they were created before the constructor
+    // was updated to call setForFailedJobs(true).
+    upload.setForFailedJobs(true);
+
     try {
       upload.perform(getCredentialsId(), run, workspace, listener);
     } catch (UploadException e) {
