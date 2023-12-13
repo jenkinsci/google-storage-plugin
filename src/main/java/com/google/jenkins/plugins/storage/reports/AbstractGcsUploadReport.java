@@ -31,59 +31,59 @@ import java.util.Set;
  */
 public abstract class AbstractGcsUploadReport implements Action {
 
-  /**
-   * @see #getParent().
-   */
-  private Actionable parent;
+    /**
+     * @see #getParent().
+     */
+    private Actionable parent;
 
-  /**
-   * @param parent the parent object of this action.
-   * @see #getParent().
-   */
-  AbstractGcsUploadReport(Actionable parent) {
-    this.parent = checkNotNull(parent);
-  }
+    /**
+     * @param parent the parent object of this action.
+     * @see #getParent().
+     */
+    AbstractGcsUploadReport(Actionable parent) {
+        this.parent = checkNotNull(parent);
+    }
 
-  /** {@inheritDoc} */
-  @Override
-  public String getIconFileName() {
-    return "save.gif";
-  }
+    /** {@inheritDoc} */
+    @Override
+    public String getIconFileName() {
+        return "save.gif";
+    }
 
-  /** {@inheritDoc} */
-  @Override
-  public String getDisplayName() {
-    return Messages.AbstractGcsUploadReport_DisplayName();
-  }
+    /** {@inheritDoc} */
+    @Override
+    public String getDisplayName() {
+        return Messages.AbstractGcsUploadReport_DisplayName();
+    }
 
-  /** {@inheritDoc} */
-  @Override
-  public String getUrlName() {
-    /* stapler will match this URL name to our action page */
-    return "gcsObjects";
-  }
+    /** {@inheritDoc} */
+    @Override
+    public String getUrlName() {
+        /* stapler will match this URL name to our action page */
+        return "gcsObjects";
+    }
 
-  /**
-   * @return the parent object of this action. For a build action, this is the containing build. For
-   *     a project action, this is the containing project.
-   */
-  public Actionable getParent() {
-    return parent;
-  }
+    /**
+     * @return the parent object of this action. For a build action, this is the containing build. For
+     *     a project action, this is the containing project.
+     */
+    public Actionable getParent() {
+        return parent;
+    }
 
-  /**
-   * @return the build number of this report.
-   */
-  @Nullable
-  public abstract Integer getBuildNumber();
+    /**
+     * @return the build number of this report.
+     */
+    @Nullable
+    public abstract Integer getBuildNumber();
 
-  /**
-   * @return the uploaded objects (qualified with bucket name).
-   */
-  public abstract Set<String> getStorageObjects();
+    /**
+     * @return the uploaded objects (qualified with bucket name).
+     */
+    public abstract Set<String> getStorageObjects();
 
-  /**
-   * @return the buckets that were used as upload destinations.
-   */
-  public abstract Set<String> getBuckets();
+    /**
+     * @return the buckets that were used as upload destinations.
+     */
+    public abstract Set<String> getBuckets();
 }

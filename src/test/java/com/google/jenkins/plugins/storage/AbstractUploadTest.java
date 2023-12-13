@@ -77,861 +77,813 @@ import org.mockito.MockitoAnnotations;
 /** Tests for {@link AbstractUpload}. */
 public class AbstractUploadTest {
 
-  @Rule public JenkinsRule jenkins = new JenkinsRule();
+    @Rule
+    public JenkinsRule jenkins = new JenkinsRule();
 
-  @Rule public TemporaryFolder tempDir = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
 
-  private FilePath workspace;
-  private FilePath nonWorkspace;
-  private FilePath workspaceFile;
-  private FilePath workspaceFile2;
-  private FilePath workspaceSubdir;
-  private FilePath workspaceSubdirFile;
-  private String workspaceFileContent;
+    private FilePath workspace;
+    private FilePath nonWorkspace;
+    private FilePath workspaceFile;
+    private FilePath workspaceFile2;
+    private FilePath workspaceSubdir;
+    private FilePath workspaceSubdirFile;
+    private String workspaceFileContent;
 
-  @Mock private GoogleRobotCredentials credentials;
-  private GoogleCredential credential;
+    @Mock
+    private GoogleRobotCredentials credentials;
 
-  private final MockExecutor executor = new MockExecutor();
-  private ConflictException conflictException;
-  private ForbiddenException forbiddenException;
-  private NotFoundException notFoundException;
-  @Mock private HttpResponseException httpResponseException;
+    private GoogleCredential credential;
 
-  @Rule
-  public Verifier verifySawAll =
-      new Verifier() {
+    private final MockExecutor executor = new MockExecutor();
+    private ConflictException conflictException;
+    private ForbiddenException forbiddenException;
+    private NotFoundException notFoundException;
+
+    @Mock
+    private HttpResponseException httpResponseException;
+
+    @Rule
+    public Verifier verifySawAll = new Verifier() {
         @Override
         public void verify() {
-          assertTrue(executor.sawAll());
-          assertFalse(executor.sawUnexpected());
+            assertTrue(executor.sawAll());
+            assertFalse(executor.sawUnexpected());
         }
-      };
-
-  private static class FakeUpload extends AbstractUpload {
-
-    public FakeUpload(
-        String bucket,
-        boolean isPublic,
-        boolean forFailed,
-        boolean showInline,
-        @Nullable String pathPrefix,
-        MockUploadModule module,
-        String details,
-        @Nullable UploadSpec uploads) {
-      super(bucket, module);
-      setSharedPublicly(isPublic);
-      setForFailedJobs(forFailed);
-      setShowInline(showInline);
-      setPathPrefix(pathPrefix);
-      this.details = details;
-      this.uploads = uploads;
-    }
-
-    @Override
-    public String getDetails() {
-      return details;
-    }
-
-    @Override
-    @Nullable
-    protected UploadSpec getInclusions(Run<?, ?> run, FilePath workspace, TaskListener listener)
-        throws UploadException {
-      return uploads;
-    }
-
-    private final String details;
-    @Nullable private final UploadSpec uploads;
-
-    /** We need this because it is used to retrieve the module when it is null.0 */
-    @Extension
-    public static class DescriptorImpl extends AbstractUploadDescriptor {
-
-      public DescriptorImpl() {
-        super(FakeUpload.class);
-      }
-
-      public String getDisplayName() {
-        return "asdf";
-      }
-    }
-  }
-
-  private FreeStyleProject project;
-  private FreeStyleBuild build;
-
-  @BeforeClass
-  public static void init() {
-    assumeFalse(SystemUtils.IS_OS_WINDOWS);
-  }
-
-  @Before
-  public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
-
-    when(credentials.getId()).thenReturn(CREDENTIALS_ID);
-    when(credentials.getProjectId()).thenReturn(PROJECT_ID);
-
-    if (jenkins.jenkins != null) {
-      SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
-
-      project = jenkins.createFreeStyleProject("test");
-      project
-          .getPublishersList()
-          .add(
-              // Create a storage plugin with no uploaders to fake things out.
-              new GoogleCloudStorageUploader(CREDENTIALS_ID, null));
-      build = project.scheduleBuild2(0).get();
-    }
-
-    credential = new GoogleCredential();
-    when(credentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
-        .thenReturn(credential);
-
-    // Return ourselves as remotable
-    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class))).thenReturn(credentials);
-
-    notFoundException = new NotFoundException();
-    conflictException = new ConflictException();
-    forbiddenException = new ForbiddenException();
-    httpResponseException = new StubHttpResponseException(STATUS_CODE_UNAUTHORIZED, "Stub!");
-
-    workspace = new FilePath(makeTempDir("workspace"));
-    workspaceFile = workspace.child(FILENAME);
-    workspaceFileContent = "Some filler content";
-    workspaceFile.write(workspaceFileContent, Charsets.UTF_8.name());
-    workspaceFile2 = workspace.child(FILENAME2);
-    workspaceFile2.write(workspaceFileContent, Charsets.UTF_8.name());
-
-    workspaceSubdir = workspace.child(SUBDIR_PREFIX);
-    workspaceSubdir.mkdirs();
-    workspaceSubdirFile = workspaceSubdir.child(FILENAME);
-    workspaceSubdirFile.write(workspaceFileContent, Charsets.UTF_8.name());
-
-    nonWorkspace = new FilePath(makeTempDir("non-workspace"));
-  }
-
-  @Test
-  @WithoutJenkins
-  public void testGetters() {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = true;
-    final String pathPrefix = null;
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            null /* uploads */);
-
-    assertEquals(BUCKET_URI, underTest.getBucket());
-    assertEquals(sharedPublicly, underTest.isSharedPublicly());
-    assertEquals(forFailedJobs, underTest.isForFailedJobs());
-    assertEquals(showInline, underTest.isShowInline());
-  }
-
-  @Test(expected = NullPointerException.class)
-  @WithoutJenkins
-  public void testCheckNullBucket() throws Exception {
-    new FakeUpload(
-        null /* TESTING NULL BUCKET*/,
-        false /* sharedPublicly */,
-        true /* forFailedJobs */,
-        false /* showInline */,
-        null /* pathPrefix */,
-        new MockUploadModule(executor),
-        FAKE_DETAILS,
-        null /* uploads */);
-  }
-
-  @Test
-  public void testCheckNullOnNullables() throws Exception {
-    // The upload should handle null for the other fields.
-    new FakeUpload(
-        BUCKET_URI,
-        false /* sharedPublicly */,
-        true /* forFailedJobs */,
-        false /* showInline */,
-        null /* pathPrefix */,
-        null /* TESTING NULL MODULE*/,
-        FAKE_DETAILS,
-        null /* uploads */);
-  }
-
-  @Test
-  public void testKeepPathPrefix() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceSubdirFile));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(
-        Storage.Objects.Insert.class, MockUploadModule.checkObjectName(SUBDIR_FILENAME));
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test
-  public void testStripPathPrefixWithCorrectPrefix() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = STRIP_PREFIX;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceSubdirFile));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(
-        Storage.Objects.Insert.class, MockUploadModule.checkObjectName(PREFIX_STRIPPED_FILENAME));
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-
-    BuildGcsUploadReport buildReport = BuildGcsUploadReport.of(build);
-    assertNotNull(buildReport);
-    assertEquals(1, buildReport.getStorageObjects().size());
-    assertEquals(
-        BUCKET_PREFIX_STRIPPED_FILENAME, Iterables.getLast(buildReport.getStorageObjects()));
-  }
-
-  @Test
-  public void testStripPathPrefixWithWrongPrefix() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = WRONG_PREFIX;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceSubdirFile));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(
-        Storage.Objects.Insert.class,
-        MockUploadModule.checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test
-  public void testStripPathPrefixNoTrailingSlash() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = STRIP_PREFIX_NO_SLASH;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceSubdirFile));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(
-        Storage.Objects.Insert.class, MockUploadModule.checkObjectName(PREFIX_STRIPPED_FILENAME));
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test
-  public void testStripPathPrefixWithNonDirectoryPrefix() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    // This string is a prefix of the input file string,
-    // but is not at a directory boundary;  it should not be stripped.
-    final String pathPrefix = STRIP_PREFIX_MALFORMED;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceSubdirFile));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(
-        Storage.Objects.Insert.class,
-        MockUploadModule.checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test
-  public void testOnePartPrefix() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(FILENAME));
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test
-  public void testTwoPartPrefix() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI + "/" + STORAGE_PREFIX,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(
-        Storage.Objects.Insert.class,
-        MockUploadModule.checkObjectName(STORAGE_PREFIX + "/" + FILENAME));
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test
-  public void testRetryOnFailure() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor, 2 /* retries */),
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.throwWhen(Storage.Objects.Insert.class, new IOException("should trigger retry"));
-    executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(FILENAME));
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test(expected = UploadException.class)
-  public void testRetryOnFailureStillFails() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor, 2 /* retries */),
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.throwWhen(Storage.Objects.Insert.class, new IOException("should trigger retry"));
-    executor.throwWhen(Storage.Objects.Insert.class, new IOException("should trigger failure"));
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test
-  public void testRetryOn401() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    Bucket bucket = new Bucket();
-    bucket.setName(BUCKET_NAME);
-    bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile, workspaceFile2));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor), /* no retries */
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(FILENAME));
-    executor.throwWhen(
-        Storage.Objects.Insert.class,
-        httpResponseException,
-        MockUploadModule.checkObjectName(FILENAME2));
-    executor.when(Storage.Buckets.Get.class, bucket);
-    executor.passThruWhen(
-        Storage.Objects.Insert.class, MockUploadModule.checkObjectName(FILENAME2));
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test(expected = UploadException.class)
-  public void testRetryOn401StillFails() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    Bucket bucket = new Bucket();
-    bucket.setName(BUCKET_NAME);
-    bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor), /* no retries */
-            FAKE_DETAILS,
-            uploads);
-
-    int maxRetriesPlus1 = RetryStorageOperation.MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES + 1;
-
-    for (int i = 0; i < maxRetriesPlus1; i++) {
-      executor.when(Storage.Buckets.Get.class, bucket);
-      executor.throwWhen(
-          Storage.Objects.Insert.class,
-          httpResponseException,
-          MockUploadModule.checkObjectName(FILENAME));
-    }
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test
-  public void testNullUploadSpec() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI + "/" + STORAGE_PREFIX,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            null /* uploads */);
-
-    // Verify that we see no RPCs by pushing nothing into the MockExecutor
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test
-  public void testWorkspaceNoFiles() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.<FilePath>of());
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI + "/" + STORAGE_PREFIX,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    // No object insertions
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test
-  public void testBucketConflict() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.<FilePath>of());
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
-
-    Bucket bucket = new Bucket();
-    bucket.setName(BUCKET_NAME);
-    bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.throwWhen(
-        Storage.Buckets.Insert.class,
-        conflictException,
-        MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.when(Storage.Buckets.Get.class, bucket);
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test(expected = UploadException.class)
-  public void testBucketException() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.<FilePath>of());
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, new IOException("test"));
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test
-  public void testTrailingSlash() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI + "/" + STORAGE_PREFIX + "/",
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(
-        Storage.Objects.Insert.class,
-        // Verify there isn't a double-'/'
-        MockUploadModule.checkObjectName(STORAGE_PREFIX + "/" + FILENAME));
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  @Test
-  public void testSharedPublicly() throws Exception {
-    final boolean sharedPublicly = true;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
-
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
-
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
-
-    final Bucket bucket = new Bucket();
-    bucket.setName(BUCKET_NAME);
-    bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
-
-    executor.when(Storage.Buckets.Get.class, bucket);
-    executor.passThruWhen(
-        Storage.Objects.Insert.class,
-        new Predicate<Storage.Objects.Insert>() {
-          @Override
-          public boolean apply(Storage.Objects.Insert operation) {
-            StorageObject object = (StorageObject) operation.getJsonContent();
-
-            assertTrue(object.getAcl().containsAll(bucket.getDefaultObjectAcl()));
-
-            List<ObjectAccessControl> addedAcl =
-                Lists.newArrayList(
-                    Iterables.filter(object.getAcl(), not(in(bucket.getDefaultObjectAcl()))));
-            Set<String> addedEntities = Sets.newHashSet();
-            for (ObjectAccessControl access : addedAcl) {
-              assertEquals("READER", access.getRole());
-              addedEntities.add(access.getEntity());
+    };
+
+    private static class FakeUpload extends AbstractUpload {
+
+        public FakeUpload(
+                String bucket,
+                boolean isPublic,
+                boolean forFailed,
+                boolean showInline,
+                @Nullable String pathPrefix,
+                MockUploadModule module,
+                String details,
+                @Nullable UploadSpec uploads) {
+            super(bucket, module);
+            setSharedPublicly(isPublic);
+            setForFailedJobs(forFailed);
+            setShowInline(showInline);
+            setPathPrefix(pathPrefix);
+            this.details = details;
+            this.uploads = uploads;
+        }
+
+        @Override
+        public String getDetails() {
+            return details;
+        }
+
+        @Override
+        @Nullable
+        protected UploadSpec getInclusions(Run<?, ?> run, FilePath workspace, TaskListener listener)
+                throws UploadException {
+            return uploads;
+        }
+
+        private final String details;
+
+        @Nullable
+        private final UploadSpec uploads;
+
+        /** We need this because it is used to retrieve the module when it is null.0 */
+        @Extension
+        public static class DescriptorImpl extends AbstractUploadDescriptor {
+
+            public DescriptorImpl() {
+                super(FakeUpload.class);
             }
-            assertTrue(addedEntities.contains("allUsers"));
-            return true;
-          }
+
+            public String getDisplayName() {
+                return "asdf";
+            }
+        }
+    }
+
+    private FreeStyleProject project;
+    private FreeStyleBuild build;
+
+    @BeforeClass
+    public static void init() {
+        assumeFalse(SystemUtils.IS_OS_WINDOWS);
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+
+        when(credentials.getId()).thenReturn(CREDENTIALS_ID);
+        when(credentials.getProjectId()).thenReturn(PROJECT_ID);
+
+        if (jenkins.jenkins != null) {
+            SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
+
+            project = jenkins.createFreeStyleProject("test");
+            project.getPublishersList()
+                    .add(
+                            // Create a storage plugin with no uploaders to fake things out.
+                            new GoogleCloudStorageUploader(CREDENTIALS_ID, null));
+            build = project.scheduleBuild2(0).get();
+        }
+
+        credential = new GoogleCredential();
+        when(credentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
+                .thenReturn(credential);
+
+        // Return ourselves as remotable
+        when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class))).thenReturn(credentials);
+
+        notFoundException = new NotFoundException();
+        conflictException = new ConflictException();
+        forbiddenException = new ForbiddenException();
+        httpResponseException = new StubHttpResponseException(STATUS_CODE_UNAUTHORIZED, "Stub!");
+
+        workspace = new FilePath(makeTempDir("workspace"));
+        workspaceFile = workspace.child(FILENAME);
+        workspaceFileContent = "Some filler content";
+        workspaceFile.write(workspaceFileContent, Charsets.UTF_8.name());
+        workspaceFile2 = workspace.child(FILENAME2);
+        workspaceFile2.write(workspaceFileContent, Charsets.UTF_8.name());
+
+        workspaceSubdir = workspace.child(SUBDIR_PREFIX);
+        workspaceSubdir.mkdirs();
+        workspaceSubdirFile = workspaceSubdir.child(FILENAME);
+        workspaceSubdirFile.write(workspaceFileContent, Charsets.UTF_8.name());
+
+        nonWorkspace = new FilePath(makeTempDir("non-workspace"));
+    }
+
+    @Test
+    @WithoutJenkins
+    public void testGetters() {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = true;
+        final String pathPrefix = null;
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                null /* uploads */);
+
+        assertEquals(BUCKET_URI, underTest.getBucket());
+        assertEquals(sharedPublicly, underTest.isSharedPublicly());
+        assertEquals(forFailedJobs, underTest.isForFailedJobs());
+        assertEquals(showInline, underTest.isShowInline());
+    }
+
+    @Test(expected = NullPointerException.class)
+    @WithoutJenkins
+    public void testCheckNullBucket() throws Exception {
+        new FakeUpload(
+                null /* TESTING NULL BUCKET*/,
+                false /* sharedPublicly */,
+                true /* forFailedJobs */,
+                false /* showInline */,
+                null /* pathPrefix */,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                null /* uploads */);
+    }
+
+    @Test
+    public void testCheckNullOnNullables() throws Exception {
+        // The upload should handle null for the other fields.
+        new FakeUpload(
+                BUCKET_URI,
+                false /* sharedPublicly */,
+                true /* forFailedJobs */,
+                false /* showInline */,
+                null /* pathPrefix */,
+                null /* TESTING NULL MODULE*/,
+                FAKE_DETAILS,
+                null /* uploads */);
+    }
+
+    @Test
+    public void testKeepPathPrefix() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceSubdirFile));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(SUBDIR_FILENAME));
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test
+    public void testStripPathPrefixWithCorrectPrefix() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = STRIP_PREFIX;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceSubdirFile));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(PREFIX_STRIPPED_FILENAME));
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+
+        BuildGcsUploadReport buildReport = BuildGcsUploadReport.of(build);
+        assertNotNull(buildReport);
+        assertEquals(1, buildReport.getStorageObjects().size());
+        assertEquals(BUCKET_PREFIX_STRIPPED_FILENAME, Iterables.getLast(buildReport.getStorageObjects()));
+    }
+
+    @Test
+    public void testStripPathPrefixWithWrongPrefix() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = WRONG_PREFIX;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceSubdirFile));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.passThruWhen(
+                Storage.Objects.Insert.class,
+                MockUploadModule.checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test
+    public void testStripPathPrefixNoTrailingSlash() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = STRIP_PREFIX_NO_SLASH;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceSubdirFile));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(PREFIX_STRIPPED_FILENAME));
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test
+    public void testStripPathPrefixWithNonDirectoryPrefix() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        // This string is a prefix of the input file string,
+        // but is not at a directory boundary;  it should not be stripped.
+        final String pathPrefix = STRIP_PREFIX_MALFORMED;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceSubdirFile));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.passThruWhen(
+                Storage.Objects.Insert.class,
+                MockUploadModule.checkObjectName(SUBDIR_FILENAME)); // full, non-stripped filename
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test
+    public void testOnePartPrefix() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(FILENAME));
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test
+    public void testTwoPartPrefix() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI + "/" + STORAGE_PREFIX,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.passThruWhen(
+                Storage.Objects.Insert.class, MockUploadModule.checkObjectName(STORAGE_PREFIX + "/" + FILENAME));
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test
+    public void testRetryOnFailure() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor, 2 /* retries */),
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.throwWhen(Storage.Objects.Insert.class, new IOException("should trigger retry"));
+        executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(FILENAME));
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test(expected = UploadException.class)
+    public void testRetryOnFailureStillFails() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor, 2 /* retries */),
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.throwWhen(Storage.Objects.Insert.class, new IOException("should trigger retry"));
+        executor.throwWhen(Storage.Objects.Insert.class, new IOException("should trigger failure"));
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test
+    public void testRetryOn401() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        Bucket bucket = new Bucket();
+        bucket.setName(BUCKET_NAME);
+        bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile, workspaceFile2));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor), /* no retries */
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(FILENAME));
+        executor.throwWhen(
+                Storage.Objects.Insert.class, httpResponseException, MockUploadModule.checkObjectName(FILENAME2));
+        executor.when(Storage.Buckets.Get.class, bucket);
+        executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName(FILENAME2));
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test(expected = UploadException.class)
+    public void testRetryOn401StillFails() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        Bucket bucket = new Bucket();
+        bucket.setName(BUCKET_NAME);
+        bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor), /* no retries */
+                FAKE_DETAILS,
+                uploads);
+
+        int maxRetriesPlus1 = RetryStorageOperation.MAX_REMOTE_CREDENTIAL_EXPIRED_RETRIES + 1;
+
+        for (int i = 0; i < maxRetriesPlus1; i++) {
+            executor.when(Storage.Buckets.Get.class, bucket);
+            executor.throwWhen(
+                    Storage.Objects.Insert.class, httpResponseException, MockUploadModule.checkObjectName(FILENAME));
+        }
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test
+    public void testNullUploadSpec() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI + "/" + STORAGE_PREFIX,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                null /* uploads */);
+
+        // Verify that we see no RPCs by pushing nothing into the MockExecutor
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test
+    public void testWorkspaceNoFiles() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.<FilePath>of());
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI + "/" + STORAGE_PREFIX,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        // No object insertions
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test
+    public void testBucketConflict() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.<FilePath>of());
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
+
+        Bucket bucket = new Bucket();
+        bucket.setName(BUCKET_NAME);
+        bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.throwWhen(
+                Storage.Buckets.Insert.class, conflictException, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.when(Storage.Buckets.Get.class, bucket);
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test(expected = UploadException.class)
+    public void testBucketException() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.<FilePath>of());
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, new IOException("test"));
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test
+    public void testTrailingSlash() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI + "/" + STORAGE_PREFIX + "/",
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.passThruWhen(
+                Storage.Objects.Insert.class,
+                // Verify there isn't a double-'/'
+                MockUploadModule.checkObjectName(STORAGE_PREFIX + "/" + FILENAME));
+
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
+
+    @Test
+    public void testSharedPublicly() throws Exception {
+        final boolean sharedPublicly = true;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
+
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
+
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
+
+        final Bucket bucket = new Bucket();
+        bucket.setName(BUCKET_NAME);
+        bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
+
+        executor.when(Storage.Buckets.Get.class, bucket);
+        executor.passThruWhen(Storage.Objects.Insert.class, new Predicate<Storage.Objects.Insert>() {
+            @Override
+            public boolean apply(Storage.Objects.Insert operation) {
+                StorageObject object = (StorageObject) operation.getJsonContent();
+
+                assertTrue(object.getAcl().containsAll(bucket.getDefaultObjectAcl()));
+
+                List<ObjectAccessControl> addedAcl =
+                        Lists.newArrayList(Iterables.filter(object.getAcl(), not(in(bucket.getDefaultObjectAcl()))));
+                Set<String> addedEntities = Sets.newHashSet();
+                for (ObjectAccessControl access : addedAcl) {
+                    assertEquals("READER", access.getRole());
+                    addedEntities.add(access.getEntity());
+                }
+                assertTrue(addedEntities.contains("allUsers"));
+                return true;
+            }
         });
 
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
 
-  @Test
-  public void testNotShared() throws Exception {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
+    @Test
+    public void testNotShared() throws Exception {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
 
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(workspaceFile));
 
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
 
-    Bucket bucket = new Bucket();
-    bucket.setName(BUCKET_NAME);
-    bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
+        Bucket bucket = new Bucket();
+        bucket.setName(BUCKET_NAME);
+        bucket.setDefaultObjectAcl(Lists.newArrayList(new ObjectAccessControl()));
 
-    executor.when(Storage.Buckets.Get.class, bucket);
-    executor.passThruWhen(
-        Storage.Objects.Insert.class,
-        new Predicate<Storage.Objects.Insert>() {
-          @Override
-          public boolean apply(Storage.Objects.Insert operation) {
-            StorageObject object = (StorageObject) operation.getJsonContent();
+        executor.when(Storage.Buckets.Get.class, bucket);
+        executor.passThruWhen(Storage.Objects.Insert.class, new Predicate<Storage.Objects.Insert>() {
+            @Override
+            public boolean apply(Storage.Objects.Insert operation) {
+                StorageObject object = (StorageObject) operation.getJsonContent();
 
-            assertNull(object.getAcl());
-            return true;
-          }
+                assertNull(object.getAcl());
+                return true;
+            }
         });
 
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
 
-  @Test(expected = UploadException.class)
-  public void upload_nofile() throws UploadException, IOException {
-    final boolean sharedPublicly = false;
-    final boolean forFailedJobs = true;
-    final boolean showInline = false;
-    final String pathPrefix = null;
+    @Test(expected = UploadException.class)
+    public void upload_nofile() throws UploadException, IOException {
+        final boolean sharedPublicly = false;
+        final boolean forFailedJobs = true;
+        final boolean showInline = false;
+        final String pathPrefix = null;
 
-    FilePath nonExistentFile = workspace.child("non-existent-file");
-    final AbstractUpload.UploadSpec uploads =
-        new AbstractUpload.UploadSpec(workspace, ImmutableList.of(nonExistentFile));
+        FilePath nonExistentFile = workspace.child("non-existent-file");
+        final AbstractUpload.UploadSpec uploads =
+                new AbstractUpload.UploadSpec(workspace, ImmutableList.of(nonExistentFile));
 
-    FakeUpload underTest =
-        new FakeUpload(
-            BUCKET_URI,
-            sharedPublicly,
-            forFailedJobs,
-            showInline,
-            pathPrefix,
-            new MockUploadModule(executor),
-            FAKE_DETAILS,
-            uploads);
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI,
+                sharedPublicly,
+                forFailedJobs,
+                showInline,
+                pathPrefix,
+                new MockUploadModule(executor),
+                FAKE_DETAILS,
+                uploads);
 
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
 
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
 
-  @Test
-  @WithoutJenkins
-  public void doCheckBucketTest() throws IOException {
-    DescriptorImpl descriptor = new DescriptorImpl();
+    @Test
+    @WithoutJenkins
+    public void doCheckBucketTest() throws IOException {
+        DescriptorImpl descriptor = new DescriptorImpl();
 
-    assertEquals(FormValidation.Kind.OK, descriptor.doCheckBucketNameWithVars("gs://asdf").kind);
-    // Successfully resolved
-    assertEquals(
-        FormValidation.Kind.OK,
-        descriptor.doCheckBucketNameWithVars("gs://asdf$BUILD_NUMBER").kind);
-    // UN-successfully resolved
-    assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckBucketNameWithVars("gs://$foo").kind);
-    // Escaped $BUILD_NUMBER
-    assertEquals(
-        FormValidation.Kind.ERROR,
-        descriptor.doCheckBucketNameWithVars("gs://$$BUILD_NUMBER").kind);
-    // Empty
-    assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckBucketNameWithVars("").kind);
-    // Not a gs:// URI
-    assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckBucketNameWithVars("foo").kind);
-  }
+        assertEquals(FormValidation.Kind.OK, descriptor.doCheckBucketNameWithVars("gs://asdf").kind);
+        // Successfully resolved
+        assertEquals(FormValidation.Kind.OK, descriptor.doCheckBucketNameWithVars("gs://asdf$BUILD_NUMBER").kind);
+        // UN-successfully resolved
+        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckBucketNameWithVars("gs://$foo").kind);
+        // Escaped $BUILD_NUMBER
+        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckBucketNameWithVars("gs://$$BUILD_NUMBER").kind);
+        // Empty
+        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckBucketNameWithVars("").kind);
+        // Not a gs:// URI
+        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckBucketNameWithVars("foo").kind);
+    }
 
-  private File makeTempDir(String name) throws IOException {
-    File dir = new File(tempDir.getRoot(), name);
-    dir.mkdir();
-    return dir;
-  }
+    private File makeTempDir(String name) throws IOException {
+        File dir = new File(tempDir.getRoot(), name);
+        dir.mkdir();
+        return dir;
+    }
 
-  private static final String PROJECT_ID = "foo.com:bar-baz";
-  private static final String CREDENTIALS_ID = "bazinga";
-  private static final String NAME = "Source (foo.com:bar-baz)";
+    private static final String PROJECT_ID = "foo.com:bar-baz";
+    private static final String CREDENTIALS_ID = "bazinga";
+    private static final String NAME = "Source (foo.com:bar-baz)";
 
-  private static final String BUCKET_NAME = "ma-bucket";
-  private static final String BUCKET_URI = "gs://" + BUCKET_NAME;
-  private static final String STORAGE_PREFIX = "foo";
-  private static final String FILENAME = "bar.baz";
-  private static final String FILENAME2 = "bar2.baz";
-  private static final String SUBDIR_PREFIX = "foo/bar";
-  private static final String SUBDIR_FILENAME = "foo/bar/bar.baz";
-  private static final String WRONG_PREFIX = "qqq/";
-  private static final String STRIP_PREFIX = "foo/";
-  private static final String STRIP_PREFIX_NO_SLASH = "foo";
-  private static final String STRIP_PREFIX_MALFORMED = "foo/ba";
-  private static final String PREFIX_STRIPPED_FILENAME = "bar/bar.baz";
-  private static final String BUCKET_PREFIX_STRIPPED_FILENAME = "ma-bucket/bar/bar.baz";
-  private static final String FAKE_DETAILS = "These are my fake details";
-  private static final String FIRST_NAME = "foo";
-  private static final String SECOND_NAME = "bar";
+    private static final String BUCKET_NAME = "ma-bucket";
+    private static final String BUCKET_URI = "gs://" + BUCKET_NAME;
+    private static final String STORAGE_PREFIX = "foo";
+    private static final String FILENAME = "bar.baz";
+    private static final String FILENAME2 = "bar2.baz";
+    private static final String SUBDIR_PREFIX = "foo/bar";
+    private static final String SUBDIR_FILENAME = "foo/bar/bar.baz";
+    private static final String WRONG_PREFIX = "qqq/";
+    private static final String STRIP_PREFIX = "foo/";
+    private static final String STRIP_PREFIX_NO_SLASH = "foo";
+    private static final String STRIP_PREFIX_MALFORMED = "foo/ba";
+    private static final String PREFIX_STRIPPED_FILENAME = "bar/bar.baz";
+    private static final String BUCKET_PREFIX_STRIPPED_FILENAME = "ma-bucket/bar/bar.baz";
+    private static final String FAKE_DETAILS = "These are my fake details";
+    private static final String FIRST_NAME = "foo";
+    private static final String SECOND_NAME = "bar";
 }

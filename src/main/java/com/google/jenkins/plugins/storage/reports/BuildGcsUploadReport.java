@@ -30,84 +30,84 @@ import java.util.Set;
  */
 public class BuildGcsUploadReport extends AbstractGcsUploadReport {
 
-  private final Set<String> buckets;
-  private final Set<String> files;
+    private final Set<String> buckets;
+    private final Set<String> files;
 
-  public BuildGcsUploadReport(Run<?, ?> run) {
-    super(run);
-    this.buckets = Sets.newHashSet();
-    this.files = Sets.newHashSet();
-  }
-
-  /**
-   * @param project a project to get {@link BuildGcsUploadReport} for.
-   * @return the {@link BuildGcsUploadReport} of the last build, as returned by {@link #of(Run)}, or
-   *     null of no build existed.
-   */
-  @Nullable
-  public static BuildGcsUploadReport of(AbstractProject<?, ?> project) {
-    // TODO(nghia) : Put more thoughts into whether we want getLastBuild()
-    // or getLastSuccessfulBuild() here.
-    //
-    // Displaying the last build has the advantage that logs for failed builds
-    // are also easily accessible through these links.
-    //
-    // On the other hand, last successful builds have a more complete set of
-    // links.
-    //
-    // May we only display the last build _if_ the project has uploads for
-    // failed build as well?
-    AbstractBuild<?, ?> lastBuild = project.getLastBuild();
-    return lastBuild == null ? null : BuildGcsUploadReport.of(lastBuild);
-  }
-
-  /**
-   * @param run the run to get {@link BuildGcsUploadReport} for.
-   * @return the existing {@link BuildGcsUploadReport} of a build. If none, create a new {@link
-   *     BuildGcsUploadReport} and return.
-   */
-  public static synchronized BuildGcsUploadReport of(Run<?, ?> run) {
-    BuildGcsUploadReport links = run.getAction(BuildGcsUploadReport.class);
-    if (links != null) {
-      return links;
+    public BuildGcsUploadReport(Run<?, ?> run) {
+        super(run);
+        this.buckets = Sets.newHashSet();
+        this.files = Sets.newHashSet();
     }
-    links = new BuildGcsUploadReport(run);
-    run.addAction(links);
-    return links;
-  }
 
-  /**
-   * @param bucketName the name of the destination bucket.
-   */
-  public void addBucket(String bucketName) {
-    buckets.add(bucketName);
-  }
-
-  /**
-   * @param relativePath the relative path (to the workspace) of the uploaded file.
-   * @param bucket the directory location in the cloud
-   */
-  public void addUpload(String relativePath, BucketPath bucket) {
-    synchronized (files) {
-      files.add(bucket.getPath() + "/" + relativePath);
+    /**
+     * @param project a project to get {@link BuildGcsUploadReport} for.
+     * @return the {@link BuildGcsUploadReport} of the last build, as returned by {@link #of(Run)}, or
+     *     null of no build existed.
+     */
+    @Nullable
+    public static BuildGcsUploadReport of(AbstractProject<?, ?> project) {
+        // TODO(nghia) : Put more thoughts into whether we want getLastBuild()
+        // or getLastSuccessfulBuild() here.
+        //
+        // Displaying the last build has the advantage that logs for failed builds
+        // are also easily accessible through these links.
+        //
+        // On the other hand, last successful builds have a more complete set of
+        // links.
+        //
+        // May we only display the last build _if_ the project has uploads for
+        // failed build as well?
+        AbstractBuild<?, ?> lastBuild = project.getLastBuild();
+        return lastBuild == null ? null : BuildGcsUploadReport.of(lastBuild);
     }
-  }
 
-  /** {@inheritDoc} */
-  @Override
-  public Set<String> getBuckets() {
-    return Collections.unmodifiableSet(buckets);
-  }
+    /**
+     * @param run the run to get {@link BuildGcsUploadReport} for.
+     * @return the existing {@link BuildGcsUploadReport} of a build. If none, create a new {@link
+     *     BuildGcsUploadReport} and return.
+     */
+    public static synchronized BuildGcsUploadReport of(Run<?, ?> run) {
+        BuildGcsUploadReport links = run.getAction(BuildGcsUploadReport.class);
+        if (links != null) {
+            return links;
+        }
+        links = new BuildGcsUploadReport(run);
+        run.addAction(links);
+        return links;
+    }
 
-  /** {@inheritDoc} */
-  @Override
-  public Set<String> getStorageObjects() {
-    return Collections.unmodifiableSet(files);
-  }
+    /**
+     * @param bucketName the name of the destination bucket.
+     */
+    public void addBucket(String bucketName) {
+        buckets.add(bucketName);
+    }
 
-  /** {@inheritDoc} */
-  @Override
-  public Integer getBuildNumber() {
-    return ((AbstractBuild<?, ?>) getParent()).getNumber();
-  }
+    /**
+     * @param relativePath the relative path (to the workspace) of the uploaded file.
+     * @param bucket the directory location in the cloud
+     */
+    public void addUpload(String relativePath, BucketPath bucket) {
+        synchronized (files) {
+            files.add(bucket.getPath() + "/" + relativePath);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Set<String> getBuckets() {
+        return Collections.unmodifiableSet(buckets);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Set<String> getStorageObjects() {
+        return Collections.unmodifiableSet(files);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Integer getBuildNumber() {
+        return ((AbstractBuild<?, ?>) getParent()).getNumber();
+    }
 }

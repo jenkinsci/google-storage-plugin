@@ -30,71 +30,71 @@ import java.util.LinkedList;
 
 /** Mock upload module to stub out executor for testing. */
 public class MockUploadModule extends UploadModule {
-  public MockUploadModule(MockExecutor executor) {
-    this(executor, 1 /* retries */);
-  }
-
-  public MockUploadModule(MockExecutor executor, int retries) {
-    this.executor = executor;
-    this.retryCount = retries;
-  }
-
-  @Override
-  public int getInsertRetryCount() {
-    return retryCount;
-  }
-
-  @Override
-  public MockExecutor newExecutor() {
-    return executor;
-  }
-
-  private final MockExecutor executor;
-  private final int retryCount;
-
-  public static Predicate<Storage.Objects.Insert> checkObjectName(final String objectName) {
-    return new Predicate<Storage.Objects.Insert>() {
-      @Override
-      public boolean apply(Storage.Objects.Insert operation) {
-        StorageObject object = (StorageObject) operation.getJsonContent();
-        assertEquals(objectName, object.getName());
-        return true;
-      }
-    };
-  }
-
-  public static Predicate<Storage.Objects.Get> checkGetObject(final String objectName) {
-    return new Predicate<Storage.Objects.Get>() {
-      @Override
-      public boolean apply(Storage.Objects.Get operation) {
-        assertEquals(objectName, operation.getObject());
-        return true;
-      }
-    };
-  }
-
-  public static Predicate<Storage.Buckets.Insert> checkBucketName(final String bucketName) {
-    return new Predicate<Storage.Buckets.Insert>() {
-      @Override
-      public boolean apply(Storage.Buckets.Insert operation) {
-        Bucket bucket = (Bucket) operation.getJsonContent();
-        assertEquals(bucketName, bucket.getName());
-        return true;
-      }
-    };
-  }
-
-  private final LinkedList<InputStream> mediaStreams = new LinkedList<InputStream>();
-
-  public void addNextMedia(InputStream stream) {
-    mediaStreams.add(stream);
-  }
-
-  public InputStream executeMediaAsInputStream(Get getObject) throws IOException {
-    if (mediaStreams.isEmpty()) {
-      return null;
+    public MockUploadModule(MockExecutor executor) {
+        this(executor, 1 /* retries */);
     }
-    return mediaStreams.remove(0);
-  }
+
+    public MockUploadModule(MockExecutor executor, int retries) {
+        this.executor = executor;
+        this.retryCount = retries;
+    }
+
+    @Override
+    public int getInsertRetryCount() {
+        return retryCount;
+    }
+
+    @Override
+    public MockExecutor newExecutor() {
+        return executor;
+    }
+
+    private final MockExecutor executor;
+    private final int retryCount;
+
+    public static Predicate<Storage.Objects.Insert> checkObjectName(final String objectName) {
+        return new Predicate<Storage.Objects.Insert>() {
+            @Override
+            public boolean apply(Storage.Objects.Insert operation) {
+                StorageObject object = (StorageObject) operation.getJsonContent();
+                assertEquals(objectName, object.getName());
+                return true;
+            }
+        };
+    }
+
+    public static Predicate<Storage.Objects.Get> checkGetObject(final String objectName) {
+        return new Predicate<Storage.Objects.Get>() {
+            @Override
+            public boolean apply(Storage.Objects.Get operation) {
+                assertEquals(objectName, operation.getObject());
+                return true;
+            }
+        };
+    }
+
+    public static Predicate<Storage.Buckets.Insert> checkBucketName(final String bucketName) {
+        return new Predicate<Storage.Buckets.Insert>() {
+            @Override
+            public boolean apply(Storage.Buckets.Insert operation) {
+                Bucket bucket = (Bucket) operation.getJsonContent();
+                assertEquals(bucketName, bucket.getName());
+                return true;
+            }
+        };
+    }
+
+    private final LinkedList<InputStream> mediaStreams = new LinkedList<InputStream>();
+
+    public void addNextMedia(InputStream stream) {
+        mediaStreams.add(stream);
+    }
+
+    public InputStream executeMediaAsInputStream(Get getObject) throws IOException {
+        if (mediaStreams.isEmpty()) {
+            return null;
+        }
+        return mediaStreams.remove(0);
+    }
 }
 ;

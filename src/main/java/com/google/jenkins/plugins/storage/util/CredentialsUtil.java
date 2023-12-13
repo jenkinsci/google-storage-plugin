@@ -31,54 +31,50 @@ import java.security.GeneralSecurityException;
 
 /** Provides a library of utility functions for credentials-related work. */
 public class CredentialsUtil {
-  /**
-   * Get the Google Robot Credentials for the given credentialsId.
-   *
-   * @param itemGroup A handle to the Jenkins instance. Must be non-null.
-   * @param domainRequirements A list of domain requirements. Must be non-null.
-   * @param credentialsId The ID of the GoogleRobotCredentials to be retrieved from Jenkins and
-   *     utilized for authorization. Must be non-empty or non-null and exist in credentials store.
-   * @return Google Robot Credential for the given credentialsId.
-   * @throws hudson.AbortException If there was an issue retrieving the Google Robot Credentials.
-   */
-  public static GoogleRobotCredentials getRobotCredentials(
-      ItemGroup itemGroup,
-      ImmutableList<DomainRequirement> domainRequirements,
-      String credentialsId)
-      throws AbortException {
-    Preconditions.checkNotNull(itemGroup);
-    Preconditions.checkNotNull(domainRequirements);
-    Preconditions.checkArgument(!Strings.isNullOrEmpty(credentialsId));
+    /**
+     * Get the Google Robot Credentials for the given credentialsId.
+     *
+     * @param itemGroup A handle to the Jenkins instance. Must be non-null.
+     * @param domainRequirements A list of domain requirements. Must be non-null.
+     * @param credentialsId The ID of the GoogleRobotCredentials to be retrieved from Jenkins and
+     *     utilized for authorization. Must be non-empty or non-null and exist in credentials store.
+     * @return Google Robot Credential for the given credentialsId.
+     * @throws hudson.AbortException If there was an issue retrieving the Google Robot Credentials.
+     */
+    public static GoogleRobotCredentials getRobotCredentials(
+            ItemGroup itemGroup, ImmutableList<DomainRequirement> domainRequirements, String credentialsId)
+            throws AbortException {
+        Preconditions.checkNotNull(itemGroup);
+        Preconditions.checkNotNull(domainRequirements);
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(credentialsId));
 
-    GoogleRobotCredentials robotCreds =
-        CredentialsMatchers.firstOrNull(
-            CredentialsProvider.lookupCredentials(
-                GoogleRobotCredentials.class, itemGroup, ACL.SYSTEM, domainRequirements),
-            CredentialsMatchers.withId(credentialsId));
+        GoogleRobotCredentials robotCreds = CredentialsMatchers.firstOrNull(
+                CredentialsProvider.lookupCredentials(
+                        GoogleRobotCredentials.class, itemGroup, ACL.SYSTEM, domainRequirements),
+                CredentialsMatchers.withId(credentialsId));
 
-    if (robotCreds == null) {
-      throw new AbortException(Messages.CredentialsUtil_FailedToRetrieveCredentials(credentialsId));
+        if (robotCreds == null) {
+            throw new AbortException(Messages.CredentialsUtil_FailedToRetrieveCredentials(credentialsId));
+        }
+
+        return robotCreds;
     }
 
-    return robotCreds;
-  }
+    /**
+     * Get the Credential from the Google robot credentials for GKE access.
+     *
+     * @param robotCreds Google Robot Credential for desired service account.
+     * @return Google Credential for the service account.
+     * @throws AbortException if there was an error initializing HTTP transport.
+     */
+    public static Credential getGoogleCredential(GoogleRobotCredentials robotCreds) throws AbortException {
+        Credential credential;
+        try {
+            credential = robotCreds.getGoogleCredential(new StorageScopeRequirement());
+        } catch (GeneralSecurityException gse) {
+            throw new AbortException(Messages.CredentialsUtil_FailedToInitializeHTTPTransport(gse));
+        }
 
-  /**
-   * Get the Credential from the Google robot credentials for GKE access.
-   *
-   * @param robotCreds Google Robot Credential for desired service account.
-   * @return Google Credential for the service account.
-   * @throws AbortException if there was an error initializing HTTP transport.
-   */
-  public static Credential getGoogleCredential(GoogleRobotCredentials robotCreds)
-      throws AbortException {
-    Credential credential;
-    try {
-      credential = robotCreds.getGoogleCredential(new StorageScopeRequirement());
-    } catch (GeneralSecurityException gse) {
-      throw new AbortException(Messages.CredentialsUtil_FailedToInitializeHTTPTransport(gse));
+        return credential;
     }
-
-    return credential;
-  }
 }

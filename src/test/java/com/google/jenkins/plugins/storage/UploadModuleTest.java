@@ -36,52 +36,54 @@ import org.mockito.MockitoAnnotations;
 /** Tests for {@link UploadModule}. */
 public class UploadModuleTest {
 
-  @Rule public JenkinsRule jenkins = new JenkinsRule();
+    @Rule
+    public JenkinsRule jenkins = new JenkinsRule();
 
-  @Rule public ExpectedException thrown = ExpectedException.none();
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
-  @Mock private GoogleRobotCredentials mockGoogleRobotCredentials;
-  private UploadModule underTest;
+    @Mock
+    private GoogleRobotCredentials mockGoogleRobotCredentials;
 
-  GoogleCredential credential = new GoogleCredential();
+    private UploadModule underTest;
 
-  @SuppressWarnings("serial")
-  @Before
-  public void setup() throws Exception {
-    MockitoAnnotations.initMocks(this);
-    underTest = new UploadModule();
+    GoogleCredential credential = new GoogleCredential();
 
-    when(mockGoogleRobotCredentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
-        .thenReturn(credential);
-  }
+    @SuppressWarnings("serial")
+    @Before
+    public void setup() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        underTest = new UploadModule();
 
-  @Test
-  public void version_space() throws Exception {
-    Storage storage =
-        underTest.getStorageService(mockGoogleRobotCredentials, "0.14-SNAPSHOT (other details)");
-    assertEquals(storage.getApplicationName(), "Jenkins-GCS-Plugin/0.14-SNAPSHOT");
-  }
+        when(mockGoogleRobotCredentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
+                .thenReturn(credential);
+    }
 
-  @Test
-  public void version_noSpace() throws Exception {
-    Storage storage = underTest.getStorageService(mockGoogleRobotCredentials, "v");
-    assertEquals(storage.getApplicationName(), "Jenkins-GCS-Plugin/v");
-  }
+    @Test
+    public void version_space() throws Exception {
+        Storage storage = underTest.getStorageService(mockGoogleRobotCredentials, "0.14-SNAPSHOT (other details)");
+        assertEquals(storage.getApplicationName(), "Jenkins-GCS-Plugin/0.14-SNAPSHOT");
+    }
 
-  @Test
-  public void version_none() throws Exception {
-    Storage storage = underTest.getStorageService(mockGoogleRobotCredentials, "");
-    assertEquals(storage.getApplicationName(), "Jenkins-GCS-Plugin");
-  }
+    @Test
+    public void version_noSpace() throws Exception {
+        Storage storage = underTest.getStorageService(mockGoogleRobotCredentials, "v");
+        assertEquals(storage.getApplicationName(), "Jenkins-GCS-Plugin/v");
+    }
 
-  @Test
-  public void newUploader_notRightScope()
-      throws GeneralSecurityException, IOException, UploadException {
-    GeneralSecurityException ex = new GeneralSecurityException();
-    when(mockGoogleRobotCredentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
-        .thenThrow(ex);
-    thrown.expect(IOException.class);
-    thrown.expectMessage(Messages.UploadModule_ExceptionStorageService());
-    underTest.getStorageService(mockGoogleRobotCredentials, "");
-  }
+    @Test
+    public void version_none() throws Exception {
+        Storage storage = underTest.getStorageService(mockGoogleRobotCredentials, "");
+        assertEquals(storage.getApplicationName(), "Jenkins-GCS-Plugin");
+    }
+
+    @Test
+    public void newUploader_notRightScope() throws GeneralSecurityException, IOException, UploadException {
+        GeneralSecurityException ex = new GeneralSecurityException();
+        when(mockGoogleRobotCredentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
+                .thenThrow(ex);
+        thrown.expect(IOException.class);
+        thrown.expectMessage(Messages.UploadModule_ExceptionStorageService());
+        underTest.getStorageService(mockGoogleRobotCredentials, "");
+    }
 }

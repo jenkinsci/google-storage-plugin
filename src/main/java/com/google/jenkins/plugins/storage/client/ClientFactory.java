@@ -36,88 +36,83 @@ import java.util.Optional;
 
 /** Creates clients for communicating with Google APIs. */
 public class ClientFactory {
-  public static final String APPLICATION_NAME = "jenkins-google-storage-plugin";
+    public static final String APPLICATION_NAME = "jenkins-google-storage-plugin";
 
-  private final Credential credential;
-  private final HttpTransport transport;
-  private final JsonFactory jsonFactory;
-  private final String credentialsId;
-  private final String defaultProjectId;
+    private final Credential credential;
+    private final HttpTransport transport;
+    private final JsonFactory jsonFactory;
+    private final String credentialsId;
+    private final String defaultProjectId;
 
-  /**
-   * Creates a {@link ClientFactory} instance.
-   *
-   * @param itemGroup A handle to the Jenkins instance.
-   * @param domainRequirements A list of domain requirements.
-   * @param credentialsId The ID of the GoogleRobotCredentials to be retrieved from Jenkins and
-   *     utilized for authorization.
-   * @param httpTransport If specified, the HTTP transport this factory will utilize for clients it
-   *     creates.
-   * @throws hudson.AbortException If failed to create a new client factory.
-   */
-  public ClientFactory(
-      ItemGroup itemGroup,
-      ImmutableList<DomainRequirement> domainRequirements,
-      String credentialsId,
-      Optional<HttpTransport> httpTransport)
-      throws AbortException {
-    GoogleRobotCredentials robotCreds =
-        getRobotCredentials(itemGroup, domainRequirements, credentialsId);
-    this.credential = getGoogleCredential(robotCreds);
-    this.defaultProjectId =
-        Strings.isNullOrEmpty(robotCreds.getProjectId()) ? "" : robotCreds.getProjectId();
-    this.credentialsId = credentialsId;
+    /**
+     * Creates a {@link ClientFactory} instance.
+     *
+     * @param itemGroup A handle to the Jenkins instance.
+     * @param domainRequirements A list of domain requirements.
+     * @param credentialsId The ID of the GoogleRobotCredentials to be retrieved from Jenkins and
+     *     utilized for authorization.
+     * @param httpTransport If specified, the HTTP transport this factory will utilize for clients it
+     *     creates.
+     * @throws hudson.AbortException If failed to create a new client factory.
+     */
+    public ClientFactory(
+            ItemGroup itemGroup,
+            ImmutableList<DomainRequirement> domainRequirements,
+            String credentialsId,
+            Optional<HttpTransport> httpTransport)
+            throws AbortException {
+        GoogleRobotCredentials robotCreds = getRobotCredentials(itemGroup, domainRequirements, credentialsId);
+        this.credential = getGoogleCredential(robotCreds);
+        this.defaultProjectId = Strings.isNullOrEmpty(robotCreds.getProjectId()) ? "" : robotCreds.getProjectId();
+        this.credentialsId = credentialsId;
 
-    try {
-      this.transport = httpTransport.orElse(GoogleNetHttpTransport.newTrustedTransport());
-    } catch (GeneralSecurityException | IOException e) {
-      throw new AbortException(Messages.ClientFactory_FailedToInitializeHTTPTransport(e));
+        try {
+            this.transport = httpTransport.orElse(GoogleNetHttpTransport.newTrustedTransport());
+        } catch (GeneralSecurityException | IOException e) {
+            throw new AbortException(Messages.ClientFactory_FailedToInitializeHTTPTransport(e));
+        }
+
+        this.jsonFactory = new JacksonFactory();
     }
 
-    this.jsonFactory = new JacksonFactory();
-  }
+    /**
+     * Creates a {@link ClientFactory} instance without specifying domainRequirements or
+     * httpTransport.
+     *
+     * @param itemGroup A handle to the Jenkins instance.
+     * @param credentialsId The ID of the GoogleRobotCredentials to be retrieved from Jenkins and
+     *     utilized for authorization.
+     * @throws AbortException If failed to create a new client factory.
+     */
+    public ClientFactory(ItemGroup itemGroup, String credentialsId) throws AbortException {
+        this(itemGroup, ImmutableList.of(), credentialsId, Optional.empty());
+    }
 
-  /**
-   * Creates a {@link ClientFactory} instance without specifying domainRequirements or
-   * httpTransport.
-   *
-   * @param itemGroup A handle to the Jenkins instance.
-   * @param credentialsId The ID of the GoogleRobotCredentials to be retrieved from Jenkins and
-   *     utilized for authorization.
-   * @throws AbortException If failed to create a new client factory.
-   */
-  public ClientFactory(ItemGroup itemGroup, String credentialsId) throws AbortException {
-    this(itemGroup, ImmutableList.of(), credentialsId, Optional.empty());
-  }
+    /**
+     * Creates a new {@link StorageClient}.
+     *
+     * @return A new {@link StorageClient} instance.
+     */
+    public StorageClient storageClient() {
+        return new StorageClient(new Storage.Builder(transport, jsonFactory, credential)
+                .setGoogleClientRequestInitializer(request ->
+                        request.setRequestHeaders(request.getRequestHeaders().setUserAgent(APPLICATION_NAME)))
+                .setHttpRequestInitializer(new RetryHttpInitializerWrapper(credential))
+                .setApplicationName(APPLICATION_NAME)
+                .build());
+    }
 
-  /**
-   * Creates a new {@link StorageClient}.
-   *
-   * @return A new {@link StorageClient} instance.
-   */
-  public StorageClient storageClient() {
-    return new StorageClient(
-        new Storage.Builder(transport, jsonFactory, credential)
-            .setGoogleClientRequestInitializer(
-                request ->
-                    request.setRequestHeaders(
-                        request.getRequestHeaders().setUserAgent(APPLICATION_NAME)))
-            .setHttpRequestInitializer(new RetryHttpInitializerWrapper(credential))
-            .setApplicationName(APPLICATION_NAME)
-            .build());
-  }
+    /**
+     * @return The default Project ID associated with this ClientFactory's credentials.
+     */
+    public String getDefaultProjectId() {
+        return this.defaultProjectId;
+    }
 
-  /**
-   * @return The default Project ID associated with this ClientFactory's credentials.
-   */
-  public String getDefaultProjectId() {
-    return this.defaultProjectId;
-  }
-
-  /**
-   * @return The Credentials ID for this ClientFactory.
-   */
-  public String getCredentialsId() {
-    return this.credentialsId;
-  }
+    /**
+     * @return The Credentials ID for this ClientFactory.
+     */
+    public String getCredentialsId() {
+        return this.credentialsId;
+    }
 }

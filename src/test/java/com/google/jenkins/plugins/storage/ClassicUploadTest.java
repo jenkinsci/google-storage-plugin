@@ -47,151 +47,144 @@ import org.mockito.MockitoAnnotations;
 /** Tests for {@link ClassicUpload}. */
 public class ClassicUploadTest {
 
-  @Rule public JenkinsRule jenkins = new JenkinsRule();
+    @Rule
+    public JenkinsRule jenkins = new JenkinsRule();
 
-  @Mock private GoogleRobotCredentials credentials;
+    @Mock
+    private GoogleRobotCredentials credentials;
 
-  private GoogleCredential credential;
+    private GoogleCredential credential;
 
-  private String bucket;
-  private String glob;
+    private String bucket;
+    private String glob;
 
-  private FreeStyleProject project;
-  private ClassicUpload underTest;
-  private boolean sharedPublicly;
-  private boolean forFailedJobs;
-  private boolean showInline;
-  private boolean stripPathPrefix;
-  private String pathPrefix;
+    private FreeStyleProject project;
+    private ClassicUpload underTest;
+    private boolean sharedPublicly;
+    private boolean forFailedJobs;
+    private boolean showInline;
+    private boolean stripPathPrefix;
+    private String pathPrefix;
 
-  private final MockExecutor executor = new MockExecutor();
-  private ConflictException conflictException;
-  private ForbiddenException forbiddenException;
-  private NotFoundException notFoundException;
+    private final MockExecutor executor = new MockExecutor();
+    private ConflictException conflictException;
+    private ForbiddenException forbiddenException;
+    private NotFoundException notFoundException;
 
-  private static class MockUploadModule extends UploadModule {
-    public MockUploadModule(MockExecutor executor) {
-      this.executor = executor;
+    private static class MockUploadModule extends UploadModule {
+        public MockUploadModule(MockExecutor executor) {
+            this.executor = executor;
+        }
+
+        @Override
+        public MockExecutor newExecutor() {
+            return executor;
+        }
+
+        private final MockExecutor executor;
     }
 
-    @Override
-    public MockExecutor newExecutor() {
-      return executor;
-    }
-
-    private final MockExecutor executor;
-  }
-
-  @Rule
-  public Verifier verifySawAll =
-      new Verifier() {
+    @Rule
+    public Verifier verifySawAll = new Verifier() {
         @Override
         public void verify() {
-          assertTrue(executor.sawAll());
-          assertFalse(executor.sawUnexpected());
+            assertTrue(executor.sawAll());
+            assertFalse(executor.sawUnexpected());
         }
-      };
+    };
 
-  @Before
-  public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
 
-    when(credentials.getId()).thenReturn(CREDENTIALS_ID);
-    when(credentials.getProjectId()).thenReturn(PROJECT_ID);
+        when(credentials.getId()).thenReturn(CREDENTIALS_ID);
+        when(credentials.getProjectId()).thenReturn(PROJECT_ID);
 
-    if (jenkins.jenkins != null) {
-      SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
+        if (jenkins.jenkins != null) {
+            SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
 
-      // Create a project to which we may attach our uploader.
-      project = jenkins.createFreeStyleProject("test");
+            // Create a project to which we may attach our uploader.
+            project = jenkins.createFreeStyleProject("test");
+        }
+
+        credential = new GoogleCredential();
+        when(credentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
+                .thenReturn(credential);
+
+        // Return ourselves as remotable
+        when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class))).thenReturn(credentials);
+
+        notFoundException = new NotFoundException();
+        conflictException = new ConflictException();
+        forbiddenException = new ForbiddenException();
+
+        bucket = "gs://bucket";
+        glob = "bar.txt";
+        underTest = new ClassicUpload(
+                bucket, new MockUploadModule(executor), glob, null /* legacy arg */, null /* legacy arg */);
     }
 
-    credential = new GoogleCredential();
-    when(credentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
-        .thenReturn(credential);
-
-    // Return ourselves as remotable
-    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class))).thenReturn(credentials);
-
-    notFoundException = new NotFoundException();
-    conflictException = new ConflictException();
-    forbiddenException = new ForbiddenException();
-
-    bucket = "gs://bucket";
-    glob = "bar.txt";
-    underTest =
-        new ClassicUpload(
-            bucket,
-            new MockUploadModule(executor),
-            glob,
-            null /* legacy arg */,
-            null /* legacy arg */);
-  }
-
-  @Test
-  @WithoutJenkins
-  public void testGetters() {
-    assertEquals(glob, underTest.getPattern());
-  }
-
-  @Test
-  @WithoutJenkins
-  public void testLegacyArgs() {
-    ClassicUpload legacyVersion =
-        new ClassicUpload(
-            null /* bucket */, new MockUploadModule(executor), null /* glob */, bucket, glob);
-    legacyVersion.setSharedPublicly(sharedPublicly);
-    legacyVersion.setForFailedJobs(forFailedJobs);
-    legacyVersion.setShowInline(showInline);
-    legacyVersion.setPathPrefix(pathPrefix);
-
-    assertEquals(underTest.getBucket(), legacyVersion.getBucket());
-    assertEquals(underTest.isSharedPublicly(), legacyVersion.isSharedPublicly());
-    assertEquals(underTest.isForFailedJobs(), legacyVersion.isForFailedJobs());
-    assertEquals(underTest.getPattern(), legacyVersion.getPattern());
-  }
-
-  @Test(expected = NullPointerException.class)
-  @WithoutJenkins
-  public void testCheckNullGlob() throws Exception {
-    new ClassicUpload(
-        bucket, new MockUploadModule(executor), null, null /* legacy arg */, null /* legacy arg */);
-  }
-
-  @Test
-  public void testCheckNullOnNullables() throws Exception {
-    // The upload should handle null for the other fields.
-    new ClassicUpload(
-        bucket, null /* module */, glob, null /* legacy arg */, null /* legacy arg */);
-  }
-
-  @Test
-  @WithoutJenkins
-  public void doCheckGlobTest() throws IOException {
-    DescriptorImpl descriptor = new DescriptorImpl();
-
-    assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("asdf").kind);
-    // Some good sample globs we should accept
-    assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("target/*.war").kind);
-    assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("**/target/foo.*").kind);
-    // Successfully resolved
-    assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("asdf$BUILD_NUMBER").kind);
-    // UN-successfully resolved
-    assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckPattern("$foo").kind);
-    // Escaped $BUILD_NUMBER
-    assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckPattern("$$BUILD_NUMBER").kind);
-  }
-
-  private void dumpLog(Run<?, ?> run) throws IOException {
-    BufferedReader reader = new BufferedReader(run.getLogReader());
-
-    String line;
-    while ((line = reader.readLine()) != null) {
-      System.out.println(line);
+    @Test
+    @WithoutJenkins
+    public void testGetters() {
+        assertEquals(glob, underTest.getPattern());
     }
-  }
 
-  private static final String PROJECT_ID = "foo.com:bar-baz";
-  private static final String CREDENTIALS_ID = "bazinga";
-  private static final String NAME = "Source (foo.com:bar-baz)";
+    @Test
+    @WithoutJenkins
+    public void testLegacyArgs() {
+        ClassicUpload legacyVersion =
+                new ClassicUpload(null /* bucket */, new MockUploadModule(executor), null /* glob */, bucket, glob);
+        legacyVersion.setSharedPublicly(sharedPublicly);
+        legacyVersion.setForFailedJobs(forFailedJobs);
+        legacyVersion.setShowInline(showInline);
+        legacyVersion.setPathPrefix(pathPrefix);
+
+        assertEquals(underTest.getBucket(), legacyVersion.getBucket());
+        assertEquals(underTest.isSharedPublicly(), legacyVersion.isSharedPublicly());
+        assertEquals(underTest.isForFailedJobs(), legacyVersion.isForFailedJobs());
+        assertEquals(underTest.getPattern(), legacyVersion.getPattern());
+    }
+
+    @Test(expected = NullPointerException.class)
+    @WithoutJenkins
+    public void testCheckNullGlob() throws Exception {
+        new ClassicUpload(bucket, new MockUploadModule(executor), null, null /* legacy arg */, null /* legacy arg */);
+    }
+
+    @Test
+    public void testCheckNullOnNullables() throws Exception {
+        // The upload should handle null for the other fields.
+        new ClassicUpload(bucket, null /* module */, glob, null /* legacy arg */, null /* legacy arg */);
+    }
+
+    @Test
+    @WithoutJenkins
+    public void doCheckGlobTest() throws IOException {
+        DescriptorImpl descriptor = new DescriptorImpl();
+
+        assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("asdf").kind);
+        // Some good sample globs we should accept
+        assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("target/*.war").kind);
+        assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("**/target/foo.*").kind);
+        // Successfully resolved
+        assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("asdf$BUILD_NUMBER").kind);
+        // UN-successfully resolved
+        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckPattern("$foo").kind);
+        // Escaped $BUILD_NUMBER
+        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckPattern("$$BUILD_NUMBER").kind);
+    }
+
+    private void dumpLog(Run<?, ?> run) throws IOException {
+        BufferedReader reader = new BufferedReader(run.getLogReader());
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            System.out.println(line);
+        }
+    }
+
+    private static final String PROJECT_ID = "foo.com:bar-baz";
+    private static final String CREDENTIALS_ID = "bazinga";
+    private static final String NAME = "Source (foo.com:bar-baz)";
 }

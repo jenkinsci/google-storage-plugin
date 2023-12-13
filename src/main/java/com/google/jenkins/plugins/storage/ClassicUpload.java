@@ -36,160 +36,157 @@ import org.kohsuke.stapler.QueryParameter;
  */
 public class ClassicUpload extends AbstractUpload {
 
-  /**
-   * Construct the classic upload implementation from the base properties and the glob for matching
-   * files.
-   *
-   * @param bucket GCS bucket to upload files to.
-   * @param module Helper class for connecting to the GCS API.
-   * @param pattern The glob of files to upload, which potentially contains unresolved symbols, such
-   *     as $JOB_NAME and $BUILD_NUMBER.
-   * @param bucketNameWithVars Deprecated format for bucket.
-   * @param sourceGlobWithVars Deprecated. Old name kept for deserialization.
-   */
-  @DataBoundConstructor
-  public ClassicUpload(
-      String bucket,
-      @Nullable UploadModule module,
-      String pattern,
-      // Legacy arguments for backwards compatibility
-      @Deprecated @Nullable String bucketNameWithVars,
-      @Deprecated @Nullable String sourceGlobWithVars) {
-    super(bucket != null ? bucket : bucketNameWithVars, module);
-    this.sourceGlobWithVars = pattern != null ? pattern : sourceGlobWithVars;
-    Objects.requireNonNull(this.sourceGlobWithVars);
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public String getDetails() {
-    return getPattern();
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  @Nullable
-  protected UploadSpec getInclusions(Run<?, ?> run, FilePath workspace, TaskListener listener)
-      throws UploadException {
-    try {
-
-      String globResolvedVars = StorageUtil.replaceMacro(getPattern(), run, listener);
-
-      // In order to support absolute globs (e.g. /gagent/metaOutput/std*.txt)
-      // we must identify absolute paths and rebase the "workspace" to be the
-      // root directory and the glob to be relative to root.
-      //
-      // NOTE: FilePath#list complains when the ant-style glob is actually
-      // an absolute path.
-      //
-      // TODO(mattmoor): This will not work on Windows, but short of relying
-      // on Java 7's java.nio.file.Paths there doesn't appear to be a good
-      // platform agnostic approach to this.
-      if (globResolvedVars.startsWith("/")) {
-        workspace = getRoot(workspace);
-        // TODO(mattmoor): Support Windows
-        // Drop the leading "/" in a fashion that should be compatible with
-        // non-Unix platforms (e.g. Windows, which uses drive letters: C:\)
-        globResolvedVars = globResolvedVars.substring(1);
-      }
-
-      FilePath[] inclusions = workspace.list(globResolvedVars);
-      if (inclusions.length == 0) {
-        listener.error(getModule().prefix(Messages.ClassicUpload_NoArtifacts(globResolvedVars)));
-        return null;
-      }
-      listener
-          .getLogger()
-          .println(
-              getModule()
-                  .prefix(Messages.ClassicUpload_FoundForPattern(inclusions.length, getPattern())));
-      return new UploadSpec(workspace, Arrays.asList(inclusions));
-    } catch (InterruptedException e) {
-      throw new UploadException(Messages.AbstractUpload_IncludeException(), e);
-    } catch (IOException e) {
-      throw new UploadException(Messages.AbstractUpload_IncludeException(), e);
-    }
-  }
-
-  /** Iterate from the workspace through parent directories to its root. */
-  private FilePath getRoot(final FilePath workspace) {
-    FilePath iter = workspace;
-    while (iter.getParent() != null) {
-      iter = iter.getParent();
-    }
-    return iter;
-  }
-
-  /**
-   * @return The glob of files to upload, which potentially contains unresolved symbols, such as
-   *     $JOB_NAME and $BUILD_NUMBER.
-   */
-  public String getPattern() {
-    return sourceGlobWithVars;
-  }
-
-  /** NOTE: old name kept for deserialization */
-  private final String sourceGlobWithVars;
-
-  /** Denotes this is an {@link AbstractUpload} plugin */
-  @Extension
-  public static class DescriptorImpl extends AbstractUploadDescriptor {
-
-    public DescriptorImpl() {
-      this(ClassicUpload.class);
-    }
-
-    public DescriptorImpl(Class<? extends ClassicUpload> clazz) {
-      super(clazz);
+    /**
+     * Construct the classic upload implementation from the base properties and the glob for matching
+     * files.
+     *
+     * @param bucket GCS bucket to upload files to.
+     * @param module Helper class for connecting to the GCS API.
+     * @param pattern The glob of files to upload, which potentially contains unresolved symbols, such
+     *     as $JOB_NAME and $BUILD_NUMBER.
+     * @param bucketNameWithVars Deprecated format for bucket.
+     * @param sourceGlobWithVars Deprecated. Old name kept for deserialization.
+     */
+    @DataBoundConstructor
+    public ClassicUpload(
+            String bucket,
+            @Nullable UploadModule module,
+            String pattern,
+            // Legacy arguments for backwards compatibility
+            @Deprecated @Nullable String bucketNameWithVars,
+            @Deprecated @Nullable String sourceGlobWithVars) {
+        super(bucket != null ? bucket : bucketNameWithVars, module);
+        this.sourceGlobWithVars = pattern != null ? pattern : sourceGlobWithVars;
+        Objects.requireNonNull(this.sourceGlobWithVars);
     }
 
     /** {@inheritDoc} */
     @Override
-    public String getDisplayName() {
-      return Messages.ClassicUpload_DisplayName();
+    public String getDetails() {
+        return getPattern();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @Nullable
+    protected UploadSpec getInclusions(Run<?, ?> run, FilePath workspace, TaskListener listener)
+            throws UploadException {
+        try {
+
+            String globResolvedVars = StorageUtil.replaceMacro(getPattern(), run, listener);
+
+            // In order to support absolute globs (e.g. /gagent/metaOutput/std*.txt)
+            // we must identify absolute paths and rebase the "workspace" to be the
+            // root directory and the glob to be relative to root.
+            //
+            // NOTE: FilePath#list complains when the ant-style glob is actually
+            // an absolute path.
+            //
+            // TODO(mattmoor): This will not work on Windows, but short of relying
+            // on Java 7's java.nio.file.Paths there doesn't appear to be a good
+            // platform agnostic approach to this.
+            if (globResolvedVars.startsWith("/")) {
+                workspace = getRoot(workspace);
+                // TODO(mattmoor): Support Windows
+                // Drop the leading "/" in a fashion that should be compatible with
+                // non-Unix platforms (e.g. Windows, which uses drive letters: C:\)
+                globResolvedVars = globResolvedVars.substring(1);
+            }
+
+            FilePath[] inclusions = workspace.list(globResolvedVars);
+            if (inclusions.length == 0) {
+                listener.error(getModule().prefix(Messages.ClassicUpload_NoArtifacts(globResolvedVars)));
+                return null;
+            }
+            listener.getLogger()
+                    .println(getModule()
+                            .prefix(Messages.ClassicUpload_FoundForPattern(inclusions.length, getPattern())));
+            return new UploadSpec(workspace, Arrays.asList(inclusions));
+        } catch (InterruptedException e) {
+            throw new UploadException(Messages.AbstractUpload_IncludeException(), e);
+        } catch (IOException e) {
+            throw new UploadException(Messages.AbstractUpload_IncludeException(), e);
+        }
+    }
+
+    /** Iterate from the workspace through parent directories to its root. */
+    private FilePath getRoot(final FilePath workspace) {
+        FilePath iter = workspace;
+        while (iter.getParent() != null) {
+            iter = iter.getParent();
+        }
+        return iter;
     }
 
     /**
-     * This callback validates the {@code pattern} input field's values.
-     *
-     * @param pattern The glob of files to upload, which potentially contains unresolved symbols,
-     *     such as $JOB_NAME and $BUILD_NUMBER.
-     * @return Valid form validation result or error message if invalid.
+     * @return The glob of files to upload, which potentially contains unresolved symbols, such as
+     *     $JOB_NAME and $BUILD_NUMBER.
      */
-    public static FormValidation staticDoCheckPattern(@QueryParameter final String pattern) {
-      String resolvedInput = Resolve.resolveBuiltin(pattern);
-      if (resolvedInput.isEmpty()) {
-        return FormValidation.error(Messages.ClassicUpload_EmptyGlob());
-      }
-
-      if (resolvedInput.contains("$")) {
-        // resolved file name still contains variable marker
-        return FormValidation.error(
-            Messages.ClassicUpload_BadGlobChar(
-                "$", Messages.AbstractUploadDescriptor_DollarSuggest()));
-      }
-      // TODO(mattmoor): Validation:
-      //  - relative path from workspace
-      //  - Ant mask
-      //
-      // TODO(mattmoor): The Ant glob validation is lackluster in that it
-      // requires a FilePath with which to validate the glob.  Consider
-      // putting together a regular expression to match valid patterns.
-      //
-      // NOTE: This side of things must work well with windows backward
-      // slashes.
-      return FormValidation.ok();
+    public String getPattern() {
+        return sourceGlobWithVars;
     }
 
-    /**
-     * This callback validates the {@code pattern} input field's values.
-     *
-     * @param pattern The glob of files to upload, which potentially contains unresolved symbols,
-     *     such as $JOB_NAME and $BUILD_NUMBER.
-     * @return Valid form validation result or error message if invalid.
-     */
-    public FormValidation doCheckPattern(@QueryParameter final String pattern) {
-      return staticDoCheckPattern(pattern);
+    /** NOTE: old name kept for deserialization */
+    private final String sourceGlobWithVars;
+
+    /** Denotes this is an {@link AbstractUpload} plugin */
+    @Extension
+    public static class DescriptorImpl extends AbstractUploadDescriptor {
+
+        public DescriptorImpl() {
+            this(ClassicUpload.class);
+        }
+
+        public DescriptorImpl(Class<? extends ClassicUpload> clazz) {
+            super(clazz);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String getDisplayName() {
+            return Messages.ClassicUpload_DisplayName();
+        }
+
+        /**
+         * This callback validates the {@code pattern} input field's values.
+         *
+         * @param pattern The glob of files to upload, which potentially contains unresolved symbols,
+         *     such as $JOB_NAME and $BUILD_NUMBER.
+         * @return Valid form validation result or error message if invalid.
+         */
+        public static FormValidation staticDoCheckPattern(@QueryParameter final String pattern) {
+            String resolvedInput = Resolve.resolveBuiltin(pattern);
+            if (resolvedInput.isEmpty()) {
+                return FormValidation.error(Messages.ClassicUpload_EmptyGlob());
+            }
+
+            if (resolvedInput.contains("$")) {
+                // resolved file name still contains variable marker
+                return FormValidation.error(
+                        Messages.ClassicUpload_BadGlobChar("$", Messages.AbstractUploadDescriptor_DollarSuggest()));
+            }
+            // TODO(mattmoor): Validation:
+            //  - relative path from workspace
+            //  - Ant mask
+            //
+            // TODO(mattmoor): The Ant glob validation is lackluster in that it
+            // requires a FilePath with which to validate the glob.  Consider
+            // putting together a regular expression to match valid patterns.
+            //
+            // NOTE: This side of things must work well with windows backward
+            // slashes.
+            return FormValidation.ok();
+        }
+
+        /**
+         * This callback validates the {@code pattern} input field's values.
+         *
+         * @param pattern The glob of files to upload, which potentially contains unresolved symbols,
+         *     such as $JOB_NAME and $BUILD_NUMBER.
+         * @return Valid form validation result or error message if invalid.
+         */
+        public FormValidation doCheckPattern(@QueryParameter final String pattern) {
+            return staticDoCheckPattern(pattern);
+        }
     }
-  }
 }

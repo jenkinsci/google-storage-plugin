@@ -34,31 +34,31 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 /** Tests {@link ClientFactory}. */
 public class ClientFactoryTest {
-  public static final String ACCOUNT_ID = "test-account-id";
-  public static final byte[] PK_BYTES =
-      "{\"client_email\": \"example@example.com\"}".getBytes(StandardCharsets.UTF_8);
+    public static final String ACCOUNT_ID = "test-account-id";
+    public static final byte[] PK_BYTES =
+            "{\"client_email\": \"example@example.com\"}".getBytes(StandardCharsets.UTF_8);
 
-  @Rule public JenkinsRule r = new JenkinsRule();
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
 
-  @Test
-  public void defaultTransport() throws Exception {
-    final String credentialId = "my-google-credential";
+    @Test
+    public void defaultTransport() throws Exception {
+        final String credentialId = "my-google-credential";
 
-    SecretBytes bytes = SecretBytes.fromBytes(PK_BYTES);
-    JsonServiceAccountConfig serviceAccountConfig = new JsonServiceAccountConfig();
-    serviceAccountConfig.setSecretJsonKey(bytes);
-    assertNotNull(serviceAccountConfig.getAccountId());
+        SecretBytes bytes = SecretBytes.fromBytes(PK_BYTES);
+        JsonServiceAccountConfig serviceAccountConfig = new JsonServiceAccountConfig();
+        serviceAccountConfig.setSecretJsonKey(bytes);
+        assertNotNull(serviceAccountConfig.getAccountId());
 
-    GoogleRobotPrivateKeyCredentials c =
-        new GoogleRobotPrivateKeyCredentials(
-            CredentialsScope.GLOBAL, credentialId, ACCOUNT_ID, serviceAccountConfig, null);
-    CredentialsStore store = new SystemCredentialsProvider.ProviderImpl().getStore(r.jenkins);
-    assertNotNull(store);
-    store.addCredentials(Domain.global(), c);
+        GoogleRobotPrivateKeyCredentials c = new GoogleRobotPrivateKeyCredentials(
+                CredentialsScope.GLOBAL, credentialId, ACCOUNT_ID, serviceAccountConfig, null);
+        CredentialsStore store = new SystemCredentialsProvider.ProviderImpl().getStore(r.jenkins);
+        assertNotNull(store);
+        store.addCredentials(Domain.global(), c);
 
-    // Ensure correct exception is thrown
-    assertThrows(
-        GoogleRobotPrivateKeyCredentials.PrivateKeyNotSetException.class,
-        () -> new ClientFactory(r.jenkins, ImmutableList.of(), credentialId, Optional.empty()));
-  }
+        // Ensure correct exception is thrown
+        assertThrows(
+                GoogleRobotPrivateKeyCredentials.PrivateKeyNotSetException.class,
+                () -> new ClientFactory(r.jenkins, ImmutableList.of(), credentialId, Optional.empty()));
+    }
 }

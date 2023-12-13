@@ -22,77 +22,76 @@ import java.io.Serializable;
 
 /** Handles cloud uris and their parsing. */
 public class BucketPath implements Serializable {
-  private final String bucket;
-  private final String object;
+    private final String bucket;
+    private final String object;
 
-  /**
-   * Prepares a new BucketPath.
-   *
-   * @param uri path to the bucket object, of the form "gs://bucket_name/path/to/object". May
-   *     contain other characters (i.e., *), no verification is done in this class.
-   */
-  public BucketPath(String uri) throws IllegalArgumentException {
-    // Ensure the uri starts with "gs://"
-    if (!uri.startsWith(GCS_SCHEME)) {
-      throw new IllegalArgumentException(
-          Messages.AbstractUploadDescriptor_BadPrefix(uri, GCS_SCHEME));
+    /**
+     * Prepares a new BucketPath.
+     *
+     * @param uri path to the bucket object, of the form "gs://bucket_name/path/to/object". May
+     *     contain other characters (i.e., *), no verification is done in this class.
+     */
+    public BucketPath(String uri) throws IllegalArgumentException {
+        // Ensure the uri starts with "gs://"
+        if (!uri.startsWith(GCS_SCHEME)) {
+            throw new IllegalArgumentException(Messages.AbstractUploadDescriptor_BadPrefix(uri, GCS_SCHEME));
+        }
+
+        // Lop off the GCS_SCHEME prefix.
+        uri = uri.substring(GCS_SCHEME.length());
+
+        // Break things down to a compatible format:
+        //   foo  /  bar / baz / blah.log
+        //  ^---^   ^--------------------^
+        //  bucket      storage-object
+        //
+        // TODO(mattmoor): Test objectPrefix on Windows, where '\' != '/'
+        // Must we translate?  Can we require them to specify in unix-style
+        // and still have things work?
+        String[] halves = uri.split("/", 2);
+        this.bucket = halves[0];
+        this.object = (halves.length == 1) ? "" : halves[1];
     }
 
-    // Lop off the GCS_SCHEME prefix.
-    uri = uri.substring(GCS_SCHEME.length());
+    /**
+     * Initializes BucketPath directly, with no parsing or substitutions.
+     *
+     * @param bucket The bucket portion of the URI.
+     * @param object The path to the object portion of the URI not including bucket.
+     */
+    public BucketPath(String bucket, String object) {
+        this.bucket = bucket;
+        this.object = object;
+    }
 
-    // Break things down to a compatible format:
-    //   foo  /  bar / baz / blah.log
-    //  ^---^   ^--------------------^
-    //  bucket      storage-object
-    //
-    // TODO(mattmoor): Test objectPrefix on Windows, where '\' != '/'
-    // Must we translate?  Can we require them to specify in unix-style
-    // and still have things work?
-    String[] halves = uri.split("/", 2);
-    this.bucket = halves[0];
-    this.object = (halves.length == 1) ? "" : halves[1];
-  }
+    /**
+     * Determines if this is an invalid {@link BucketPath}.
+     *
+     * @return False if the bucket is empty.
+     */
+    public boolean error() {
+        // The bucket cannot be empty under normal circumstances.
+        return getBucket().length() <= 0;
+    }
 
-  /**
-   * Initializes BucketPath directly, with no parsing or substitutions.
-   *
-   * @param bucket The bucket portion of the URI.
-   * @param object The path to the object portion of the URI not including bucket.
-   */
-  public BucketPath(String bucket, String object) {
-    this.bucket = bucket;
-    this.object = object;
-  }
+    /**
+     * @return Regenerate the path (without gs:// prefix)
+     */
+    public String getPath() {
+        return bucket + (object.isEmpty() ? "" : "/" + object);
+    }
 
-  /**
-   * Determines if this is an invalid {@link BucketPath}.
-   *
-   * @return False if the bucket is empty.
-   */
-  public boolean error() {
-    // The bucket cannot be empty under normal circumstances.
-    return getBucket().length() <= 0;
-  }
+    /**
+     * @return The Bucket portion of the URI
+     */
+    public String getBucket() {
+        return bucket;
+    }
 
-  /**
-   * @return Regenerate the path (without gs:// prefix)
-   */
-  public String getPath() {
-    return bucket + (object.isEmpty() ? "" : "/" + object);
-  }
-
-  /**
-   * @return The Bucket portion of the URI
-   */
-  public String getBucket() {
-    return bucket;
-  }
-
-  /**
-   * @return The object portion of the URI
-   */
-  public String getObject() {
-    return object;
-  }
+    /**
+     * @return The object portion of the URI
+     */
+    public String getObject() {
+        return object;
+    }
 }

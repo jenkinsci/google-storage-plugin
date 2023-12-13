@@ -33,35 +33,35 @@ import java.util.Set;
  */
 public class ProjectGcsUploadReport extends AbstractGcsUploadReport {
 
-  public ProjectGcsUploadReport(AbstractProject<?, ?> project) {
-    super(project);
-  }
+    public ProjectGcsUploadReport(AbstractProject<?, ?> project) {
+        super(project);
+    }
 
-  /**
-   * @return the project that this {@link ProjectGcsUploadReport} belongs to.
-   */
-  public AbstractProject<?, ?> getProject() {
-    return (AbstractProject<?, ?>) getParent();
-  }
+    /**
+     * @return the project that this {@link ProjectGcsUploadReport} belongs to.
+     */
+    public AbstractProject<?, ?> getProject() {
+        return (AbstractProject<?, ?>) getParent();
+    }
 
-  /** {@inheritDoc} */
-  @Override
-  public Set<String> getBuckets() {
-    BuildGcsUploadReport links = BuildGcsUploadReport.of(getProject());
-    return links == null ? ImmutableSet.<String>of() : links.getBuckets();
-  }
+    /** {@inheritDoc} */
+    @Override
+    public Set<String> getBuckets() {
+        BuildGcsUploadReport links = BuildGcsUploadReport.of(getProject());
+        return links == null ? ImmutableSet.<String>of() : links.getBuckets();
+    }
 
-  /** {@inheritDoc} */
-  @Override
-  public Set<String> getStorageObjects() {
-    BuildGcsUploadReport links = BuildGcsUploadReport.of(getProject());
-    return links == null ? ImmutableSet.<String>of() : links.getStorageObjects();
-  }
+    /** {@inheritDoc} */
+    @Override
+    public Set<String> getStorageObjects() {
+        BuildGcsUploadReport links = BuildGcsUploadReport.of(getProject());
+        return links == null ? ImmutableSet.<String>of() : links.getStorageObjects();
+    }
 
-  /** {@inheritDoc} */
-  @Override
-  public Integer getBuildNumber() {
-    BuildGcsUploadReport links = BuildGcsUploadReport.of(getProject());
-    return links == null ? null : links.getBuildNumber();
-  }
+    /** {@inheritDoc} */
+    @Override
+    public Integer getBuildNumber() {
+        BuildGcsUploadReport links = BuildGcsUploadReport.of(getProject());
+        return links == null ? null : links.getBuildNumber();
+    }
 }

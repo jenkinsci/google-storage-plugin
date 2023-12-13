@@ -17,14 +17,14 @@ package com.google.jenkins.plugins.storage;
 
 /** The class of exceptions that occur during actions of {@link AbstractUpload}s */
 public class UploadException extends Exception {
-  // Generated serial version ID.
-  private static final long serialVersionUID = 3255684370490910421L;
+    // Generated serial version ID.
+    private static final long serialVersionUID = 3255684370490910421L;
 
-  public UploadException(String message) {
-    super(message);
-  }
+    public UploadException(String message) {
+        super(message);
+    }
 
-  public UploadException(String message, Throwable cause) {
-    super(message, cause);
-  }
+    public UploadException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
