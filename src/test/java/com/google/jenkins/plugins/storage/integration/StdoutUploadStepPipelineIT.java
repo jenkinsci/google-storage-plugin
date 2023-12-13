@@ -38,56 +38,55 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 /** Tests the {@link StdoutUploadStep} for use-cases involving the Jenkins Pipeline DSL. */
 public class StdoutUploadStepPipelineIT {
-  private static final Logger LOGGER = Logger.getLogger(StdoutUploadStepPipelineIT.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(StdoutUploadStepPipelineIT.class.getName());
 
-  @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
-  public static String credentialsId;
-  private static final String pattern = "build_log.txt";
-  private static String bucket;
-  private static StorageClient storageClient;
-  private static EnvVars envVars;
+    @ClassRule
+    public static JenkinsRule jenkinsRule = new JenkinsRule();
 
-  @BeforeClass
-  public static void init() throws Exception {
-    LOGGER.info("Initializing StdoutUploadStepPipelineIT");
+    public static String credentialsId;
+    private static final String pattern = "build_log.txt";
+    private static String bucket;
+    private static StorageClient storageClient;
+    private static EnvVars envVars;
 
-    envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
-    credentialsId = envVars.get("CREDENTIALS_ID");
-    storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
-    bucket = formatRandomName("test");
-    envVars.put("BUCKET", bucket);
-  }
+    @BeforeClass
+    public static void init() throws Exception {
+        LOGGER.info("Initializing StdoutUploadStepPipelineIT");
 
-  @Test
-  public void testStdoutUploadStepSuccessful() throws Exception {
-    WorkflowJob testProject =
-        jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
+        envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
+        credentialsId = envVars.get("CREDENTIALS_ID");
+        storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
+        bucket = formatRandomName("test");
+        envVars.put("BUCKET", bucket);
+    }
 
-    testProject.setDefinition(
-        new CpsFlowDefinition(loadResource(getClass(), "stdoutUploadStepPipeline.groovy"), true));
-    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-    assertNotNull(run);
-    jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
-    dumpLog(LOGGER, run);
-    storageClient.deleteFromBucket(bucket, pattern);
-  }
+    @Test
+    public void testStdoutUploadStepSuccessful() throws Exception {
+        WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
-  @Test
-  public void testMalformedStdoutUploadStepFailure() throws Exception {
-    WorkflowJob testProject =
-        jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
+        testProject.setDefinition(
+                new CpsFlowDefinition(loadResource(getClass(), "stdoutUploadStepPipeline.groovy"), true));
+        WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+        assertNotNull(run);
+        jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
+        dumpLog(LOGGER, run);
+        storageClient.deleteFromBucket(bucket, pattern);
+    }
 
-    testProject.setDefinition(
-        new CpsFlowDefinition(
-            loadResource(getClass(), "malformedStdoutUploadStepPipeline.groovy"), true));
-    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-    assertNotNull(run);
-    jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
-    dumpLog(LOGGER, run);
-  }
+    @Test
+    public void testMalformedStdoutUploadStepFailure() throws Exception {
+        WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, formatRandomName("test"));
 
-  @AfterClass
-  public static void cleanUp() throws Exception {
-    storageClient.deleteBucket(bucket);
-  }
+        testProject.setDefinition(
+                new CpsFlowDefinition(loadResource(getClass(), "malformedStdoutUploadStepPipeline.groovy"), true));
+        WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+        assertNotNull(run);
+        jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
+        dumpLog(LOGGER, run);
+    }
+
+    @AfterClass
+    public static void cleanUp() throws Exception {
+        storageClient.deleteBucket(bucket);
+    }
 }

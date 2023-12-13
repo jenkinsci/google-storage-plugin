@@ -67,504 +67,427 @@ import org.mockito.MockitoAnnotations;
 /** Tests for {@link GoogleCloudStorageUploader}. */
 public class GoogleCloudStorageUploaderTest {
 
-  @Rule public JenkinsRule jenkins = new JenkinsRule();
+    @Rule
+    public JenkinsRule jenkins = new JenkinsRule();
 
-  @Mock private GoogleRobotCredentials credentials;
+    @Mock
+    private GoogleRobotCredentials credentials;
 
-  private GoogleCredential credential;
+    private GoogleCredential credential;
 
-  private String bucket;
-  private String glob;
+    private String bucket;
+    private String glob;
 
-  private FreeStyleProject project;
-  private GoogleCloudStorageUploader underTest;
-  private boolean sharedPublicly;
-  private boolean forFailedJobs;
-  private boolean showInline;
-  private boolean stripPathPrefix;
-  private String pathPrefix;
+    private FreeStyleProject project;
+    private GoogleCloudStorageUploader underTest;
+    private boolean sharedPublicly;
+    private boolean forFailedJobs;
+    private boolean showInline;
+    private boolean stripPathPrefix;
+    private String pathPrefix;
 
-  private final MockExecutor executor = new MockExecutor();
-  private ConflictException conflictException;
-  private ForbiddenException forbiddenException;
-  private NotFoundException notFoundException;
+    private final MockExecutor executor = new MockExecutor();
+    private ConflictException conflictException;
+    private ForbiddenException forbiddenException;
+    private NotFoundException notFoundException;
 
-  private AbstractUpload setOptionalParams(AbstractUpload a) {
-    a.setSharedPublicly(sharedPublicly);
-    a.setForFailedJobs(forFailedJobs);
-    a.setShowInline(showInline);
-    if (stripPathPrefix) {
-      a.setPathPrefix(pathPrefix);
-    }
-    return a;
-  }
-
-  private static class MockUploadModule extends UploadModule {
-
-    public MockUploadModule(MockExecutor executor) {
-      this.executor = executor;
+    private AbstractUpload setOptionalParams(AbstractUpload a) {
+        a.setSharedPublicly(sharedPublicly);
+        a.setForFailedJobs(forFailedJobs);
+        a.setShowInline(showInline);
+        if (stripPathPrefix) {
+            a.setPathPrefix(pathPrefix);
+        }
+        return a;
     }
 
-    @Override
-    public MockExecutor newExecutor() {
-      return executor;
+    private static class MockUploadModule extends UploadModule {
+
+        public MockUploadModule(MockExecutor executor) {
+            this.executor = executor;
+        }
+
+        @Override
+        public MockExecutor newExecutor() {
+            return executor;
+        }
+
+        private final MockExecutor executor;
     }
 
-    private final MockExecutor executor;
-  }
-
-  @Rule
-  public Verifier verifySawAll =
-      new Verifier() {
+    @Rule
+    public Verifier verifySawAll = new Verifier() {
         @Override
         public void verify() {
-          assertTrue(executor.sawAll());
-          assertFalse(executor.sawUnexpected());
+            assertTrue(executor.sawAll());
+            assertFalse(executor.sawUnexpected());
         }
-      };
+    };
 
-  /**
-   * Checks that any object insertion that we do has certain properties at the point of execution.
-   */
-  private Predicate<Storage.Objects.Insert> checkFieldsMatch =
-      new Predicate<Storage.Objects.Insert>() {
+    /**
+     * Checks that any object insertion that we do has certain properties at the point of execution.
+     */
+    private Predicate<Storage.Objects.Insert> checkFieldsMatch = new Predicate<Storage.Objects.Insert>() {
         public boolean apply(Storage.Objects.Insert insertion) {
-          assertNotNull(insertion.getMediaHttpUploader());
-          assertEquals(bucket.substring(GCS_SCHEME.length()), insertion.getBucket());
+            assertNotNull(insertion.getMediaHttpUploader());
+            assertEquals(bucket.substring(GCS_SCHEME.length()), insertion.getBucket());
 
-          StorageObject object = (StorageObject) insertion.getJsonContent();
+            StorageObject object = (StorageObject) insertion.getJsonContent();
 
-          if (sharedPublicly) {
-            assertNotNull(object.getAcl());
-          } else {
-            assertNull(object.getAcl());
-          }
-          return true;
+            if (sharedPublicly) {
+                assertNotNull(object.getAcl());
+            } else {
+                assertNull(object.getAcl());
+            }
+            return true;
         }
-      };
+    };
 
-  @BeforeClass
-  public static void init() {
-    assumeFalse(SystemUtils.IS_OS_WINDOWS);
-  }
-
-  @Before
-  public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
-
-    when(credentials.getId()).thenReturn(CREDENTIALS_ID);
-    when(credentials.getProjectId()).thenReturn(PROJECT_ID);
-
-    if (jenkins.jenkins != null) {
-      SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
-
-      // Create a project to which we may attach our uploader.
-      project = jenkins.createFreeStyleProject("test");
+    @BeforeClass
+    public static void init() {
+        assumeFalse(SystemUtils.IS_OS_WINDOWS);
     }
 
-    credential = new GoogleCredential();
-    when(credentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
-        .thenReturn(credential);
-
-    // Return ourselves as remotable
-    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class))).thenReturn(credentials);
-
-    notFoundException = new NotFoundException();
-    conflictException = new ConflictException();
-    forbiddenException = new ForbiddenException();
-
-    bucket = "gs://bucket";
-    glob = "bar.txt";
-    underTest =
-        new GoogleCloudStorageUploader(
-            CREDENTIALS_ID,
-            ImmutableList.<AbstractUpload>of(
-                new ClassicUpload(
-                    bucket,
-                    new MockUploadModule(executor),
-                    glob,
-                    null /* legacy arg*/,
-                    null /* legacy arg */)));
-  }
-
-  @Test
-  @WithoutJenkins
-  public void testGetters() {
-    assertEquals(CREDENTIALS_ID, underTest.getCredentialsId());
-    assertEquals(1, underTest.getUploads().size());
-  }
-
-  @Test(expected = NullPointerException.class)
-  @WithoutJenkins
-  public void testCheckNull() throws Exception {
-    new GoogleCloudStorageUploader(null, ImmutableList.<AbstractUpload>of());
-  }
-
-  @Test
-  @WithoutJenkins
-  public void testCheckNullOnNullables() throws Exception {
-    // The uploader should handle null for the other fields.
-    new GoogleCloudStorageUploader("", null);
-  }
-
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testFilePlain() throws Exception {
-    project.getBuildersList().add(new Shell("echo foo > bar.txt"));
-    project.getPublishersList().add(underTest);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(Storage.Buckets.Insert.class);
-    executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    dumpLog(build);
-    assertEquals(Result.SUCCESS, build.getResult());
-  }
-
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testFilePlain_uploadFailed() throws Exception {
-    project.getBuildersList().add(new Shell("echo foo > bar.txt"));
-    project.getPublishersList().add(underTest);
-
-    executor.throwWhen(Storage.Buckets.Get.class, forbiddenException);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.FAILURE, build.getResult());
-    assertThat(
-        IOUtils.toString(new InputStreamReader(build.getLogInputStream())),
-        containsString("Forbidden"));
-  }
-
-  @Test
-  public void testBadBucket() throws Exception {
-    bucket = "bucket";
-    underTest =
-        new GoogleCloudStorageUploader(
-            CREDENTIALS_ID,
-            ImmutableList.<AbstractUpload>of(
-                setOptionalParams(
-                    new ClassicUpload(
-                        bucket,
-                        new MockUploadModule(executor),
-                        glob,
-                        null /* legacy arg */,
-                        null /* legacy arg */))));
-
-    project.getBuildersList().add(new Shell("echo foo > bar.txt"));
-    project.getPublishersList().add(underTest);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.FAILURE, build.getResult());
-  }
-
-  @Test
-  public void testNoFileFailure() throws Exception {
-    project.getBuildersList().add(new Shell("echo foo > foo.txt"));
-    project.getPublishersList().add(underTest);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.SUCCESS, build.getResult());
-
-    dumpLog(build);
-    assertThat(
-        IOUtils.toString(new InputStreamReader(build.getLogInputStream())),
-        containsString(Messages.ClassicUpload_NoArtifacts(glob)));
-  }
-
-  @Test
-  public void testFilePlainWithFailure() throws Exception {
-    project.getBuildersList().add(new Shell("echo foo > bar.txt"));
-    // Fail the build to show that the uploader does nothing.
-    project.getBuildersList().add(new FailureBuilder());
-    project.getPublishersList().add(underTest);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.FAILURE, build.getResult());
-  }
-
-  @Test
-  public void testFilePlainWithFailureAndUpload() throws Exception {
-    forFailedJobs = true;
-
-    underTest =
-        new GoogleCloudStorageUploader(
-            CREDENTIALS_ID,
-            ImmutableList.<AbstractUpload>of(
-                setOptionalParams(
-                    new ClassicUpload(
-                        bucket,
-                        new MockUploadModule(executor),
-                        glob,
-                        null /* legacy arg */,
-                        null /* legacy arg */))));
-
-    project.getBuildersList().add(new Shell("echo foo > bar.txt"));
-    // Fail the build to show that the uploader does nothing.
-    project.getBuildersList().add(new FailureBuilder());
-    project.getPublishersList().add(underTest);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(Storage.Buckets.Insert.class);
-    executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.FAILURE, build.getResult());
-  }
-
-  @Test
-  public void testStdoutUpload() throws Exception {
-    underTest =
-        new GoogleCloudStorageUploader(
-            CREDENTIALS_ID,
-            ImmutableList.<AbstractUpload>of(
-                setOptionalParams(
-                    new StdoutUpload(
-                        bucket,
-                        new MockUploadModule(executor),
-                        "build-log.txt",
-                        null /* legacy arg */))));
-
-    project.getBuildersList().add(new Shell("echo Hello World!"));
-    project.getPublishersList().add(underTest);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(Storage.Buckets.Insert.class);
-    executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.SUCCESS, build.getResult());
-  }
-
-  @Test
-  public void testFileGlob() throws Exception {
-    glob = "*.txt";
-    underTest =
-        new GoogleCloudStorageUploader(
-            CREDENTIALS_ID,
-            ImmutableList.<AbstractUpload>of(
-                setOptionalParams(
-                    new ClassicUpload(
-                        bucket,
-                        new MockUploadModule(executor),
-                        glob,
-                        null /* legacy arg */,
-                        null /* legacy arg */))));
-
-    project.getBuildersList().add(new Shell("echo foo > bar.txt"));
-    project.getPublishersList().add(underTest);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(Storage.Buckets.Insert.class);
-    executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.SUCCESS, build.getResult());
-  }
-
-  @Test
-  public void testAbsolutePath() throws Exception {
-    String absoluteFilePath = "/tmp/bar.txt";
-    glob = absoluteFilePath;
-    underTest =
-        new GoogleCloudStorageUploader(
-            CREDENTIALS_ID,
-            ImmutableList.<AbstractUpload>of(
-                setOptionalParams(
-                    new ClassicUpload(
-                        bucket,
-                        new MockUploadModule(executor),
-                        glob,
-                        null /* legacy arg */,
-                        null /* legacy arg */))));
-
-    project.getBuildersList().add(new Shell("echo foo > " + absoluteFilePath));
-    project.getPublishersList().add(underTest);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(Storage.Buckets.Insert.class);
-    executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.SUCCESS, build.getResult());
-  }
-
-  @Test
-  public void testAbsoluteGlob() throws Exception {
-    String absoluteFilePath1 = "/tmp/bar.1.txt";
-    String absoluteFilePath2 = "/tmp/bar.2.txt";
-    glob = "/tmp/bar.*.txt";
-    underTest =
-        new GoogleCloudStorageUploader(
-            CREDENTIALS_ID,
-            ImmutableList.<AbstractUpload>of(
-                setOptionalParams(
-                    new ClassicUpload(
-                        bucket,
-                        new MockUploadModule(executor),
-                        glob,
-                        null /* legacy arg */,
-                        null /* legacy arg */))));
-
-    project.getBuildersList().add(new Shell("echo foo > " + absoluteFilePath1));
-    project.getBuildersList().add(new Shell("echo foo > " + absoluteFilePath2));
-    project.getPublishersList().add(underTest);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(Storage.Buckets.Insert.class);
-    executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
-    executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.SUCCESS, build.getResult());
-  }
-
-  @Test
-  public void testFileWithVar() throws Exception {
-    glob = "bar.$BUILD_NUMBER.txt";
-    underTest =
-        new GoogleCloudStorageUploader(
-            CREDENTIALS_ID,
-            ImmutableList.<AbstractUpload>of(
-                setOptionalParams(
-                    new ClassicUpload(
-                        bucket,
-                        new MockUploadModule(executor),
-                        glob,
-                        null /* legacy arg */,
-                        null /* legacy arg */))));
-
-    project.getBuildersList().add(new Shell("echo foo > bar.$BUILD_NUMBER.txt"));
-    project.getPublishersList().add(underTest);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(Storage.Buckets.Insert.class);
-    executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.SUCCESS, build.getResult());
-  }
-
-  @Test
-  public void testFileWithDir() throws Exception {
-    glob = "blah/bar.txt";
-    underTest =
-        new GoogleCloudStorageUploader(
-            CREDENTIALS_ID,
-            ImmutableList.<AbstractUpload>of(
-                setOptionalParams(
-                    new ClassicUpload(
-                        bucket,
-                        new MockUploadModule(executor),
-                        glob,
-                        null /* legacy arg */,
-                        null /* legacy arg */))));
-
-    project.getBuildersList().add(new Shell("mkdir blah; echo foo > blah/bar.txt"));
-    project.getPublishersList().add(underTest);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(Storage.Buckets.Insert.class);
-    executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.SUCCESS, build.getResult());
-  }
-
-  @Test
-  public void testFileWithRecursiveGlob() throws Exception {
-    glob = "**/*.txt";
-    underTest =
-        new GoogleCloudStorageUploader(
-            CREDENTIALS_ID,
-            ImmutableList.<AbstractUpload>of(
-                setOptionalParams(
-                    new ClassicUpload(
-                        bucket,
-                        new MockUploadModule(executor),
-                        glob,
-                        null /* legacy arg */,
-                        null /* legacy arg */))));
-
-    project.getBuildersList().add(new Shell("mkdir blah; echo foo > blah/bar.txt"));
-    project.getPublishersList().add(underTest);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(Storage.Buckets.Insert.class);
-    executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.SUCCESS, build.getResult());
-  }
-
-  @Test
-  public void testMultiFileGlob() throws Exception {
-    glob = "*.txt";
-    underTest =
-        new GoogleCloudStorageUploader(
-            CREDENTIALS_ID,
-            ImmutableList.<AbstractUpload>of(
-                setOptionalParams(
-                    new ClassicUpload(
-                        bucket,
-                        new MockUploadModule(executor),
-                        glob,
-                        null /* legacy arg */,
-                        null /* legacy arg */))));
-
-    project.getBuildersList().add(new Shell("echo foo > foo.txt; echo bar > bar.txt"));
-    project.getPublishersList().add(underTest);
-
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(Storage.Buckets.Insert.class);
-    executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
-    executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
-
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    assertEquals(Result.SUCCESS, build.getResult());
-  }
-
-  @Test
-  @WithoutJenkins
-  public void testDescriptor() {
-    DescriptorImpl descriptor = new DescriptorImpl();
-    assertTrue(descriptor.isApplicable(AbstractProject.class));
-    assertEquals(Messages.GoogleCloudStorageUploader_DisplayName(), descriptor.getDisplayName());
-  }
-
-  @Test
-  public void testGetDefaultUploads() {
-    DescriptorImpl descriptor = new DescriptorImpl();
-    List<AbstractUpload> defaultUploads = descriptor.getDefaultUploads();
-    assertEquals(1, defaultUploads.size());
-    assertThat(defaultUploads.get(0), instanceOf(StdoutUpload.class));
-  }
-
-  private void dumpLog(Run<?, ?> run) throws IOException {
-    BufferedReader reader = new BufferedReader(run.getLogReader());
-
-    String line;
-    while ((line = reader.readLine()) != null) {
-      System.out.println(line);
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+
+        when(credentials.getId()).thenReturn(CREDENTIALS_ID);
+        when(credentials.getProjectId()).thenReturn(PROJECT_ID);
+
+        if (jenkins.jenkins != null) {
+            SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
+
+            // Create a project to which we may attach our uploader.
+            project = jenkins.createFreeStyleProject("test");
+        }
+
+        credential = new GoogleCredential();
+        when(credentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
+                .thenReturn(credential);
+
+        // Return ourselves as remotable
+        when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class))).thenReturn(credentials);
+
+        notFoundException = new NotFoundException();
+        conflictException = new ConflictException();
+        forbiddenException = new ForbiddenException();
+
+        bucket = "gs://bucket";
+        glob = "bar.txt";
+        underTest = new GoogleCloudStorageUploader(
+                CREDENTIALS_ID,
+                ImmutableList.<AbstractUpload>of(new ClassicUpload(
+                        bucket, new MockUploadModule(executor), glob, null /* legacy arg*/, null /* legacy arg */)));
     }
-  }
 
-  private static final String PROJECT_ID = "foo.com:bar-baz";
-  private static final String CREDENTIALS_ID = "bazinga";
-  private static final String NAME = "Source (foo.com:bar-baz)";
+    @Test
+    @WithoutJenkins
+    public void testGetters() {
+        assertEquals(CREDENTIALS_ID, underTest.getCredentialsId());
+        assertEquals(1, underTest.getUploads().size());
+    }
+
+    @Test(expected = NullPointerException.class)
+    @WithoutJenkins
+    public void testCheckNull() throws Exception {
+        new GoogleCloudStorageUploader(null, ImmutableList.<AbstractUpload>of());
+    }
+
+    @Test
+    @WithoutJenkins
+    public void testCheckNullOnNullables() throws Exception {
+        // The uploader should handle null for the other fields.
+        new GoogleCloudStorageUploader("", null);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testFilePlain() throws Exception {
+        project.getBuildersList().add(new Shell("echo foo > bar.txt"));
+        project.getPublishersList().add(underTest);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class);
+        executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        dumpLog(build);
+        assertEquals(Result.SUCCESS, build.getResult());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testFilePlain_uploadFailed() throws Exception {
+        project.getBuildersList().add(new Shell("echo foo > bar.txt"));
+        project.getPublishersList().add(underTest);
+
+        executor.throwWhen(Storage.Buckets.Get.class, forbiddenException);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.FAILURE, build.getResult());
+        assertThat(IOUtils.toString(new InputStreamReader(build.getLogInputStream())), containsString("Forbidden"));
+    }
+
+    @Test
+    public void testBadBucket() throws Exception {
+        bucket = "bucket";
+        underTest = new GoogleCloudStorageUploader(
+                CREDENTIALS_ID,
+                ImmutableList.<AbstractUpload>of(setOptionalParams(new ClassicUpload(
+                        bucket, new MockUploadModule(executor), glob, null /* legacy arg */, null /* legacy arg */))));
+
+        project.getBuildersList().add(new Shell("echo foo > bar.txt"));
+        project.getPublishersList().add(underTest);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.FAILURE, build.getResult());
+    }
+
+    @Test
+    public void testNoFileFailure() throws Exception {
+        project.getBuildersList().add(new Shell("echo foo > foo.txt"));
+        project.getPublishersList().add(underTest);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.SUCCESS, build.getResult());
+
+        dumpLog(build);
+        assertThat(
+                IOUtils.toString(new InputStreamReader(build.getLogInputStream())),
+                containsString(Messages.ClassicUpload_NoArtifacts(glob)));
+    }
+
+    @Test
+    public void testFilePlainWithFailure() throws Exception {
+        project.getBuildersList().add(new Shell("echo foo > bar.txt"));
+        // Fail the build to show that the uploader does nothing.
+        project.getBuildersList().add(new FailureBuilder());
+        project.getPublishersList().add(underTest);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.FAILURE, build.getResult());
+    }
+
+    @Test
+    public void testFilePlainWithFailureAndUpload() throws Exception {
+        forFailedJobs = true;
+
+        underTest = new GoogleCloudStorageUploader(
+                CREDENTIALS_ID,
+                ImmutableList.<AbstractUpload>of(setOptionalParams(new ClassicUpload(
+                        bucket, new MockUploadModule(executor), glob, null /* legacy arg */, null /* legacy arg */))));
+
+        project.getBuildersList().add(new Shell("echo foo > bar.txt"));
+        // Fail the build to show that the uploader does nothing.
+        project.getBuildersList().add(new FailureBuilder());
+        project.getPublishersList().add(underTest);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class);
+        executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.FAILURE, build.getResult());
+    }
+
+    @Test
+    public void testStdoutUpload() throws Exception {
+        underTest = new GoogleCloudStorageUploader(
+                CREDENTIALS_ID,
+                ImmutableList.<AbstractUpload>of(setOptionalParams(new StdoutUpload(
+                        bucket, new MockUploadModule(executor), "build-log.txt", null /* legacy arg */))));
+
+        project.getBuildersList().add(new Shell("echo Hello World!"));
+        project.getPublishersList().add(underTest);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class);
+        executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.SUCCESS, build.getResult());
+    }
+
+    @Test
+    public void testFileGlob() throws Exception {
+        glob = "*.txt";
+        underTest = new GoogleCloudStorageUploader(
+                CREDENTIALS_ID,
+                ImmutableList.<AbstractUpload>of(setOptionalParams(new ClassicUpload(
+                        bucket, new MockUploadModule(executor), glob, null /* legacy arg */, null /* legacy arg */))));
+
+        project.getBuildersList().add(new Shell("echo foo > bar.txt"));
+        project.getPublishersList().add(underTest);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class);
+        executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.SUCCESS, build.getResult());
+    }
+
+    @Test
+    public void testAbsolutePath() throws Exception {
+        String absoluteFilePath = "/tmp/bar.txt";
+        glob = absoluteFilePath;
+        underTest = new GoogleCloudStorageUploader(
+                CREDENTIALS_ID,
+                ImmutableList.<AbstractUpload>of(setOptionalParams(new ClassicUpload(
+                        bucket, new MockUploadModule(executor), glob, null /* legacy arg */, null /* legacy arg */))));
+
+        project.getBuildersList().add(new Shell("echo foo > " + absoluteFilePath));
+        project.getPublishersList().add(underTest);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class);
+        executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.SUCCESS, build.getResult());
+    }
+
+    @Test
+    public void testAbsoluteGlob() throws Exception {
+        String absoluteFilePath1 = "/tmp/bar.1.txt";
+        String absoluteFilePath2 = "/tmp/bar.2.txt";
+        glob = "/tmp/bar.*.txt";
+        underTest = new GoogleCloudStorageUploader(
+                CREDENTIALS_ID,
+                ImmutableList.<AbstractUpload>of(setOptionalParams(new ClassicUpload(
+                        bucket, new MockUploadModule(executor), glob, null /* legacy arg */, null /* legacy arg */))));
+
+        project.getBuildersList().add(new Shell("echo foo > " + absoluteFilePath1));
+        project.getBuildersList().add(new Shell("echo foo > " + absoluteFilePath2));
+        project.getPublishersList().add(underTest);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class);
+        executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
+        executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.SUCCESS, build.getResult());
+    }
+
+    @Test
+    public void testFileWithVar() throws Exception {
+        glob = "bar.$BUILD_NUMBER.txt";
+        underTest = new GoogleCloudStorageUploader(
+                CREDENTIALS_ID,
+                ImmutableList.<AbstractUpload>of(setOptionalParams(new ClassicUpload(
+                        bucket, new MockUploadModule(executor), glob, null /* legacy arg */, null /* legacy arg */))));
+
+        project.getBuildersList().add(new Shell("echo foo > bar.$BUILD_NUMBER.txt"));
+        project.getPublishersList().add(underTest);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class);
+        executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.SUCCESS, build.getResult());
+    }
+
+    @Test
+    public void testFileWithDir() throws Exception {
+        glob = "blah/bar.txt";
+        underTest = new GoogleCloudStorageUploader(
+                CREDENTIALS_ID,
+                ImmutableList.<AbstractUpload>of(setOptionalParams(new ClassicUpload(
+                        bucket, new MockUploadModule(executor), glob, null /* legacy arg */, null /* legacy arg */))));
+
+        project.getBuildersList().add(new Shell("mkdir blah; echo foo > blah/bar.txt"));
+        project.getPublishersList().add(underTest);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class);
+        executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.SUCCESS, build.getResult());
+    }
+
+    @Test
+    public void testFileWithRecursiveGlob() throws Exception {
+        glob = "**/*.txt";
+        underTest = new GoogleCloudStorageUploader(
+                CREDENTIALS_ID,
+                ImmutableList.<AbstractUpload>of(setOptionalParams(new ClassicUpload(
+                        bucket, new MockUploadModule(executor), glob, null /* legacy arg */, null /* legacy arg */))));
+
+        project.getBuildersList().add(new Shell("mkdir blah; echo foo > blah/bar.txt"));
+        project.getPublishersList().add(underTest);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class);
+        executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.SUCCESS, build.getResult());
+    }
+
+    @Test
+    public void testMultiFileGlob() throws Exception {
+        glob = "*.txt";
+        underTest = new GoogleCloudStorageUploader(
+                CREDENTIALS_ID,
+                ImmutableList.<AbstractUpload>of(setOptionalParams(new ClassicUpload(
+                        bucket, new MockUploadModule(executor), glob, null /* legacy arg */, null /* legacy arg */))));
+
+        project.getBuildersList().add(new Shell("echo foo > foo.txt; echo bar > bar.txt"));
+        project.getPublishersList().add(underTest);
+
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class);
+        executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
+        executor.passThruWhen(Storage.Objects.Insert.class, checkFieldsMatch);
+
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+
+        assertEquals(Result.SUCCESS, build.getResult());
+    }
+
+    @Test
+    @WithoutJenkins
+    public void testDescriptor() {
+        DescriptorImpl descriptor = new DescriptorImpl();
+        assertTrue(descriptor.isApplicable(AbstractProject.class));
+        assertEquals(Messages.GoogleCloudStorageUploader_DisplayName(), descriptor.getDisplayName());
+    }
+
+    @Test
+    public void testGetDefaultUploads() {
+        DescriptorImpl descriptor = new DescriptorImpl();
+        List<AbstractUpload> defaultUploads = descriptor.getDefaultUploads();
+        assertEquals(1, defaultUploads.size());
+        assertThat(defaultUploads.get(0), instanceOf(StdoutUpload.class));
+    }
+
+    private void dumpLog(Run<?, ?> run) throws IOException {
+        BufferedReader reader = new BufferedReader(run.getLogReader());
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            System.out.println(line);
+        }
+    }
+
+    private static final String PROJECT_ID = "foo.com:bar-baz";
+    private static final String CREDENTIALS_ID = "bazinga";
+    private static final String NAME = "Source (foo.com:bar-baz)";
 }

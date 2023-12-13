@@ -19,69 +19,67 @@ import com.google.common.base.Charsets;
 
 /** Utility class for building HTTP header values. */
 public class HttpHeaders {
-  private static final String RFC_5987_ATTR_CHARS = "!#$&+-.^_`|~";
+    private static final String RFC_5987_ATTR_CHARS = "!#$&+-.^_`|~";
 
-  /**
-   * Returns an RFC 6266 Content-Disposition header for the given filename.
-   *
-   * @param filename Name of the file to get the Content-Disposition header for.
-   * @param showInline If the content should be displayed inline or as an attachment.
-   * @return The RFC 6266 Content-Disposition header for the filename.
-   */
-  public static String getContentDisposition(String filename, boolean showInline) {
-    return String.format(
-        "%s; filename=%s; filename*=%s",
-        showInline ? "inline" : "attachment",
-        getRfc2616QuotedString(filename),
-        getRfc5987ExtValue(filename));
-  }
-
-  /**
-   * Returns an RFC 2616 quoted-string encoding of the given text. Code points &lt;= U+255 will be
-   * encoded, others will be zapped to underscore.
-   */
-  private static String getRfc2616QuotedString(String text) {
-    StringBuilder builder = new StringBuilder("\"");
-    for (int i = 0; i < text.length(); ) {
-      int codePoint = text.codePointAt(i);
-      i += Character.charCount(codePoint);
-      if (codePoint == '"') {
-        builder.append("\\\"");
-      } else if (codePoint == '\\') {
-        builder.append("\\\\");
-      } else if (codePoint <= 255) {
-        // Assumes the remote side will interpret as ISO-8859-1.
-        builder.appendCodePoint(codePoint);
-      } else {
-        builder.append('_');
-      }
+    /**
+     * Returns an RFC 6266 Content-Disposition header for the given filename.
+     *
+     * @param filename Name of the file to get the Content-Disposition header for.
+     * @param showInline If the content should be displayed inline or as an attachment.
+     * @return The RFC 6266 Content-Disposition header for the filename.
+     */
+    public static String getContentDisposition(String filename, boolean showInline) {
+        return String.format(
+                "%s; filename=%s; filename*=%s",
+                showInline ? "inline" : "attachment", getRfc2616QuotedString(filename), getRfc5987ExtValue(filename));
     }
-    return builder.append('"').toString();
-  }
 
-  /**
-   * Returns an RFC 5987 ext-value encoding of the given text, with charset UTF-8 and no language
-   * tag.
-   */
-  private static String getRfc5987ExtValue(String text) {
-    StringBuilder builder = new StringBuilder("UTF-8''");
-    for (int i = 0; i < text.length(); ) {
-      int codePoint = text.codePointAt(i);
-      int len = Character.charCount(codePoint);
-      if ((codePoint >= '0' && codePoint <= '9')
-          || (codePoint >= 'A' && codePoint <= 'Z')
-          || (codePoint >= 'a' && codePoint <= 'z')
-          || (RFC_5987_ATTR_CHARS.indexOf(codePoint) != -1)) {
-        builder.appendCodePoint(codePoint);
-      } else {
-        for (byte b : text.substring(i, i + len).getBytes(Charsets.UTF_8)) {
-          builder.append(String.format("%%%02X", ((int) b) & 0xff));
+    /**
+     * Returns an RFC 2616 quoted-string encoding of the given text. Code points &lt;= U+255 will be
+     * encoded, others will be zapped to underscore.
+     */
+    private static String getRfc2616QuotedString(String text) {
+        StringBuilder builder = new StringBuilder("\"");
+        for (int i = 0; i < text.length(); ) {
+            int codePoint = text.codePointAt(i);
+            i += Character.charCount(codePoint);
+            if (codePoint == '"') {
+                builder.append("\\\"");
+            } else if (codePoint == '\\') {
+                builder.append("\\\\");
+            } else if (codePoint <= 255) {
+                // Assumes the remote side will interpret as ISO-8859-1.
+                builder.appendCodePoint(codePoint);
+            } else {
+                builder.append('_');
+            }
         }
-      }
-      i += len;
+        return builder.append('"').toString();
     }
-    return builder.toString();
-  }
 
-  private HttpHeaders() {}
+    /**
+     * Returns an RFC 5987 ext-value encoding of the given text, with charset UTF-8 and no language
+     * tag.
+     */
+    private static String getRfc5987ExtValue(String text) {
+        StringBuilder builder = new StringBuilder("UTF-8''");
+        for (int i = 0; i < text.length(); ) {
+            int codePoint = text.codePointAt(i);
+            int len = Character.charCount(codePoint);
+            if ((codePoint >= '0' && codePoint <= '9')
+                    || (codePoint >= 'A' && codePoint <= 'Z')
+                    || (codePoint >= 'a' && codePoint <= 'z')
+                    || (RFC_5987_ATTR_CHARS.indexOf(codePoint) != -1)) {
+                builder.appendCodePoint(codePoint);
+            } else {
+                for (byte b : text.substring(i, i + len).getBytes(Charsets.UTF_8)) {
+                    builder.append(String.format("%%%02X", ((int) b) & 0xff));
+                }
+            }
+            i += len;
+        }
+        return builder.toString();
+    }
+
+    private HttpHeaders() {}
 }

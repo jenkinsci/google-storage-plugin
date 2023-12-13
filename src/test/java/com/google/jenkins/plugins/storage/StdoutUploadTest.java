@@ -42,76 +42,75 @@ import org.mockito.MockitoAnnotations;
 /** Unit test for {@link StdoutUpload} and friends. */
 public class StdoutUploadTest {
 
-  @Rule public JenkinsRule jenkins = new JenkinsRule();
+    @Rule
+    public JenkinsRule jenkins = new JenkinsRule();
 
-  @Mock private GoogleRobotCredentials credentials;
-  private GoogleCredential credential;
+    @Mock
+    private GoogleRobotCredentials credentials;
 
-  private final MockExecutor executor = new MockExecutor();
+    private GoogleCredential credential;
 
-  private FreeStyleProject project;
-  private FreeStyleBuild build;
+    private final MockExecutor executor = new MockExecutor();
 
-  private NotFoundException notFoundException;
+    private FreeStyleProject project;
+    private FreeStyleBuild build;
 
-  @Before
-  public void setup() throws Exception {
-    MockitoAnnotations.initMocks(this);
+    private NotFoundException notFoundException;
 
-    when(credentials.getId()).thenReturn(CREDENTIALS_ID);
-    when(credentials.getProjectId()).thenReturn(PROJECT_ID);
+    @Before
+    public void setup() throws Exception {
+        MockitoAnnotations.initMocks(this);
 
-    if (jenkins.jenkins != null) {
-      SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
+        when(credentials.getId()).thenReturn(CREDENTIALS_ID);
+        when(credentials.getProjectId()).thenReturn(PROJECT_ID);
 
-      project = jenkins.createFreeStyleProject("test");
-      project
-          .getPublishersList()
-          .add(
-              // Create a storage plugin with no uploaders to fake things out.
-              new GoogleCloudStorageUploader(CREDENTIALS_ID, null));
-      build = project.scheduleBuild2(0).get();
+        if (jenkins.jenkins != null) {
+            SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
+
+            project = jenkins.createFreeStyleProject("test");
+            project.getPublishersList()
+                    .add(
+                            // Create a storage plugin with no uploaders to fake things out.
+                            new GoogleCloudStorageUploader(CREDENTIALS_ID, null));
+            build = project.scheduleBuild2(0).get();
+        }
+        credential = new GoogleCredential();
+        when(credentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
+                .thenReturn(credential);
+
+        // Return ourselves as remotable
+        when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class))).thenReturn(credentials);
+
+        notFoundException = new NotFoundException();
     }
-    credential = new GoogleCredential();
-    when(credentials.getGoogleCredential(isA(GoogleOAuth2ScopeRequirement.class)))
-        .thenReturn(credential);
 
-    // Return ourselves as remotable
-    when(credentials.forRemote(isA(GoogleOAuth2ScopeRequirement.class))).thenReturn(credentials);
+    @Test
+    public void doCheckLogNameTest() throws IOException {
+        DescriptorImpl descriptor = new DescriptorImpl();
 
-    notFoundException = new NotFoundException();
-  }
+        assertEquals(FormValidation.Kind.OK, descriptor.doCheckLogName("asdf").kind);
+        // Successfully resolved
+        assertEquals(FormValidation.Kind.OK, descriptor.doCheckLogName("asdf$BUILD_NUMBER").kind);
+        // UN-successfully resolved
+        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckLogName("$foo").kind);
+        // Escaped $BUILD_NUMBER
+        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckLogName("$$BUILD_NUMBER").kind);
+    }
 
-  @Test
-  public void doCheckLogNameTest() throws IOException {
-    DescriptorImpl descriptor = new DescriptorImpl();
+    @Test
+    public void doCheckLogNameExpansion() throws Exception {
+        StdoutUpload underTest =
+                new StdoutUpload(BUCKET_URI, new MockUploadModule(executor), "build.$BUILD_NUMBER.log", null);
 
-    assertEquals(FormValidation.Kind.OK, descriptor.doCheckLogName("asdf").kind);
-    // Successfully resolved
-    assertEquals(FormValidation.Kind.OK, descriptor.doCheckLogName("asdf$BUILD_NUMBER").kind);
-    // UN-successfully resolved
-    assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckLogName("$foo").kind);
-    // Escaped $BUILD_NUMBER
-    assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckLogName("$$BUILD_NUMBER").kind);
-  }
+        executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
+        executor.passThruWhen(Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
+        executor.passThruWhen(Storage.Objects.Insert.class, MockUploadModule.checkObjectName("build.1.log"));
 
-  @Test
-  public void doCheckLogNameExpansion() throws Exception {
-    StdoutUpload underTest =
-        new StdoutUpload(
-            BUCKET_URI, new MockUploadModule(executor), "build.$BUILD_NUMBER.log", null);
+        underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
+    }
 
-    executor.throwWhen(Storage.Buckets.Get.class, notFoundException);
-    executor.passThruWhen(
-        Storage.Buckets.Insert.class, MockUploadModule.checkBucketName(BUCKET_NAME));
-    executor.passThruWhen(
-        Storage.Objects.Insert.class, MockUploadModule.checkObjectName("build.1.log"));
-
-    underTest.perform(CREDENTIALS_ID, build, TaskListener.NULL);
-  }
-
-  private static final String PROJECT_ID = "foo.com:bar-baz";
-  private static final String CREDENTIALS_ID = "bazinga";
-  private static final String BUCKET_NAME = "bucket";
-  private static final String BUCKET_URI = "gs://" + BUCKET_NAME;
+    private static final String PROJECT_ID = "foo.com:bar-baz";
+    private static final String CREDENTIALS_ID = "bazinga";
+    private static final String BUCKET_NAME = "bucket";
+    private static final String BUCKET_URI = "gs://" + BUCKET_NAME;
 }

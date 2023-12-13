@@ -91,581 +91,548 @@ import org.kohsuke.stapler.DataBoundSetter;
  *     </ul>
  */
 // TODO: Refactor to use StorageClient https://github.com/jenkinsci/google-storage-plugin/issues/71
-public abstract class AbstractUpload
-    implements Describable<AbstractUpload>, ExtensionPoint, Serializable {
-  private static final Logger logger = Logger.getLogger(AbstractUpload.class.getName());
-  private static final Map<String, String> CONTENT_TYPES =
-      Stream.of(
-              new String[][] {
+public abstract class AbstractUpload implements Describable<AbstractUpload>, ExtensionPoint, Serializable {
+    private static final Logger logger = Logger.getLogger(AbstractUpload.class.getName());
+    private static final Map<String, String> CONTENT_TYPES = Stream.of(new String[][] {
                 {"css", "text/css"},
                 {"js", "application/javascript"},
                 {"svg", "image/svg+xml"},
                 {"woff2", "font/woff2"}
-              })
-          .collect(
-              Collectors.collectingAndThen(
-                  Collectors.toMap(data -> data[0], data -> data[1]),
-                  Collections::<String, String>unmodifiableMap));
-  private String pathPrefix;
-  // The module to use for providing dependencies.
-  private final transient UploadModule module;
-  // NOTE: old name kept for deserialization
-  private final String bucketNameWithVars;
-  private boolean sharedPublicly;
-  private boolean forFailedJobs;
-  private boolean showInline;
+            })
+            .collect(Collectors.collectingAndThen(
+                    Collectors.toMap(data -> data[0], data -> data[1]), Collections::<String, String>unmodifiableMap));
+    private String pathPrefix;
+    // The module to use for providing dependencies.
+    private final transient UploadModule module;
+    // NOTE: old name kept for deserialization
+    private final String bucketNameWithVars;
+    private boolean sharedPublicly;
+    private boolean forFailedJobs;
+    private boolean showInline;
 
-  /**
-   * Construct the base upload from a handful of universal properties.
-   *
-   * @param bucket The unresolved name of the storage bucket within which to store the resulting
-   *     objects.
-   * @param module An {@link UploadModule} to use for execution.
-   */
-  public AbstractUpload(String bucket, @Nullable UploadModule module) {
-    if (module != null) {
-      this.module = module;
-    } else {
-      this.module = new UploadModule();
-    }
-    this.bucketNameWithVars = checkNotNull(bucket);
-  }
-
-  /**
-   * This method allows the old signature for compatibility reasons. Calls {@link #perform(String,
-   * Run, FilePath, TaskListener)}.
-   *
-   * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
-   * @param build Current build being run.
-   * @param listener Listener for events of this job.
-   * @throws UploadException If there was an issue uploading/accessing the GCS API.
-   * @throws IOException If there was issue authenticating with credentialsId.
-   */
-  public final void perform(String credentialsId, AbstractBuild<?, ?> build, TaskListener listener)
-      throws UploadException, IOException {
-    perform(credentialsId, build, build.getWorkspace(), listener);
-  }
-
-  /**
-   * The main action entry point of this extension. This uploads the contents included by the
-   * implementation to our resolved storage bucket.
-   *
-   * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
-   * @param run Current job being run.
-   * @param workspace Workspace of node running the job.
-   * @param listener Listener for events of this job.
-   * @throws UploadException If there was an issue uploading/accessing the GCS API.
-   * @throws IOException If there was issue authenticating with credentialsId.
-   */
-  public final void perform(
-      String credentialsId, Run<?, ?> run, FilePath workspace, TaskListener listener)
-      throws UploadException, IOException {
-    GoogleRobotCredentials credentials = StorageUtil.lookupCredentials(credentialsId);
-
-    if (!forResult(run.getResult())) {
-      // Don't upload for the given build state.
-      return;
-    }
-
-    try {
-      // Turn paths containing things like $BUILD_NUMBER and $JOB_NAME into
-      // their fully resolved forms.
-      String resolvedBucket = StorageUtil.replaceMacro(getBucket(), run, listener);
-      BucketPath storagePrefix = new BucketPath(resolvedBucket);
-
-      UploadSpec uploads = getInclusions(run, checkNotNull(workspace), listener);
-
-      if (uploads != null) {
-        BuildGcsUploadReport links = BuildGcsUploadReport.of(run);
-        links.addBucket(storagePrefix.getBucket());
-
-        initiateUploadsAtWorkspace(credentials, run, storagePrefix, uploads, listener);
-      }
-    } catch (InterruptedException e) {
-      throw new UploadException(Messages.AbstractUpload_UploadException(), e);
-    } catch (IOException e) {
-      throw new UploadException(Messages.AbstractUpload_UploadException(), e);
-    }
-  }
-
-  /**
-   * This tuple is used to return the modified workspace and collection of {@link FilePath}s to
-   * upload to {@link #perform}.
-   *
-   * <p>NOTE: The workspace is simply used to determine the path the object will be stored in
-   * relative to the bucket. If it is relative to the workspace, that relative path will be appended
-   * to the storage prefix. If it is not, then the absolute path will be appended.
-   */
-  protected static class UploadSpec implements Serializable {
-
-    public UploadSpec(FilePath workspace, List<FilePath> inclusions) {
-      this.workspace = checkNotNull(workspace);
-      this.inclusions = Collections.unmodifiableCollection(inclusions);
-    }
-
-    public final FilePath workspace;
-    public final Collection<FilePath> inclusions;
-  }
-
-  /**
-   * Implementations override this interface in order to surface the set of {@link FilePath}s the
-   * core logic should upload.
-   *
-   * @see UploadSpec for further details.
-   * @param run Current job being run.
-   * @param workspace Workspace of node running the job.
-   * @param listener Listener for events of this job.
-   * @return Set of {@link FilePath}s to upload.
-   * @throws UploadException If there was an issue fetching the inclusions.
-   */
-  @Nullable
-  protected abstract UploadSpec getInclusions(
-      Run<?, ?> run, FilePath workspace, TaskListener listener) throws UploadException;
-
-  /**
-   * This hook is intended to give implementations the opportunity to further annotate the {@link
-   * StorageObject} with metadata before uploading it to cloud storage.
-   *
-   * <p>NOTE: The base implementation does not do anything, so calling {@code
-   * super.annotateObject()} is unnecessary.
-   *
-   * @param object GCS object to annotate.
-   * @param listener Listener for events of this job.
-   * @throws UploadException If there was an issue annotating the object with metadata.
-   */
-  protected void annotateObject(StorageObject object, TaskListener listener)
-      throws UploadException {
-    ;
-  }
-
-  /**
-   * Retrieves the metadata to attach to the storage object.
-   *
-   * <p>NOTE: This can be overriden to surface additional (or less) information.
-   *
-   * @param run Current job being run.
-   * @return Metadata in key-value form.
-   */
-  protected Map<String, String> getMetadata(Run<?, ?> run) {
-    return MetadataContainer.of(run).getSerializedMetadata();
-  }
-
-  /**
-   * Determine whether we should upload the pattern for the given build result.
-   *
-   * @param result Result of the build run.
-   * @return Whether we should upload the pattern for the given build result.
-   */
-  public boolean forResult(Result result) {
-    if (result == null) {
-      // We might have unfinished builds, e.g., through pipeline of Build Step.
-      // Always run for those.
-      return true;
-    }
-    if (result == Result.SUCCESS) {
-      // We always run on successful builds.
-      return true;
-    }
-    if (result == Result.FAILURE || result == Result.UNSTABLE) {
-      return isForFailedJobs();
-    }
-    // else NOT_BUILT
-    return false;
-  }
-
-  /**
-   * @return Provide detail information summarizing this download for the GCS upload report.
-   */
-  public abstract String getDetails();
-
-  /**
-   * @return The {@link UploadModule} for providing dependencies.
-   */
-  protected synchronized UploadModule getModule() {
-    if (this.module == null) {
-      return new UploadModule();
-    }
-    return this.module;
-  }
-  /**
-   * @return The bucket name specified by the user, which potentially contains unresolved symbols,
-   *     such as $JOB_NAME and $BUILD_NUMBER.
-   */
-  public String getBucket() {
-    return bucketNameWithVars;
-  }
-
-  /**
-   * @param sharedPublicly Whether to surface the file being uploaded to anyone with the link.
-   */
-  @DataBoundSetter
-  public void setSharedPublicly(boolean sharedPublicly) {
-    this.sharedPublicly = sharedPublicly;
-  }
-
-  /**
-   * @return Whether to surface the file being uploaded to anyone with the link.
-   */
-  public boolean isSharedPublicly() {
-    return sharedPublicly;
-  }
-
-  /**
-   * @param forFailedJobs Whether to attempt the upload, even if the job failed.
-   */
-  @DataBoundSetter
-  public void setForFailedJobs(boolean forFailedJobs) {
-    this.forFailedJobs = forFailedJobs;
-  }
-
-  /**
-   * @return Whether to attempt the upload, even if the job failed.
-   */
-  public boolean isForFailedJobs() {
-    return forFailedJobs;
-  }
-
-  /**
-   * @param showInline Set whether to indicate in metadata that the file should be viewable inline
-   *     in web browsers, rather than requiring it to be downloaded first.
-   */
-  @DataBoundSetter
-  public void setShowInline(boolean showInline) {
-    this.showInline = showInline;
-  }
-
-  /**
-   * @return Whether to indicate in metadata that the file should be viewable inline in web
-   *     browsers, rather than requiring it to be downloaded first.
-   */
-  public boolean isShowInline() {
-    return showInline;
-  }
-
-  /**
-   * @param pathPrefix The path prefix that will be stripped from uploaded files. May be null if no
-   *     path prefix needs to be stripped.
-   *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
-   *     automatically added if it is missing.
-   */
-  @DataBoundSetter
-  public void setPathPrefix(@Nullable String pathPrefix) {
-    if (pathPrefix != null && !pathPrefix.endsWith("/")) {
-      pathPrefix += "/";
-    }
-    this.pathPrefix = pathPrefix;
-  }
-
-  /**
-   * @return The path prefix that will be stripped from uploaded files. May be null if no path
-   *     prefix needs to be stripped.
-   *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
-   *     automatically added if it is missing.
-   */
-  @Nullable
-  public String getPathPrefix() {
-    return pathPrefix;
-  }
-
-  /**
-   * Gives all registered {@link AbstractUpload}s. See:
-   * https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
-   *
-   * @return All registered {@link AbstractUpload}s.
-   */
-  public static DescriptorExtensionList<AbstractUpload, AbstractUploadDescriptor> all() {
-    return checkNotNull(Jenkins.get()).getDescriptorList(AbstractUpload.class);
-  }
-
-  /** {@inheritDoc} */
-  public AbstractUploadDescriptor getDescriptor() {
-    return (AbstractUploadDescriptor) checkNotNull(Jenkins.get()).getDescriptor(getClass());
-  }
-
-  /**
-   * Execute the {@link UploadSpec} for this {@code build} to the bucket specified by {@code
-   * storagePrefix} using the authority of {@code credentials} and logging any information to {@code
-   * listener}.
-   *
-   * @throws UploadException If there was any issue during upload.
-   */
-  private void initiateUploadsAtWorkspace(
-      final GoogleRobotCredentials credentials,
-      final Run run,
-      final BucketPath storagePrefix,
-      final UploadSpec uploads,
-      final TaskListener listener)
-      throws UploadException {
-    try {
-      try {
-        // Use remotable credential to access the storage service from the
-        // remote machine.
-        final GoogleRobotCredentials remoteCredentials =
-            checkNotNull(credentials).forRemote(getModule().getRequirement());
-        final String version = getModule().getVersion();
-
-        uploads.workspace.act(
-            new MasterToSlaveCallable<Void, UploadException>() {
-              @Override
-              public Void call() throws UploadException {
-                performUploads(
-                    storagePrefix.getBucket(),
-                    storagePrefix.getObject(),
-                    remoteCredentials,
-                    uploads,
-                    listener,
-                    version);
-                return (Void) null;
-              }
-            });
-      } catch (GeneralSecurityException e) {
-        throw new UploadException(Messages.AbstractUpload_RemoteCredentialError(), e);
-      }
-
-      // We can't do this over the wire, so do it in bulk here
-      BuildGcsUploadReport report = BuildGcsUploadReport.of(run);
-      for (FilePath include : uploads.inclusions) {
-        report.addUpload(
-            StorageUtil.getStrippedFilename(
-                StorageUtil.getRelative(include, uploads.workspace), pathPrefix),
-            storagePrefix);
-      }
-
-    } catch (IOException e) {
-      throw new UploadException(Messages.AbstractUpload_ExceptionFileUpload(), e);
-    } catch (InterruptedException e) {
-      throw new UploadException(Messages.AbstractUpload_ExceptionFileUpload(), e);
-    }
-  }
-
-  /**
-   * This is the workhorse API for performing the actual uploads. It is performed at the workspace,
-   * so that all of the {@link FilePath}s should be local.
-   */
-  private void performUploads(
-      final String bucketName,
-      final String objectPrefix,
-      final GoogleRobotCredentials credentials,
-      final UploadSpec uploads,
-      final TaskListener listener,
-      final String version)
-      throws UploadException {
-    RepeatOperation<UploadException> a =
-        new RepeatOperation<UploadException>() {
-          private final Queue<FilePath> paths = new LinkedList<>(uploads.inclusions);
-          private final Executor executor = getModule().newExecutor();
-
-          private Storage service;
-          private Bucket bucket;
-
-          @Override
-          public void initCredentials() throws UploadException, IOException {
-            service = getModule().getStorageService(credentials, version);
-            // Ensure the bucket exists, fetching it regardless so that we can
-            // attach its default ACLs to the objects we upload.
-            bucket = getOrCreateBucket(service, credentials, executor, bucketName);
-          }
-
-          @Override
-          public void act()
-              throws UploadException, IOException, InterruptedException, ExecutorException {
-            FilePath include = paths.peek();
-            if (include == null) {
-              return;
-            }
-            String relativePath = StorageUtil.getRelative(include, uploads.workspace);
-            String uploadedFileName = StorageUtil.getStrippedFilename(relativePath, pathPrefix);
-            String finalName =
-                FilenameUtils.separatorsToUnix(
-                    FilenameUtils.concat(objectPrefix, uploadedFileName));
-
-            StorageObject object =
-                new StorageObject()
-                    .setName(finalName)
-                    .setContentDisposition(
-                        HttpHeaders.getContentDisposition(include.getName(), isShowInline()))
-                    .setContentType(detectMIMEType(include.getName()))
-                    .setSize(BigInteger.valueOf(include.length()));
-
-            if (isSharedPublicly()) {
-              object.setAcl(addPublicReadAccess(getDefaultObjectAcl(bucket, listener)));
-            }
-
-            // Give clients an opportunity to decorate the storage
-            // object before we store it.
-            annotateObject(object, listener);
-
-            // Log that we are uploading the file and begin executing the upload.
-            listener
-                .getLogger()
-                .println(getModule().prefix(Messages.AbstractUpload_Uploading(relativePath)));
-
-            performUploadWithRetry(executor, service, bucket, object, include);
-            paths.remove(include);
-          }
-
-          @Override
-          public boolean moreWork() {
-            return !paths.isEmpty();
-          }
-        };
-
-    try {
-      RetryStorageOperation.performRequestWithReinitCredentials(a);
-    } catch (ForbiddenException e) {
-      // If the user doesn't own a bucket then they will end up here.
-      throw new UploadException(Messages.AbstractUpload_ForbiddenFileUpload(), e);
-    } catch (ExecutorException e) {
-      throw new UploadException(Messages.AbstractUpload_ExceptionFileUpload(), e);
-    } catch (IOException e) {
-      throw new UploadException(Messages.AbstractUpload_ExceptionFileUpload(), e);
-    } catch (InterruptedException e) {
-      throw new UploadException(Messages.AbstractUpload_ExceptionFileUpload(), e);
-    }
-  }
-
-  /**
-   * Auxiliar method for detecting web-related filename extensions, so setting correctly
-   * Content-Type.
-   */
-  private String detectMIMEType(String filename) {
-    String extension = Files.getFileExtension(filename);
-    if (CONTENT_TYPES.containsKey(extension)) {
-      return CONTENT_TYPES.get(extension);
-    } else {
-      return URLConnection.guessContentTypeFromName(filename);
-    }
-  }
-
-  /**
-   * We need our own storage retry logic because we must recreate the input stream for the media
-   * uploader.
-   */
-  private void performUploadWithRetry(
-      final Executor executor,
-      final Storage service,
-      final Bucket bucket,
-      final StorageObject object,
-      final FilePath include)
-      throws ExecutorException, IOException, InterruptedException {
-    Operation a =
-        new Operation() {
-          public void act() throws IOException, InterruptedException, ExecutorException {
-            // Create the insertion operation with the decorated object and
-            // an input stream of the file contents.
-            try (InputStream is = include.read()) {
-              Storage.Objects.Insert insertion =
-                  service
-                      .objects()
-                      .insert(
-                          bucket.getName(),
-                          object,
-                          new InputStreamContent(object.getContentType(), is));
-
-              // Make the operation non-resumable because we have seen a dramatic
-              // (e.g. 1000x) speedup from this.
-              MediaHttpUploader mediaUploader = insertion.getMediaHttpUploader();
-              if (mediaUploader != null) {
-                mediaUploader.setDirectUploadEnabled(true);
-              }
-              executor.execute(insertion);
-            }
-          }
-        };
-
-    RetryStorageOperation.performRequestWithRetry(executor, a, getModule().getInsertRetryCount());
-  }
-
-  // Fetch the default object ACL for this bucket. Return an empty list if
-  // we cannot.
-  private static List<ObjectAccessControl> getDefaultObjectAcl(
-      Bucket bucket, TaskListener listener) {
-    List<ObjectAccessControl> defaultAcl = bucket.getDefaultObjectAcl();
-    if (defaultAcl == null) {
-      listener.error(Messages.AbstractUpload_BucketObjectAclsError(bucket.getName()));
-      return ImmutableList.of();
-    } else {
-      return defaultAcl;
-    }
-  }
-
-  // Add public access to a given access control list
-  private static List<ObjectAccessControl> addPublicReadAccess(
-      List<ObjectAccessControl> defaultAcl) {
-    List<ObjectAccessControl> acl = Lists.newArrayList(defaultAcl);
-    final String publicEntity = "allUsers";
-    boolean alreadyShared =
-        Iterables.tryFind(
-                acl,
-                new Predicate<ObjectAccessControl>() {
-                  @Override
-                  public boolean apply(ObjectAccessControl access) {
-                    if (access != null) {
-                      return Objects.equal(access.getEntity(), publicEntity);
-                    } else {
-                      throw new NullPointerException(Messages.AbstractUpload_NullAccessError());
-                    }
-                  }
-                })
-            .isPresent();
-    /* If the entity 'allUsers' didn't already has READER or OWNER access, grant
-    READER. This is to avoid having both an OWNER record and a READER record
-    for that same entity */
-    if (!alreadyShared) {
-      acl.add(new ObjectAccessControl().setEntity("allUsers").setRole("READER"));
-    }
-    return acl;
-  }
-
-  /**
-   * Fetches or creates an instance of the bucket with the given name with the specified storage
-   * service.
-   *
-   * @param service Handle to the GCS API.
-   * @param credentials The credentials with which to fetch/create the bucket
-   * @param executor Helper class to make calls to the GCS API.
-   * @param bucketName The top-level bucket name to ensure exists
-   * @return an instance of the named bucket, created or retrieved.
-   * @throws UploadException if any issues are encountered
-   */
-  protected Bucket getOrCreateBucket(
-      Storage service, GoogleRobotCredentials credentials, Executor executor, String bucketName)
-      throws UploadException {
-    try {
-      try {
-        return executor.execute(
-            service.buckets().get(bucketName).setProjection("full")); // to retrieve the bucket ACLs
-      } catch (NotFoundException e) {
-        try {
-          // This is roughly the opposite of how the command-line sample does
-          // things.  We do things this way to optimize for the case where the
-          // bucket already exists.
-          Bucket bucket = new Bucket().setName(bucketName);
-          bucket =
-              executor.execute(
-                  service
-                      .buckets()
-                      .insert(credentials.getProjectId(), bucket)
-                      .setProjection("full")); // to retrieve the bucket ACLs
-
-          return bucket;
-        } catch (ConflictException ex) {
-          // If we get back a "Conflict" response, it means that the bucket
-          // was inserted between when we first tried to get it and were able
-          // to successfully insert one.
-          // NOTE: This could be due to an initial insertion attempt succeeding
-          // but returning an exception, or a race with another service.
-          return executor.execute(
-              service
-                  .buckets()
-                  .get(bucketName)
-                  .setProjection("full")); // to retrieve the bucket ACLs
+    /**
+     * Construct the base upload from a handful of universal properties.
+     *
+     * @param bucket The unresolved name of the storage bucket within which to store the resulting
+     *     objects.
+     * @param module An {@link UploadModule} to use for execution.
+     */
+    public AbstractUpload(String bucket, @Nullable UploadModule module) {
+        if (module != null) {
+            this.module = module;
+        } else {
+            this.module = new UploadModule();
         }
-      }
-    } catch (ExecutorException e) {
-      throw new UploadException(Messages.AbstractUpload_ExceptionGetBucket(bucketName), e);
-    } catch (IOException e) {
-      throw new UploadException(Messages.AbstractUpload_ExceptionGetBucket(bucketName), e);
+        this.bucketNameWithVars = checkNotNull(bucket);
     }
-  }
+
+    /**
+     * This method allows the old signature for compatibility reasons. Calls {@link #perform(String,
+     * Run, FilePath, TaskListener)}.
+     *
+     * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
+     * @param build Current build being run.
+     * @param listener Listener for events of this job.
+     * @throws UploadException If there was an issue uploading/accessing the GCS API.
+     * @throws IOException If there was issue authenticating with credentialsId.
+     */
+    public final void perform(String credentialsId, AbstractBuild<?, ?> build, TaskListener listener)
+            throws UploadException, IOException {
+        perform(credentialsId, build, build.getWorkspace(), listener);
+    }
+
+    /**
+     * The main action entry point of this extension. This uploads the contents included by the
+     * implementation to our resolved storage bucket.
+     *
+     * @param credentialsId The unique ID for the credentials we are using to authenticate with GCS.
+     * @param run Current job being run.
+     * @param workspace Workspace of node running the job.
+     * @param listener Listener for events of this job.
+     * @throws UploadException If there was an issue uploading/accessing the GCS API.
+     * @throws IOException If there was issue authenticating with credentialsId.
+     */
+    public final void perform(String credentialsId, Run<?, ?> run, FilePath workspace, TaskListener listener)
+            throws UploadException, IOException {
+        GoogleRobotCredentials credentials = StorageUtil.lookupCredentials(credentialsId);
+
+        if (!forResult(run.getResult())) {
+            // Don't upload for the given build state.
+            return;
+        }
+
+        try {
+            // Turn paths containing things like $BUILD_NUMBER and $JOB_NAME into
+            // their fully resolved forms.
+            String resolvedBucket = StorageUtil.replaceMacro(getBucket(), run, listener);
+            BucketPath storagePrefix = new BucketPath(resolvedBucket);
+
+            UploadSpec uploads = getInclusions(run, checkNotNull(workspace), listener);
+
+            if (uploads != null) {
+                BuildGcsUploadReport links = BuildGcsUploadReport.of(run);
+                links.addBucket(storagePrefix.getBucket());
+
+                initiateUploadsAtWorkspace(credentials, run, storagePrefix, uploads, listener);
+            }
+        } catch (InterruptedException e) {
+            throw new UploadException(Messages.AbstractUpload_UploadException(), e);
+        } catch (IOException e) {
+            throw new UploadException(Messages.AbstractUpload_UploadException(), e);
+        }
+    }
+
+    /**
+     * This tuple is used to return the modified workspace and collection of {@link FilePath}s to
+     * upload to {@link #perform}.
+     *
+     * <p>NOTE: The workspace is simply used to determine the path the object will be stored in
+     * relative to the bucket. If it is relative to the workspace, that relative path will be appended
+     * to the storage prefix. If it is not, then the absolute path will be appended.
+     */
+    protected static class UploadSpec implements Serializable {
+
+        public UploadSpec(FilePath workspace, List<FilePath> inclusions) {
+            this.workspace = checkNotNull(workspace);
+            this.inclusions = Collections.unmodifiableCollection(inclusions);
+        }
+
+        public final FilePath workspace;
+        public final Collection<FilePath> inclusions;
+    }
+
+    /**
+     * Implementations override this interface in order to surface the set of {@link FilePath}s the
+     * core logic should upload.
+     *
+     * @see UploadSpec for further details.
+     * @param run Current job being run.
+     * @param workspace Workspace of node running the job.
+     * @param listener Listener for events of this job.
+     * @return Set of {@link FilePath}s to upload.
+     * @throws UploadException If there was an issue fetching the inclusions.
+     */
+    @Nullable
+    protected abstract UploadSpec getInclusions(Run<?, ?> run, FilePath workspace, TaskListener listener)
+            throws UploadException;
+
+    /**
+     * This hook is intended to give implementations the opportunity to further annotate the {@link
+     * StorageObject} with metadata before uploading it to cloud storage.
+     *
+     * <p>NOTE: The base implementation does not do anything, so calling {@code
+     * super.annotateObject()} is unnecessary.
+     *
+     * @param object GCS object to annotate.
+     * @param listener Listener for events of this job.
+     * @throws UploadException If there was an issue annotating the object with metadata.
+     */
+    protected void annotateObject(StorageObject object, TaskListener listener) throws UploadException {
+        ;
+    }
+
+    /**
+     * Retrieves the metadata to attach to the storage object.
+     *
+     * <p>NOTE: This can be overriden to surface additional (or less) information.
+     *
+     * @param run Current job being run.
+     * @return Metadata in key-value form.
+     */
+    protected Map<String, String> getMetadata(Run<?, ?> run) {
+        return MetadataContainer.of(run).getSerializedMetadata();
+    }
+
+    /**
+     * Determine whether we should upload the pattern for the given build result.
+     *
+     * @param result Result of the build run.
+     * @return Whether we should upload the pattern for the given build result.
+     */
+    public boolean forResult(Result result) {
+        if (result == null) {
+            // We might have unfinished builds, e.g., through pipeline of Build Step.
+            // Always run for those.
+            return true;
+        }
+        if (result == Result.SUCCESS) {
+            // We always run on successful builds.
+            return true;
+        }
+        if (result == Result.FAILURE || result == Result.UNSTABLE) {
+            return isForFailedJobs();
+        }
+        // else NOT_BUILT
+        return false;
+    }
+
+    /**
+     * @return Provide detail information summarizing this download for the GCS upload report.
+     */
+    public abstract String getDetails();
+
+    /**
+     * @return The {@link UploadModule} for providing dependencies.
+     */
+    protected synchronized UploadModule getModule() {
+        if (this.module == null) {
+            return new UploadModule();
+        }
+        return this.module;
+    }
+    /**
+     * @return The bucket name specified by the user, which potentially contains unresolved symbols,
+     *     such as $JOB_NAME and $BUILD_NUMBER.
+     */
+    public String getBucket() {
+        return bucketNameWithVars;
+    }
+
+    /**
+     * @param sharedPublicly Whether to surface the file being uploaded to anyone with the link.
+     */
+    @DataBoundSetter
+    public void setSharedPublicly(boolean sharedPublicly) {
+        this.sharedPublicly = sharedPublicly;
+    }
+
+    /**
+     * @return Whether to surface the file being uploaded to anyone with the link.
+     */
+    public boolean isSharedPublicly() {
+        return sharedPublicly;
+    }
+
+    /**
+     * @param forFailedJobs Whether to attempt the upload, even if the job failed.
+     */
+    @DataBoundSetter
+    public void setForFailedJobs(boolean forFailedJobs) {
+        this.forFailedJobs = forFailedJobs;
+    }
+
+    /**
+     * @return Whether to attempt the upload, even if the job failed.
+     */
+    public boolean isForFailedJobs() {
+        return forFailedJobs;
+    }
+
+    /**
+     * @param showInline Set whether to indicate in metadata that the file should be viewable inline
+     *     in web browsers, rather than requiring it to be downloaded first.
+     */
+    @DataBoundSetter
+    public void setShowInline(boolean showInline) {
+        this.showInline = showInline;
+    }
+
+    /**
+     * @return Whether to indicate in metadata that the file should be viewable inline in web
+     *     browsers, rather than requiring it to be downloaded first.
+     */
+    public boolean isShowInline() {
+        return showInline;
+    }
+
+    /**
+     * @param pathPrefix The path prefix that will be stripped from uploaded files. May be null if no
+     *     path prefix needs to be stripped.
+     *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
+     *     automatically added if it is missing.
+     */
+    @DataBoundSetter
+    public void setPathPrefix(@Nullable String pathPrefix) {
+        if (pathPrefix != null && !pathPrefix.endsWith("/")) {
+            pathPrefix += "/";
+        }
+        this.pathPrefix = pathPrefix;
+    }
+
+    /**
+     * @return The path prefix that will be stripped from uploaded files. May be null if no path
+     *     prefix needs to be stripped.
+     *     <p>Filenames that do not start with this prefix will not be modified. Trailing slash is
+     *     automatically added if it is missing.
+     */
+    @Nullable
+    public String getPathPrefix() {
+        return pathPrefix;
+    }
+
+    /**
+     * Gives all registered {@link AbstractUpload}s. See:
+     * https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point
+     *
+     * @return All registered {@link AbstractUpload}s.
+     */
+    public static DescriptorExtensionList<AbstractUpload, AbstractUploadDescriptor> all() {
+        return checkNotNull(Jenkins.get()).getDescriptorList(AbstractUpload.class);
+    }
+
+    /** {@inheritDoc} */
+    public AbstractUploadDescriptor getDescriptor() {
+        return (AbstractUploadDescriptor) checkNotNull(Jenkins.get()).getDescriptor(getClass());
+    }
+
+    /**
+     * Execute the {@link UploadSpec} for this {@code build} to the bucket specified by {@code
+     * storagePrefix} using the authority of {@code credentials} and logging any information to {@code
+     * listener}.
+     *
+     * @throws UploadException If there was any issue during upload.
+     */
+    private void initiateUploadsAtWorkspace(
+            final GoogleRobotCredentials credentials,
+            final Run run,
+            final BucketPath storagePrefix,
+            final UploadSpec uploads,
+            final TaskListener listener)
+            throws UploadException {
+        try {
+            try {
+                // Use remotable credential to access the storage service from the
+                // remote machine.
+                final GoogleRobotCredentials remoteCredentials =
+                        checkNotNull(credentials).forRemote(getModule().getRequirement());
+                final String version = getModule().getVersion();
+
+                uploads.workspace.act(new MasterToSlaveCallable<Void, UploadException>() {
+                    @Override
+                    public Void call() throws UploadException {
+                        performUploads(
+                                storagePrefix.getBucket(),
+                                storagePrefix.getObject(),
+                                remoteCredentials,
+                                uploads,
+                                listener,
+                                version);
+                        return (Void) null;
+                    }
+                });
+            } catch (GeneralSecurityException e) {
+                throw new UploadException(Messages.AbstractUpload_RemoteCredentialError(), e);
+            }
+
+            // We can't do this over the wire, so do it in bulk here
+            BuildGcsUploadReport report = BuildGcsUploadReport.of(run);
+            for (FilePath include : uploads.inclusions) {
+                report.addUpload(
+                        StorageUtil.getStrippedFilename(
+                                StorageUtil.getRelative(include, uploads.workspace), pathPrefix),
+                        storagePrefix);
+            }
+
+        } catch (IOException e) {
+            throw new UploadException(Messages.AbstractUpload_ExceptionFileUpload(), e);
+        } catch (InterruptedException e) {
+            throw new UploadException(Messages.AbstractUpload_ExceptionFileUpload(), e);
+        }
+    }
+
+    /**
+     * This is the workhorse API for performing the actual uploads. It is performed at the workspace,
+     * so that all of the {@link FilePath}s should be local.
+     */
+    private void performUploads(
+            final String bucketName,
+            final String objectPrefix,
+            final GoogleRobotCredentials credentials,
+            final UploadSpec uploads,
+            final TaskListener listener,
+            final String version)
+            throws UploadException {
+        RepeatOperation<UploadException> a = new RepeatOperation<UploadException>() {
+            private final Queue<FilePath> paths = new LinkedList<>(uploads.inclusions);
+            private final Executor executor = getModule().newExecutor();
+
+            private Storage service;
+            private Bucket bucket;
+
+            @Override
+            public void initCredentials() throws UploadException, IOException {
+                service = getModule().getStorageService(credentials, version);
+                // Ensure the bucket exists, fetching it regardless so that we can
+                // attach its default ACLs to the objects we upload.
+                bucket = getOrCreateBucket(service, credentials, executor, bucketName);
+            }
+
+            @Override
+            public void act() throws UploadException, IOException, InterruptedException, ExecutorException {
+                FilePath include = paths.peek();
+                if (include == null) {
+                    return;
+                }
+                String relativePath = StorageUtil.getRelative(include, uploads.workspace);
+                String uploadedFileName = StorageUtil.getStrippedFilename(relativePath, pathPrefix);
+                String finalName = FilenameUtils.separatorsToUnix(FilenameUtils.concat(objectPrefix, uploadedFileName));
+
+                StorageObject object = new StorageObject()
+                        .setName(finalName)
+                        .setContentDisposition(HttpHeaders.getContentDisposition(include.getName(), isShowInline()))
+                        .setContentType(detectMIMEType(include.getName()))
+                        .setSize(BigInteger.valueOf(include.length()));
+
+                if (isSharedPublicly()) {
+                    object.setAcl(addPublicReadAccess(getDefaultObjectAcl(bucket, listener)));
+                }
+
+                // Give clients an opportunity to decorate the storage
+                // object before we store it.
+                annotateObject(object, listener);
+
+                // Log that we are uploading the file and begin executing the upload.
+                listener.getLogger().println(getModule().prefix(Messages.AbstractUpload_Uploading(relativePath)));
+
+                performUploadWithRetry(executor, service, bucket, object, include);
+                paths.remove(include);
+            }
+
+            @Override
+            public boolean moreWork() {
+                return !paths.isEmpty();
+            }
+        };
+
+        try {
+            RetryStorageOperation.performRequestWithReinitCredentials(a);
+        } catch (ForbiddenException e) {
+            // If the user doesn't own a bucket then they will end up here.
+            throw new UploadException(Messages.AbstractUpload_ForbiddenFileUpload(), e);
+        } catch (ExecutorException e) {
+            throw new UploadException(Messages.AbstractUpload_ExceptionFileUpload(), e);
+        } catch (IOException e) {
+            throw new UploadException(Messages.AbstractUpload_ExceptionFileUpload(), e);
+        } catch (InterruptedException e) {
+            throw new UploadException(Messages.AbstractUpload_ExceptionFileUpload(), e);
+        }
+    }
+
+    /**
+     * Auxiliar method for detecting web-related filename extensions, so setting correctly
+     * Content-Type.
+     */
+    private String detectMIMEType(String filename) {
+        String extension = Files.getFileExtension(filename);
+        if (CONTENT_TYPES.containsKey(extension)) {
+            return CONTENT_TYPES.get(extension);
+        } else {
+            return URLConnection.guessContentTypeFromName(filename);
+        }
+    }
+
+    /**
+     * We need our own storage retry logic because we must recreate the input stream for the media
+     * uploader.
+     */
+    private void performUploadWithRetry(
+            final Executor executor,
+            final Storage service,
+            final Bucket bucket,
+            final StorageObject object,
+            final FilePath include)
+            throws ExecutorException, IOException, InterruptedException {
+        Operation a = new Operation() {
+            public void act() throws IOException, InterruptedException, ExecutorException {
+                // Create the insertion operation with the decorated object and
+                // an input stream of the file contents.
+                try (InputStream is = include.read()) {
+                    Storage.Objects.Insert insertion = service.objects()
+                            .insert(bucket.getName(), object, new InputStreamContent(object.getContentType(), is));
+
+                    // Make the operation non-resumable because we have seen a dramatic
+                    // (e.g. 1000x) speedup from this.
+                    MediaHttpUploader mediaUploader = insertion.getMediaHttpUploader();
+                    if (mediaUploader != null) {
+                        mediaUploader.setDirectUploadEnabled(true);
+                    }
+                    executor.execute(insertion);
+                }
+            }
+        };
+
+        RetryStorageOperation.performRequestWithRetry(executor, a, getModule().getInsertRetryCount());
+    }
+
+    // Fetch the default object ACL for this bucket. Return an empty list if
+    // we cannot.
+    private static List<ObjectAccessControl> getDefaultObjectAcl(Bucket bucket, TaskListener listener) {
+        List<ObjectAccessControl> defaultAcl = bucket.getDefaultObjectAcl();
+        if (defaultAcl == null) {
+            listener.error(Messages.AbstractUpload_BucketObjectAclsError(bucket.getName()));
+            return ImmutableList.of();
+        } else {
+            return defaultAcl;
+        }
+    }
+
+    // Add public access to a given access control list
+    private static List<ObjectAccessControl> addPublicReadAccess(List<ObjectAccessControl> defaultAcl) {
+        List<ObjectAccessControl> acl = Lists.newArrayList(defaultAcl);
+        final String publicEntity = "allUsers";
+        boolean alreadyShared = Iterables.tryFind(acl, new Predicate<ObjectAccessControl>() {
+                    @Override
+                    public boolean apply(ObjectAccessControl access) {
+                        if (access != null) {
+                            return Objects.equal(access.getEntity(), publicEntity);
+                        } else {
+                            throw new NullPointerException(Messages.AbstractUpload_NullAccessError());
+                        }
+                    }
+                })
+                .isPresent();
+        /* If the entity 'allUsers' didn't already has READER or OWNER access, grant
+        READER. This is to avoid having both an OWNER record and a READER record
+        for that same entity */
+        if (!alreadyShared) {
+            acl.add(new ObjectAccessControl().setEntity("allUsers").setRole("READER"));
+        }
+        return acl;
+    }
+
+    /**
+     * Fetches or creates an instance of the bucket with the given name with the specified storage
+     * service.
+     *
+     * @param service Handle to the GCS API.
+     * @param credentials The credentials with which to fetch/create the bucket
+     * @param executor Helper class to make calls to the GCS API.
+     * @param bucketName The top-level bucket name to ensure exists
+     * @return an instance of the named bucket, created or retrieved.
+     * @throws UploadException if any issues are encountered
+     */
+    protected Bucket getOrCreateBucket(
+            Storage service, GoogleRobotCredentials credentials, Executor executor, String bucketName)
+            throws UploadException {
+        try {
+            try {
+                return executor.execute(
+                        service.buckets().get(bucketName).setProjection("full")); // to retrieve the bucket ACLs
+            } catch (NotFoundException e) {
+                try {
+                    // This is roughly the opposite of how the command-line sample does
+                    // things.  We do things this way to optimize for the case where the
+                    // bucket already exists.
+                    Bucket bucket = new Bucket().setName(bucketName);
+                    bucket = executor.execute(service.buckets()
+                            .insert(credentials.getProjectId(), bucket)
+                            .setProjection("full")); // to retrieve the bucket ACLs
+
+                    return bucket;
+                } catch (ConflictException ex) {
+                    // If we get back a "Conflict" response, it means that the bucket
+                    // was inserted between when we first tried to get it and were able
+                    // to successfully insert one.
+                    // NOTE: This could be due to an initial insertion attempt succeeding
+                    // but returning an exception, or a race with another service.
+                    return executor.execute(
+                            service.buckets().get(bucketName).setProjection("full")); // to retrieve the bucket ACLs
+                }
+            }
+        } catch (ExecutorException e) {
+            throw new UploadException(Messages.AbstractUpload_ExceptionGetBucket(bucketName), e);
+        } catch (IOException e) {
+            throw new UploadException(Messages.AbstractUpload_ExceptionGetBucket(bucketName), e);
+        }
+    }
 }

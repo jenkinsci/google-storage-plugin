@@ -22,9 +22,9 @@ import java.util.Collection;
 
 /** The required OAuth2 scopes for managing Google Cloud Storage buckets and objects. */
 public class StorageScopeRequirement extends GoogleOAuth2ScopeRequirement {
-  /** {@inheritDoc} */
-  @Override
-  public Collection<String> getScopes() {
-    return ImmutableList.of(StorageScopes.DEVSTORAGE_FULL_CONTROL);
-  }
+    /** {@inheritDoc} */
+    @Override
+    public Collection<String> getScopes() {
+        return ImmutableList.of(StorageScopes.DEVSTORAGE_FULL_CONTROL);
+    }
 }

@@ -18,11 +18,11 @@ package com.google.api.client.http;
 /** Liberal use of the 'final' keyword makes mocking HttpResponseException impossible. */
 public class StubHttpResponseException extends HttpResponseException {
 
-  /**
-   * @param statusCode the HTTP status code
-   * @param statusMessage the message to be included in the exception
-   */
-  public StubHttpResponseException(int statusCode, String statusMessage) {
-    super(new Builder(statusCode, statusMessage, new HttpHeaders()));
-  }
+    /**
+     * @param statusCode the HTTP status code
+     * @param statusMessage the message to be included in the exception
+     */
+    public StubHttpResponseException(int statusCode, String statusMessage) {
+        super(new Builder(statusCode, statusMessage, new HttpHeaders()));
+    }
 }

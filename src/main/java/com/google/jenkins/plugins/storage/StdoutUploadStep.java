@@ -43,159 +43,158 @@ import org.kohsuke.stapler.StaplerRequest;
 /** Build Step wrapper for {@link StdoutUpload} to be run in pipelines. Run only in post step. */
 @RequiresDomain(StorageScopeRequirement.class)
 public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Serializable {
-  private StdoutUpload upload;
-  private final String credentialsId;
+    private StdoutUpload upload;
+    private final String credentialsId;
 
-  /**
-   * Constructs a new {@link StdoutUploadStep}.
-   *
-   * @param credentialsId The credentials to utilize for authenticating with GCS.
-   * @param bucket GCS bucket to upload build artifacts to.
-   * @param logName Name of log file to store to GCS bucket.
-   */
-  @DataBoundConstructor
-  public StdoutUploadStep(String credentialsId, String bucket, String logName) {
-    this(credentialsId, bucket, Optional.ofNullable(null), logName);
-  }
-
-  /**
-   * Construct the StdoutUpload uploader to use the provided credentials to upload build artifacts.
-   *
-   * @param credentialsId The credentials to utilize for authenticating with GCS.
-   * @param bucket GCS bucket to upload build artifacts to.
-   * @param module Helper class for connecting to the GCS API.
-   * @param logName Name of log file to store to GCS bucket.
-   */
-  public StdoutUploadStep(
-      String credentialsId, String bucket, Optional<UploadModule> module, String logName) {
-    this.credentialsId = credentialsId;
-    upload = new StdoutUpload(bucket, module.orElse(null), logName, null);
-  }
-
-  /**
-   * @param sharedPublicly Whether to surface the file being uploaded to anyone with the link.
-   */
-  @DataBoundSetter
-  public void setSharedPublicly(boolean sharedPublicly) {
-    upload.setSharedPublicly(sharedPublicly);
-  }
-
-  /**
-   * @return Whether to surface the file being uploaded to anyone with the link.
-   */
-  public boolean isSharedPublicly() {
-    return upload.isSharedPublicly();
-  }
-
-  /**
-   * @param showInline Whether to indicate in metadata that the file should be viewable inline in
-   *     web browsers, rather than requiring it to be downloaded first.
-   */
-  @DataBoundSetter
-  public void setShowInline(boolean showInline) {
-    upload.setShowInline(showInline);
-  }
-
-  /**
-   * @return Whether to indicate in metadata that the file should be viewable inline in web
-   *     browsers, rather than requiring it to be downloaded first.
-   */
-  public boolean isShowInline() {
-    return upload.isShowInline();
-  }
-
-  /**
-   * @param pathPrefix The path prefix that will be stripped from uploaded files. May be null if no
-   *     path prefix needs to be stripped. Filenames that do not start with this prefix will not be
-   *     modified. Trailing slash is automatically added if it is missing.
-   */
-  @DataBoundSetter
-  public void setPathPrefix(@Nullable String pathPrefix) {
-    upload.setPathPrefix(pathPrefix);
-  }
-
-  @Nullable
-  public String getPathPrefix() {
-    return upload.getPathPrefix();
-  }
-
-  public String getLogName() {
-    return upload.getLogName();
-  }
-
-  public String getBucket() {
-    return upload.getBucket();
-  }
-
-  public String getCredentialsId() {
-    return credentialsId;
-  }
-
-  /** {@inheritDoc} * */
-  @Override
-  public BuildStepMonitor getRequiredMonitorService() {
-    return BuildStepMonitor.NONE;
-  }
-
-  /** {@inheritDoc} * */
-  @Override
-  public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
-      throws IOException {
-    try {
-      upload.perform(getCredentialsId(), run, workspace, listener);
-    } catch (UploadException e) {
-      throw new IOException(Messages.StdoutUpload_FailToUpload(), e);
-    }
-  }
-
-  /** Descriptor for {@link StdoutUploadStep} */
-  @Extension
-  @Symbol("googleStorageBuildLogUpload")
-  public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
-    /** {@inheritDoc} */
-    @Override
-    public String getDisplayName() {
-      return Messages.StdoutUpload_BuildStepDisplayName();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public boolean isApplicable(Class<? extends AbstractProject> jobType) {
-      return true;
+    /**
+     * Constructs a new {@link StdoutUploadStep}.
+     *
+     * @param credentialsId The credentials to utilize for authenticating with GCS.
+     * @param bucket GCS bucket to upload build artifacts to.
+     * @param logName Name of log file to store to GCS bucket.
+     */
+    @DataBoundConstructor
+    public StdoutUploadStep(String credentialsId, String bucket, String logName) {
+        this(credentialsId, bucket, Optional.ofNullable(null), logName);
     }
 
     /**
-     * This callback validates the {@code bucket} input field's values.
+     * Construct the StdoutUpload uploader to use the provided credentials to upload build artifacts.
      *
-     * @param bucket GCS bucket to upload build logs to.
-     * @return Valid form validation result or error message if invalid.
+     * @param credentialsId The credentials to utilize for authenticating with GCS.
+     * @param bucket GCS bucket to upload build artifacts to.
+     * @param module Helper class for connecting to the GCS API.
+     * @param logName Name of log file to store to GCS bucket.
      */
-    public FormValidation doCheckBucket(@QueryParameter final String bucket) {
-      return StdoutUpload.DescriptorImpl.staticDoCheckBucket(bucket);
+    public StdoutUploadStep(String credentialsId, String bucket, Optional<UploadModule> module, String logName) {
+        this.credentialsId = credentialsId;
+        upload = new StdoutUpload(bucket, module.orElse(null), logName, null);
     }
 
     /**
-     * This callback validates the {@code logName} input field's values.
-     *
-     * @param logName Name for the build log that will be uploaded to the GCS bucket.
-     * @return Valid form validation result or error message if invalid.
+     * @param sharedPublicly Whether to surface the file being uploaded to anyone with the link.
      */
-    public static FormValidation doCheckLogName(@QueryParameter final String logName) {
-      return new StdoutUpload.DescriptorImpl().doCheckLogName(logName);
+    @DataBoundSetter
+    public void setSharedPublicly(boolean sharedPublicly) {
+        upload.setSharedPublicly(sharedPublicly);
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public Publisher newInstance(StaplerRequest req, JSONObject formData) throws FormException {
-      // Since the config form lists the optional parameter pathPrefix as
-      // inline, it will be passed through even if stripPathPrefix is false.
-      // This might cause problems if the user, for example, fills in the field
-      // and then unchecks the checkbox. So, explicitly remove pathPrefix
-      // whenever stripPathPrefix is false.
-      if (Boolean.FALSE.equals(formData.remove("stripPathPrefix"))) {
-        formData.remove("pathPrefix");
-      }
-      return super.newInstance(req, formData);
+    /**
+     * @return Whether to surface the file being uploaded to anyone with the link.
+     */
+    public boolean isSharedPublicly() {
+        return upload.isSharedPublicly();
     }
-  }
+
+    /**
+     * @param showInline Whether to indicate in metadata that the file should be viewable inline in
+     *     web browsers, rather than requiring it to be downloaded first.
+     */
+    @DataBoundSetter
+    public void setShowInline(boolean showInline) {
+        upload.setShowInline(showInline);
+    }
+
+    /**
+     * @return Whether to indicate in metadata that the file should be viewable inline in web
+     *     browsers, rather than requiring it to be downloaded first.
+     */
+    public boolean isShowInline() {
+        return upload.isShowInline();
+    }
+
+    /**
+     * @param pathPrefix The path prefix that will be stripped from uploaded files. May be null if no
+     *     path prefix needs to be stripped. Filenames that do not start with this prefix will not be
+     *     modified. Trailing slash is automatically added if it is missing.
+     */
+    @DataBoundSetter
+    public void setPathPrefix(@Nullable String pathPrefix) {
+        upload.setPathPrefix(pathPrefix);
+    }
+
+    @Nullable
+    public String getPathPrefix() {
+        return upload.getPathPrefix();
+    }
+
+    public String getLogName() {
+        return upload.getLogName();
+    }
+
+    public String getBucket() {
+        return upload.getBucket();
+    }
+
+    public String getCredentialsId() {
+        return credentialsId;
+    }
+
+    /** {@inheritDoc} * */
+    @Override
+    public BuildStepMonitor getRequiredMonitorService() {
+        return BuildStepMonitor.NONE;
+    }
+
+    /** {@inheritDoc} * */
+    @Override
+    public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
+            throws IOException {
+        try {
+            upload.perform(getCredentialsId(), run, workspace, listener);
+        } catch (UploadException e) {
+            throw new IOException(Messages.StdoutUpload_FailToUpload(), e);
+        }
+    }
+
+    /** Descriptor for {@link StdoutUploadStep} */
+    @Extension
+    @Symbol("googleStorageBuildLogUpload")
+    public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
+        /** {@inheritDoc} */
+        @Override
+        public String getDisplayName() {
+            return Messages.StdoutUpload_BuildStepDisplayName();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public boolean isApplicable(Class<? extends AbstractProject> jobType) {
+            return true;
+        }
+
+        /**
+         * This callback validates the {@code bucket} input field's values.
+         *
+         * @param bucket GCS bucket to upload build logs to.
+         * @return Valid form validation result or error message if invalid.
+         */
+        public FormValidation doCheckBucket(@QueryParameter final String bucket) {
+            return StdoutUpload.DescriptorImpl.staticDoCheckBucket(bucket);
+        }
+
+        /**
+         * This callback validates the {@code logName} input field's values.
+         *
+         * @param logName Name for the build log that will be uploaded to the GCS bucket.
+         * @return Valid form validation result or error message if invalid.
+         */
+        public static FormValidation doCheckLogName(@QueryParameter final String logName) {
+            return new StdoutUpload.DescriptorImpl().doCheckLogName(logName);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public Publisher newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+            // Since the config form lists the optional parameter pathPrefix as
+            // inline, it will be passed through even if stripPathPrefix is false.
+            // This might cause problems if the user, for example, fills in the field
+            // and then unchecks the checkbox. So, explicitly remove pathPrefix
+            // whenever stripPathPrefix is false.
+            if (Boolean.FALSE.equals(formData.remove("stripPathPrefix"))) {
+                formData.remove("pathPrefix");
+            }
+            return super.newInstance(req, formData);
+        }
+    }
 }

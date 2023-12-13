@@ -28,36 +28,37 @@ import org.mockito.MockitoAnnotations;
 /** Unit test for {@link AbstractGcsUploadReport}. */
 public class AbstractGcsUploadReportTest {
 
-  @Mock private Actionable parent;
-  private AbstractGcsUploadReport underTest;
+    @Mock
+    private Actionable parent;
 
-  @Before
-  public void setup() {
-    MockitoAnnotations.initMocks(this);
-    underTest =
-        new AbstractGcsUploadReport(parent) {
-          @Override
-          public Set<String> getStorageObjects() {
-            return null;
-          }
+    private AbstractGcsUploadReport underTest;
 
-          @Override
-          public Integer getBuildNumber() {
-            return null;
-          }
+    @Before
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
+        underTest = new AbstractGcsUploadReport(parent) {
+            @Override
+            public Set<String> getStorageObjects() {
+                return null;
+            }
 
-          @Override
-          public Set<String> getBuckets() {
-            return null;
-          }
+            @Override
+            public Integer getBuildNumber() {
+                return null;
+            }
+
+            @Override
+            public Set<String> getBuckets() {
+                return null;
+            }
         };
-  }
+    }
 
-  @Test
-  public void getters() {
-    assertEquals(parent, underTest.getParent());
-    assertEquals(Messages.AbstractGcsUploadReport_DisplayName(), underTest.getDisplayName());
-    assertNotNull(underTest.getIconFileName());
-    assertNotNull(underTest.getUrlName());
-  }
+    @Test
+    public void getters() {
+        assertEquals(parent, underTest.getParent());
+        assertEquals(Messages.AbstractGcsUploadReport_DisplayName(), underTest.getDisplayName());
+        assertNotNull(underTest.getIconFileName());
+        assertNotNull(underTest.getUrlName());
+    }
 }

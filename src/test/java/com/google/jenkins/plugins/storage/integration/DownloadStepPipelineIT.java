@@ -43,59 +43,60 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 /** Tests the {@link DownloadStep} for use-cases involving the Jenkins Pipeline DSL. */
 public class DownloadStepPipelineIT {
-  private static final Logger LOGGER = Logger.getLogger(DownloadStepPipelineIT.class.getName());
-  @ClassRule public static JenkinsRule jenkinsRule = new JenkinsRule();
-  private static String credentialsId;
-  private static final String pattern = "downloadstep_test.txt";
-  private static String bucket;
-  private static StorageClient storageClient;
-  private static EnvVars envVars;
+    private static final Logger LOGGER = Logger.getLogger(DownloadStepPipelineIT.class.getName());
 
-  @BeforeClass
-  public static void init() throws Exception {
-    LOGGER.info("Initializing DownloadStepPipelineIT");
+    @ClassRule
+    public static JenkinsRule jenkinsRule = new JenkinsRule();
 
-    envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
-    credentialsId = envVars.get("CREDENTIALS_ID");
-    storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
-    bucket = getBucket();
+    private static String credentialsId;
+    private static final String pattern = "downloadstep_test.txt";
+    private static String bucket;
+    private static StorageClient storageClient;
+    private static EnvVars envVars;
 
-    // create file to download
-    InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream(pattern);
-    String contentType = URLConnection.guessContentTypeFromStream(stream);
-    InputStreamContent content = new InputStreamContent(contentType, stream);
-    storageClient.uploadToBucket(pattern, bucket, content);
-  }
+    @BeforeClass
+    public static void init() throws Exception {
+        LOGGER.info("Initializing DownloadStepPipelineIT");
 
-  @Test
-  public void testDownloadStepSuccessful() throws Exception {
-    String jobName = formatRandomName("test");
-    envVars.put("DIR", jobName);
-    WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
-    testProject.setDefinition(
-        new CpsFlowDefinition(loadResource(getClass(), "downloadStepPipeline.groovy"), true));
-    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-    assertNotNull(run);
-    jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
-    dumpLog(LOGGER, run);
-  }
+        envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
+        credentialsId = envVars.get("CREDENTIALS_ID");
+        storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
+        bucket = getBucket();
 
-  @Test
-  public void testMalformedDownloadStepFailure() throws Exception {
-    String jobName = formatRandomName("test");
-    WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
-    envVars.put("DIR", jobName);
-    testProject.setDefinition(
-        new CpsFlowDefinition(
-            loadResource(getClass(), "malformedDownloadStepPipeline.groovy"), true));
-    WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
-    assertNotNull(run);
-    jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
-    dumpLog(LOGGER, run);
-  }
+        // create file to download
+        InputStream stream = DownloadStepPipelineIT.class.getResourceAsStream(pattern);
+        String contentType = URLConnection.guessContentTypeFromStream(stream);
+        InputStreamContent content = new InputStreamContent(contentType, stream);
+        storageClient.uploadToBucket(pattern, bucket, content);
+    }
 
-  @AfterClass
-  public static void cleanUp() throws Exception {
-    storageClient.deleteFromBucket(bucket, pattern);
-  }
+    @Test
+    public void testDownloadStepSuccessful() throws Exception {
+        String jobName = formatRandomName("test");
+        envVars.put("DIR", jobName);
+        WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
+        testProject.setDefinition(new CpsFlowDefinition(loadResource(getClass(), "downloadStepPipeline.groovy"), true));
+        WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+        assertNotNull(run);
+        jenkinsRule.assertBuildStatus(Result.SUCCESS, jenkinsRule.waitForCompletion(run));
+        dumpLog(LOGGER, run);
+    }
+
+    @Test
+    public void testMalformedDownloadStepFailure() throws Exception {
+        String jobName = formatRandomName("test");
+        WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
+        envVars.put("DIR", jobName);
+        testProject.setDefinition(
+                new CpsFlowDefinition(loadResource(getClass(), "malformedDownloadStepPipeline.groovy"), true));
+        WorkflowRun run = testProject.scheduleBuild2(0).waitForStart();
+        assertNotNull(run);
+        jenkinsRule.assertBuildStatus(Result.FAILURE, jenkinsRule.waitForCompletion(run));
+        dumpLog(LOGGER, run);
+    }
+
+    @AfterClass
+    public static void cleanUp() throws Exception {
+        storageClient.deleteFromBucket(bucket, pattern);
+    }
 }

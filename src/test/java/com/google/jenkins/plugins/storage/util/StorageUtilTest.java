@@ -31,49 +31,50 @@ import org.jvnet.hudson.test.WithoutJenkins;
 
 /** Tests for {@link StorageUtil}. */
 public class StorageUtilTest {
-  private FilePath workspace;
-  private FilePath nonWorkspace;
+    private FilePath workspace;
+    private FilePath nonWorkspace;
 
-  @Rule public TemporaryFolder tempDir = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
 
-  @BeforeClass
-  public static void init() {
-    assumeFalse(SystemUtils.IS_OS_WINDOWS);
-  }
+    @BeforeClass
+    public static void init() {
+        assumeFalse(SystemUtils.IS_OS_WINDOWS);
+    }
 
-  @Before
-  public void setUp() throws Exception {
-    workspace = new FilePath(makeTempDir("workspace"));
-    nonWorkspace = new FilePath(makeTempDir("non-workspace"));
-  }
+    @Before
+    public void setUp() throws Exception {
+        workspace = new FilePath(makeTempDir("workspace"));
+        nonWorkspace = new FilePath(makeTempDir("non-workspace"));
+    }
 
-  @Test
-  @WithoutJenkins
-  public void getRelativePositiveTest() throws Exception {
-    FilePath one = workspace.child(FIRST_NAME);
+    @Test
+    @WithoutJenkins
+    public void getRelativePositiveTest() throws Exception {
+        FilePath one = workspace.child(FIRST_NAME);
 
-    assertEquals(FIRST_NAME, StorageUtil.getRelative(one, workspace));
+        assertEquals(FIRST_NAME, StorageUtil.getRelative(one, workspace));
 
-    FilePath second = one.child(SECOND_NAME);
-    assertEquals(SECOND_NAME, StorageUtil.getRelative(second, one));
-    assertEquals(FIRST_NAME + '/' + SECOND_NAME, StorageUtil.getRelative(second, workspace));
-  }
+        FilePath second = one.child(SECOND_NAME);
+        assertEquals(SECOND_NAME, StorageUtil.getRelative(second, one));
+        assertEquals(FIRST_NAME + '/' + SECOND_NAME, StorageUtil.getRelative(second, workspace));
+    }
 
-  @Test
-  @WithoutJenkins
-  public void getRelativeNegativeTest() throws Exception {
-    FilePath one = workspace.child(FIRST_NAME);
+    @Test
+    @WithoutJenkins
+    public void getRelativeNegativeTest() throws Exception {
+        FilePath one = workspace.child(FIRST_NAME);
 
-    assertEquals(workspace.getRemote(), "/" + StorageUtil.getRelative(workspace, one));
-    assertEquals(nonWorkspace.getRemote(), "/" + StorageUtil.getRelative(nonWorkspace, workspace));
-  }
+        assertEquals(workspace.getRemote(), "/" + StorageUtil.getRelative(workspace, one));
+        assertEquals(nonWorkspace.getRemote(), "/" + StorageUtil.getRelative(nonWorkspace, workspace));
+    }
 
-  private File makeTempDir(String name) throws IOException {
-    File dir = new File(tempDir.getRoot(), name);
-    dir.mkdir();
-    return dir;
-  }
+    private File makeTempDir(String name) throws IOException {
+        File dir = new File(tempDir.getRoot(), name);
+        dir.mkdir();
+        return dir;
+    }
 
-  private static final String FIRST_NAME = "foo";
-  private static final String SECOND_NAME = "bar";
+    private static final String FIRST_NAME = "foo";
+    private static final String SECOND_NAME = "bar";
 }
