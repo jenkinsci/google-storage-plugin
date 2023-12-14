@@ -21,9 +21,9 @@ import static org.mockito.Mockito.when;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.storage.Storage;
-import com.google.jenkins.plugins.credentials.oauth.AbstractGoogleRobotCredentialsDescriptor;
 import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
+import com.google.jenkins.plugins.storage.util.GoogleRobotCredentialsDescriptor;
 import com.google.jenkins.plugins.util.MockExecutor;
 import com.google.jenkins.plugins.util.NotFoundException;
 import hudson.model.FreeStyleBuild;
@@ -40,8 +40,11 @@ import org.mockito.MockitoAnnotations;
 public class ExpiringBucketLifecycleManagerStepTest {
   @Rule public JenkinsRule jenkins = new JenkinsRule();
   @Mock private GoogleRobotCredentials credentials;
+
+  @Mock
+  private GoogleRobotCredentialsDescriptor.AbstractGoogleRobotCredentialsTestDescriptor descriptor;
+
   private GoogleCredential credential;
-  @Mock private AbstractGoogleRobotCredentialsDescriptor descriptor;
   private final MockExecutor executor = new MockExecutor();
   private NotFoundException notFoundException = new NotFoundException();
   private static final String PROJECT_ID = "foo.com:project-build";
@@ -55,7 +58,6 @@ public class ExpiringBucketLifecycleManagerStepTest {
     MockitoAnnotations.initMocks(this);
 
     when(descriptor.getDisplayName()).thenReturn("Credentials Name");
-
     when(credentials.getId()).thenReturn(CREDENTIALS_ID);
     when(credentials.getProjectId()).thenReturn(PROJECT_ID);
     when(credentials.getDescriptor()).thenReturn(descriptor);
