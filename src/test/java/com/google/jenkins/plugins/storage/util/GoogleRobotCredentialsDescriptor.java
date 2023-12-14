@@ -36,8 +36,7 @@ public class GoogleRobotCredentialsDescriptor extends GoogleRobotCredentials {
     }
 
     @Override
-    public Credential getGoogleCredential(GoogleOAuth2ScopeRequirement requirement)
-            throws GeneralSecurityException {
+    public Credential getGoogleCredential(GoogleOAuth2ScopeRequirement requirement) throws GeneralSecurityException {
         return null;
     }
 

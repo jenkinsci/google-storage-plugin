@@ -65,11 +65,11 @@ public class DownloadStepTest {
     private GoogleCredential credential;
 
     private final MockExecutor executor = new MockExecutor();
-    
+
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        
+
         when(credentials.getId()).thenReturn(CREDENTIALS_ID);
         when(credentials.getProjectId()).thenReturn(PROJECT_ID);
 

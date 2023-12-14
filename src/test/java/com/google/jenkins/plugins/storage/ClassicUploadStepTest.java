@@ -49,7 +49,7 @@ public class ClassicUploadStepTest {
     private GoogleRobotCredentials credentials;
 
     private GoogleCredential credential;
-    
+
     private final MockExecutor executor = new MockExecutor();
 
     private NotFoundException notFoundException = new NotFoundException();
@@ -57,7 +57,7 @@ public class ClassicUploadStepTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        
+
         when(credentials.getId()).thenReturn(CREDENTIALS_ID);
         when(credentials.getProjectId()).thenReturn(PROJECT_ID);
 

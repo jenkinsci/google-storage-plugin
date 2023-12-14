@@ -240,7 +240,7 @@
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>google-oauth-plugin</artifactId>
       <!-- TODO: Remove this version when it is integrated in Jenkins BOM -->
-      <version>1.328.v6ea_0fb_df5f7b_</version>      
+      <version>1.328.v6ea_0fb_df5f7b_</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.guava</groupId>
