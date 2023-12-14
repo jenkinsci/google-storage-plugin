@@ -28,7 +28,6 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Objects;
 import com.google.api.services.storage.model.StorageObject;
-import com.google.jenkins.plugins.credentials.oauth.AbstractGoogleRobotCredentialsDescriptor;
 import com.google.jenkins.plugins.credentials.oauth.GoogleOAuth2ScopeRequirement;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.util.MockExecutor;
@@ -66,19 +65,13 @@ public class DownloadStepTest {
     private GoogleCredential credential;
 
     private final MockExecutor executor = new MockExecutor();
-
-    @Mock
-    private AbstractGoogleRobotCredentialsDescriptor descriptor;
-
+    
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-
-        when(descriptor.getDisplayName()).thenReturn("Credentials Name");
-
+        
         when(credentials.getId()).thenReturn(CREDENTIALS_ID);
         when(credentials.getProjectId()).thenReturn(PROJECT_ID);
-        when(credentials.getDescriptor()).thenReturn(descriptor);
 
         if (jenkins.jenkins != null) {
             SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
