@@ -15,9 +15,9 @@ import java.security.GeneralSecurityException;
 import org.kohsuke.stapler.QueryParameter;
 
 /**
- * Dev Memo: 
+ * Dev Memo:
  * In earlier versions, {@code AbstractGoogleRobotCredentialsDescriptor} was a standalone
- * abstract class responsible for handling descriptors for Google robot account credential extensions. 
+ * abstract class responsible for handling descriptors for Google robot account credential extensions.
  * Now, {@code AbstractGoogleRobotCredentialsDescriptor} has been restructured and
  * integrated as a static inner class within {@code GoogleRobotCredentials}.
  *
@@ -48,7 +48,7 @@ public class GoogleRobotCredentialsDescriptor extends GoogleRobotCredentials {
     }
 
     /**
-     * Abstract class for testing Google Robot Credentials Descriptor. This class extends 
+     * Abstract class for testing Google Robot Credentials Descriptor. This class extends
      * {@link GoogleRobotCredentials.AbstractGoogleRobotCredentialsDescriptor} and is used for creating test
      * instances of Google Robot Credentials descriptors.
      */
