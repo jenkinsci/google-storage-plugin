@@ -38,7 +38,7 @@ import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 /** Build Step wrapper for {@link StdoutUpload} to be run in pipelines. Run only in post step. */
 @RequiresDomain(StorageScopeRequirement.class)
@@ -185,7 +185,7 @@ public class StdoutUploadStep extends Recorder implements SimpleBuildStep, Seria
 
         /** {@inheritDoc} */
         @Override
-        public Publisher newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+        public Publisher newInstance(StaplerRequest2 req, JSONObject formData) throws FormException {
             // Since the config form lists the optional parameter pathPrefix as
             // inline, it will be passed through even if stripPathPrefix is false.
             // This might cause problems if the user, for example, fills in the field
