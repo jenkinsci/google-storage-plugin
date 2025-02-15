@@ -61,7 +61,7 @@ import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 /** A step to allow Download from Google Cloud Storage as a Build step and in pipeline. */
 @RequiresDomain(value = StorageScopeRequirement.class)
@@ -474,7 +474,7 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
 
         /** {@inheritDoc} */
         @Override
-        public Builder newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+        public Builder newInstance(StaplerRequest2 req, JSONObject formData) throws FormException {
             if (Boolean.FALSE.equals(formData.remove("stripPathPrefix"))) {
                 formData.remove("pathPrefix");
             }

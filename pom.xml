@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.86</version>
+    <version>5.7</version>
     <relativePath />
   </parent>
 
@@ -40,19 +40,6 @@
     </license>
   </licenses>
 
-  <developers>
-    <developer>
-      <id>craigdbarber</id>
-      <name>Craig Barber</name>
-      <email>craigbarber@google.com</email>
-    </developer>
-    <developer>
-      <id>stephenashank</id>
-      <name>Stephen Shank</name>
-      <email>stephenshank@google.com</email>
-    </developer>
-  </developers>
-
   <scm>
     <connection>scm:git:https://github.com/${gitHubRepo}.git</connection>
     <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
@@ -65,8 +52,8 @@
     <revision>1</revision>
     <changelist>999999-SNAPSHOT</changelist>
     <!-- https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/ -->
-    <jenkins.baseline>2.401</jenkins.baseline>
-    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
+    <jenkins.baseline>2.479</jenkins.baseline>
+    <jenkins.version>${jenkins.baseline}.1</jenkins.version>
     <gitHubRepo>jenkinsci/${project.artifactId}</gitHubRepo>
     <hpi.compatibleSinceVersion>1.5.0</hpi.compatibleSinceVersion>
     <google.api.version>1.35.2</google.api.version>
@@ -85,7 +72,7 @@
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-${jenkins.baseline}.x</artifactId>
-        <version>2745.vc7b_fe4c876fa_</version>
+        <version>4136.vca_c3202a_7fd1</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
