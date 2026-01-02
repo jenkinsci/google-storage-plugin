@@ -15,8 +15,9 @@
  */
 package com.google.jenkins.plugins.storage.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -25,51 +26,57 @@ import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.storage.Storage;
 import java.io.IOException;
 import java.io.InputStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-/** Tests {@link StorageClient}. */
-@RunWith(MockitoJUnitRunner.class)
-public class StorageClientTest {
+/** Tests {@link com.google.jenkins.plugins.storage.client.StorageClient}. */
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class StorageClientTest {
     private static final String TEST_BUCKET = "test-bucket";
     private static final String TEST_PATTERN = "test-pattern";
     private static final InputStreamContent TEST_CONTENT = new InputStreamContent("", Mockito.mock(InputStream.class));
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testInsertObjectErrorWithNullPattern() throws IOException {
+    @Test
+    void testInsertObjectErrorWithNullPattern() throws IOException {
         StorageClient storageClient = setUpObjectInsertClient();
-        storageClient.uploadToBucket(null, TEST_BUCKET, TEST_CONTENT);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInsertObjectErrorWithNullBucket() throws IOException {
-        StorageClient storageClient = setUpObjectInsertClient();
-        storageClient.uploadToBucket(TEST_PATTERN, null, TEST_CONTENT);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testInsertObjectErrorWithNullContent() throws IOException {
-        StorageClient storageClient = setUpObjectInsertClient();
-        storageClient.uploadToBucket(TEST_PATTERN, TEST_BUCKET, null);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInsertObjectErrorWithEmptyPattern() throws IOException {
-        StorageClient storageClient = setUpObjectInsertClient();
-        storageClient.uploadToBucket("", TEST_BUCKET, TEST_CONTENT);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInsertObjectErrorWithEmptyBucket() throws IOException {
-        StorageClient storageClient = setUpObjectInsertClient();
-        storageClient.uploadToBucket(TEST_PATTERN, "", TEST_CONTENT);
+        assertThrows(
+                IllegalArgumentException.class, () -> storageClient.uploadToBucket(null, TEST_BUCKET, TEST_CONTENT));
     }
 
     @Test
-    public void testInsertObjectReturnsCorrectly() throws IOException {
+    void testInsertObjectErrorWithNullBucket() throws IOException {
+        StorageClient storageClient = setUpObjectInsertClient();
+        assertThrows(
+                IllegalArgumentException.class, () -> storageClient.uploadToBucket(TEST_PATTERN, null, TEST_CONTENT));
+    }
+
+    @Test
+    void testInsertObjectErrorWithNullContent() throws IOException {
+        StorageClient storageClient = setUpObjectInsertClient();
+        assertThrows(NullPointerException.class, () -> storageClient.uploadToBucket(TEST_PATTERN, TEST_BUCKET, null));
+    }
+
+    @Test
+    void testInsertObjectErrorWithEmptyPattern() throws IOException {
+        StorageClient storageClient = setUpObjectInsertClient();
+        assertThrows(IllegalArgumentException.class, () -> storageClient.uploadToBucket("", TEST_BUCKET, TEST_CONTENT));
+    }
+
+    @Test
+    void testInsertObjectErrorWithEmptyBucket() throws IOException {
+        StorageClient storageClient = setUpObjectInsertClient();
+        assertThrows(
+                IllegalArgumentException.class, () -> storageClient.uploadToBucket(TEST_PATTERN, "", TEST_CONTENT));
+    }
+
+    @Test
+    void testInsertObjectReturnsCorrectly() throws IOException {
         StorageClient storageClient = setUpObjectInsertClient();
         Storage.Objects.Insert insertRequest =
                 storageClient.uploadToBucketRequest(TEST_PATTERN, TEST_BUCKET, TEST_CONTENT);
@@ -77,52 +84,52 @@ public class StorageClientTest {
         assertEquals(TEST_BUCKET, insertRequest.getBucket());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testDeleteObjectErrorWithNullPattern() throws IOException {
+    @Test
+    void testDeleteObjectErrorWithNullPattern() throws IOException {
         StorageClient storageClient = setUpObjectInsertClient();
-        storageClient.deleteFromBucket(TEST_BUCKET, null);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testDeleteObjectErrorWithNullBucket() throws IOException {
-        StorageClient storageClient = setUpObjectInsertClient();
-        storageClient.deleteFromBucket(null, TEST_PATTERN);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testDeleteObjectErrorWithEmptyPattern() throws IOException {
-        StorageClient storageClient = setUpObjectInsertClient();
-        storageClient.deleteFromBucket(TEST_BUCKET, "");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testDeleteObjectErrorWithEmptyBucket() throws IOException {
-        StorageClient storageClient = setUpObjectInsertClient();
-        storageClient.deleteFromBucket("", TEST_PATTERN);
+        assertThrows(IllegalArgumentException.class, () -> storageClient.deleteFromBucket(TEST_BUCKET, null));
     }
 
     @Test
-    public void testDeleteObjectReturnsCorrectly() throws IOException {
+    void testDeleteObjectErrorWithNullBucket() throws IOException {
+        StorageClient storageClient = setUpObjectInsertClient();
+        assertThrows(IllegalArgumentException.class, () -> storageClient.deleteFromBucket(null, TEST_PATTERN));
+    }
+
+    @Test
+    void testDeleteObjectErrorWithEmptyPattern() throws IOException {
+        StorageClient storageClient = setUpObjectInsertClient();
+        assertThrows(IllegalArgumentException.class, () -> storageClient.deleteFromBucket(TEST_BUCKET, ""));
+    }
+
+    @Test
+    void testDeleteObjectErrorWithEmptyBucket() throws IOException {
+        StorageClient storageClient = setUpObjectInsertClient();
+        assertThrows(IllegalArgumentException.class, () -> storageClient.deleteFromBucket("", TEST_PATTERN));
+    }
+
+    @Test
+    void testDeleteObjectReturnsCorrectly() throws IOException {
         StorageClient storageClient = setUpObjectDeleteClient();
         Storage.Objects.Delete deleteRequest = storageClient.deleteFromBucketRequest(TEST_BUCKET, TEST_PATTERN);
         assertNotNull(deleteRequest);
         assertEquals(TEST_BUCKET, deleteRequest.getBucket());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testDeleteBucketErrorWithNullBucket() throws IOException {
+    @Test
+    void testDeleteBucketErrorWithNullBucket() throws IOException {
         StorageClient storageClient = setUpBucketDeleteClient();
-        storageClient.deleteBucket(null);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testDeleteBucketErrorWithEmptyBucket() throws IOException {
-        StorageClient storageClient = setUpBucketDeleteClient();
-        storageClient.deleteBucket("");
+        assertThrows(IllegalArgumentException.class, () -> storageClient.deleteBucket(null));
     }
 
     @Test
-    public void testDeleteBucketReturnsCorrectly() throws IOException {
+    void testDeleteBucketErrorWithEmptyBucket() throws IOException {
+        StorageClient storageClient = setUpBucketDeleteClient();
+        assertThrows(IllegalArgumentException.class, () -> storageClient.deleteBucket(""));
+    }
+
+    @Test
+    void testDeleteBucketReturnsCorrectly() throws IOException {
         StorageClient storageClient = setUpBucketDeleteClient();
         Storage.Buckets.Delete deleteRequest = storageClient.deleteBucketRequest(TEST_BUCKET);
         assertNotNull(deleteRequest);

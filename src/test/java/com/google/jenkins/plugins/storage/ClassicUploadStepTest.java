@@ -15,8 +15,9 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -32,18 +33,23 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.TaskListener;
 import org.apache.commons.lang3.SystemUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Tests for {@link ClassicUpload}. */
-public class ClassicUploadStepTest {
+@WithJenkins
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ClassicUploadStepTest {
 
-    @Rule
-    public JenkinsRule jenkins = new JenkinsRule();
+    private JenkinsRule jenkins;
 
     @Mock
     private GoogleRobotCredentials credentials;
@@ -52,11 +58,11 @@ public class ClassicUploadStepTest {
 
     private final MockExecutor executor = new MockExecutor();
 
-    private NotFoundException notFoundException = new NotFoundException();
+    private final NotFoundException notFoundException = new NotFoundException();
 
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) throws Exception {
+        jenkins = rule;
 
         when(credentials.getId()).thenReturn(CREDENTIALS_ID);
         when(credentials.getProjectId()).thenReturn(PROJECT_ID);
@@ -77,7 +83,7 @@ public class ClassicUploadStepTest {
     }
 
     @Test
-    public void testRoundtrip() throws Exception {
+    void testRoundtrip() throws Exception {
         assumeFalse(SystemUtils.IS_OS_WINDOWS);
         ClassicUploadStep step = new ClassicUploadStep(CREDENTIALS_ID, "bucket", "pattern");
         ConfigurationRoundTripTest(step);
@@ -93,7 +99,7 @@ public class ClassicUploadStepTest {
     }
 
     @Test
-    public void testBuild() throws Exception {
+    void testBuild() throws Exception {
         ClassicUploadStep step =
                 new ClassicUploadStep(CREDENTIALS_ID, BUCKET_URI, new MockUploadModule(executor), "*.$BUILD_ID.txt");
         FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
@@ -116,7 +122,7 @@ public class ClassicUploadStepTest {
     }
 
     @Test
-    public void testInvalidCredentials() throws Exception {
+    void testInvalidCredentials() throws Exception {
         ClassicUploadStep step =
                 new ClassicUploadStep("bad-credentials", BUCKET_URI, new MockUploadModule(executor), "*.$BUILD_ID.txt");
         FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
@@ -139,7 +145,7 @@ public class ClassicUploadStepTest {
             return;
         }
         // Expected exception to happen.
-        assertTrue(false);
+        fail();
     }
 
     private static final String PROJECT_ID = "foo.com:project-build";

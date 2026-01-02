@@ -15,7 +15,7 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
@@ -24,15 +24,19 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.tasks.Publisher;
 import hudson.util.DescribableList;
-import java.io.IOException;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit test for {@link ProjectGcsUploadReport}. */
-public class ProjectGcsUploadReportTest {
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ProjectGcsUploadReportTest {
 
     @Mock
     private FreeStyleProject project;
@@ -52,9 +56,8 @@ public class ProjectGcsUploadReportTest {
     @Mock
     private DescribableList<Publisher, Descriptor<Publisher>> noUploadPublishers;
 
-    @Before
-    public void setup() throws IOException {
-        MockitoAnnotations.initMocks(this);
+    @BeforeEach
+    void beforeEach() {
         // set up for a case where the last build did have some uploads.
         when(project.getLastBuild()).thenReturn(build);
         when(build.getAction(BuildGcsUploadReport.class)).thenReturn(buildUploadReport);
@@ -65,7 +68,7 @@ public class ProjectGcsUploadReportTest {
     }
 
     @Test
-    public void getters_noUpload() {
+    void getters_noUpload() {
         /* in case there are no upload, test that empty lists are returned */
         ProjectGcsUploadReport underTest = new ProjectGcsUploadReport(noUploadProject);
         assertEquals(0, underTest.getBuckets().size());
@@ -73,7 +76,7 @@ public class ProjectGcsUploadReportTest {
     }
 
     @Test
-    public void getters_hasUploads() {
+    void getters_hasUploads() {
         /* In case there are uploads, test that the project report delegates to
          * the report of the last build. */
         ProjectGcsUploadReport underTest = new ProjectGcsUploadReport(project);

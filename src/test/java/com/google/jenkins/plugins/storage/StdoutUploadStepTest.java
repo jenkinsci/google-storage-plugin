@@ -29,17 +29,23 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.TaskListener;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Tests for {@link StdoutUploadStep} */
-public class StdoutUploadStepTest {
-    @Rule
-    public JenkinsRule jenkins = new JenkinsRule();
+@WithJenkins
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class StdoutUploadStepTest {
+
+    private JenkinsRule jenkins;
 
     @Mock
     private GoogleRobotCredentials credentials;
@@ -47,16 +53,16 @@ public class StdoutUploadStepTest {
     private GoogleCredential credential;
 
     private final MockExecutor executor = new MockExecutor();
-    private NotFoundException notFoundException = new NotFoundException();
+    private final NotFoundException notFoundException = new NotFoundException();
     private static final String PROJECT_ID = "foo.com:project-build";
     private static final String CREDENTIALS_ID = "creds";
     private static final String BUCKET_NAME = "test-bucket-43";
     private static final String BUCKET_URI = "gs://" + BUCKET_NAME;
     private static final String LOG_NAME = "build-log.txt";
 
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) throws Exception {
+        jenkins = rule;
 
         when(credentials.getId()).thenReturn(CREDENTIALS_ID);
         when(credentials.getProjectId()).thenReturn(PROJECT_ID);
@@ -77,7 +83,7 @@ public class StdoutUploadStepTest {
     }
 
     @Test
-    public void testRoundtrip() throws Exception {
+    void testRoundtrip() throws Exception {
         StdoutUploadStep step = new StdoutUploadStep(CREDENTIALS_ID, "bucket", "logName");
 
         ConfigurationRoundTripTest(step);
@@ -93,7 +99,7 @@ public class StdoutUploadStepTest {
     }
 
     @Test
-    public void testBuild() throws Exception {
+    void testBuild() throws Exception {
         StdoutUploadStep step =
                 new StdoutUploadStep(CREDENTIALS_ID, BUCKET_URI, Optional.of(new MockUploadModule(executor)), LOG_NAME);
 

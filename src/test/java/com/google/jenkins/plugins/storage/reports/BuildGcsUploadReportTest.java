@@ -15,9 +15,9 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.google.common.collect.Iterables;
 import com.google.jenkins.plugins.storage.util.BucketPath;
@@ -26,46 +26,47 @@ import hudson.model.AbstractProject;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import java.util.concurrent.ExecutionException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.mockito.MockitoAnnotations;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit test for {@link BuildGcsUploadReport}. */
-public class BuildGcsUploadReportTest {
+@WithJenkins
+@ExtendWith(MockitoExtension.class)
+class BuildGcsUploadReportTest {
 
-    @Rule
-    public JenkinsRule jenkins = new JenkinsRule();
+    private JenkinsRule jenkins;
 
     private AbstractProject<?, ?> project;
     private AbstractBuild<?, ?> build;
     private BuildGcsUploadReport underTest;
 
-    @Before
-    public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) throws Exception {
+        jenkins = rule;
         project = jenkins.createFreeStyleProject();
         build = new FreeStyleBuild((FreeStyleProject) project);
         underTest = new BuildGcsUploadReport(build);
     }
 
     @Test
-    public void getters() {
+    void getters() {
         assertEquals(build, underTest.getParent());
         assertEquals(build.getNumber(), underTest.getBuildNumber().intValue());
     }
 
     @Test
-    public void addBucket() {
+    void addBucket() {
         assertEquals(0, underTest.getBuckets().size());
         underTest.addBucket("bucket");
         assertEquals("bucket", Iterables.getLast(underTest.getBuckets()));
     }
 
     @Test
-    public void addUpload() throws Exception {
+    void addUpload() {
         String relativePath = "relative/path";
         assertEquals(0, underTest.getStorageObjects().size());
         underTest.addUpload(relativePath, new BucketPath("gs://myBucket/helloworld/18"));
@@ -73,24 +74,24 @@ public class BuildGcsUploadReportTest {
     }
 
     @Test
-    public void of() {
+    void of() {
         BuildGcsUploadReport report = BuildGcsUploadReport.of(build);
         assertNotNull(report);
     }
 
     @Test
-    public void of_existing() {
+    void of_existing() {
         build.addAction(underTest);
         assertEquals(underTest, BuildGcsUploadReport.of(build));
     }
 
     @Test
-    public void of_project_noLastBuild() {
+    void of_project_noLastBuild() {
         assertNull(BuildGcsUploadReport.of(project));
     }
 
     @Test
-    public void of_project_hasLastBuild() throws InterruptedException, ExecutionException {
+    void of_project_hasLastBuild() throws InterruptedException, ExecutionException {
         project.scheduleBuild2(0).get();
         project.getLastBuild().addAction(underTest);
         assertEquals(underTest, BuildGcsUploadReport.of(project));

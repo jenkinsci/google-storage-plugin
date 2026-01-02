@@ -15,9 +15,10 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -35,20 +36,25 @@ import hudson.model.Run;
 import hudson.util.FormValidation;
 import java.io.BufferedReader;
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.Verifier;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.WithoutJenkins;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Tests for {@link ClassicUpload}. */
-public class ClassicUploadTest {
+@WithJenkins
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ClassicUploadTest {
 
-    @Rule
-    public JenkinsRule jenkins = new JenkinsRule();
+    private JenkinsRule jenkins;
 
     @Mock
     private GoogleRobotCredentials credentials;
@@ -84,18 +90,9 @@ public class ClassicUploadTest {
         private final MockExecutor executor;
     }
 
-    @Rule
-    public Verifier verifySawAll = new Verifier() {
-        @Override
-        public void verify() {
-            assertTrue(executor.sawAll());
-            assertFalse(executor.sawUnexpected());
-        }
-    };
-
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) throws Exception {
+        jenkins = rule;
 
         when(credentials.getId()).thenReturn(CREDENTIALS_ID);
         when(credentials.getProjectId()).thenReturn(PROJECT_ID);
@@ -124,15 +121,21 @@ public class ClassicUploadTest {
                 bucket, new MockUploadModule(executor), glob, null /* legacy arg */, null /* legacy arg */);
     }
 
+    @AfterEach
+    void afterEach() {
+        assertTrue(executor.sawAll());
+        assertFalse(executor.sawUnexpected());
+    }
+
     @Test
     @WithoutJenkins
-    public void testGetters() {
+    void testGetters() {
         assertEquals(glob, underTest.getPattern());
     }
 
     @Test
     @WithoutJenkins
-    public void testLegacyArgs() {
+    void testLegacyArgs() {
         ClassicUpload legacyVersion =
                 new ClassicUpload(null /* bucket */, new MockUploadModule(executor), null /* glob */, bucket, glob);
         legacyVersion.setSharedPublicly(sharedPublicly);
@@ -146,21 +149,24 @@ public class ClassicUploadTest {
         assertEquals(underTest.getPattern(), legacyVersion.getPattern());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     @WithoutJenkins
-    public void testCheckNullGlob() throws Exception {
-        new ClassicUpload(bucket, new MockUploadModule(executor), null, null /* legacy arg */, null /* legacy arg */);
+    void testCheckNullGlob() {
+        assertThrows(
+                NullPointerException.class,
+                () -> new ClassicUpload(
+                        bucket, new MockUploadModule(executor), null, null /* legacy arg */, null /* legacy arg */));
     }
 
     @Test
-    public void testCheckNullOnNullables() throws Exception {
+    void testCheckNullOnNullables() {
         // The upload should handle null for the other fields.
         new ClassicUpload(bucket, null /* module */, glob, null /* legacy arg */, null /* legacy arg */);
     }
 
     @Test
     @WithoutJenkins
-    public void doCheckGlobTest() throws IOException {
+    void doCheckGlobTest() {
         DescriptorImpl descriptor = new DescriptorImpl();
 
         assertEquals(FormValidation.Kind.OK, descriptor.doCheckPattern("asdf").kind);

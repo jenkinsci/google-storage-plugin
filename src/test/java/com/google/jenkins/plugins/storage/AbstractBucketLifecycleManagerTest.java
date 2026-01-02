@@ -16,10 +16,11 @@
 package com.google.jenkins.plugins.storage;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -34,27 +35,34 @@ import com.google.jenkins.plugins.util.ConflictException;
 import com.google.jenkins.plugins.util.ForbiddenException;
 import com.google.jenkins.plugins.util.MockExecutor;
 import com.google.jenkins.plugins.util.NotFoundException;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
+import hudson.FilePath;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.Verifier;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.WithoutJenkins;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Tests for {@link AbstractBucketLifecycleManager}. */
-public class AbstractBucketLifecycleManagerTest {
+@WithJenkins
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class AbstractBucketLifecycleManagerTest {
 
-    @Rule
-    public JenkinsRule jenkins = new JenkinsRule();
+    private JenkinsRule jenkins;
 
     @Mock
     private GoogleRobotCredentials credentials;
@@ -67,24 +75,18 @@ public class AbstractBucketLifecycleManagerTest {
     private NotFoundException notFoundException;
 
     private Predicate<Storage.Buckets.Insert> checkBucketName(final String bucketName) {
-        return new Predicate<Storage.Buckets.Insert>() {
-            @Override
-            public boolean apply(Storage.Buckets.Insert operation) {
-                Bucket bucket = (Bucket) operation.getJsonContent();
-                assertEquals(bucketName, bucket.getName());
-                return true;
-            }
+        return operation -> {
+            Bucket bucket = (Bucket) operation.getJsonContent();
+            assertEquals(bucketName, bucket.getName());
+            return true;
         };
     }
 
     private Predicate<Storage.Buckets.Update> checkSameBucket(final Bucket theBucket) {
-        return new Predicate<Storage.Buckets.Update>() {
-            @Override
-            public boolean apply(Storage.Buckets.Update operation) {
-                Bucket bucket = (Bucket) operation.getJsonContent();
-                assertSame(bucket, theBucket);
-                return true;
-            }
+        return operation -> {
+            Bucket bucket = (Bucket) operation.getJsonContent();
+            assertSame(bucket, theBucket);
+            return true;
         };
     }
 
@@ -112,15 +114,6 @@ public class AbstractBucketLifecycleManagerTest {
         private final MockExecutor executor;
         private final int retryCount;
     }
-
-    @Rule
-    public Verifier verifySawAll = new Verifier() {
-        @Override
-        public void verify() {
-            assertTrue(executor.sawAll());
-            assertFalse(executor.sawUnexpected());
-        }
-    };
 
     private static class FakeUpload extends AbstractBucketLifecycleManager {
 
@@ -161,6 +154,8 @@ public class AbstractBucketLifecycleManagerTest {
                 super(FakeUpload.class);
             }
 
+            @NonNull
+            @Override
             public String getDisplayName() {
                 return "asdf";
             }
@@ -170,9 +165,9 @@ public class AbstractBucketLifecycleManagerTest {
     private FreeStyleProject project;
     private FreeStyleBuild build;
 
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) throws Exception {
+        jenkins = rule;
 
         when(credentials.getId()).thenReturn(CREDENTIALS_ID);
         when(credentials.getProjectId()).thenReturn(PROJECT_ID);
@@ -200,9 +195,15 @@ public class AbstractBucketLifecycleManagerTest {
         forbiddenException = new ForbiddenException();
     }
 
+    @AfterEach
+    void afterEach() {
+        assertTrue(executor.sawAll());
+        assertFalse(executor.sawUnexpected());
+    }
+
     @Test
     @WithoutJenkins
-    public void testGetters() {
+    void testGetters() {
         FakeUpload underTest =
                 new FakeUpload(BUCKET_URI, new MockUploadModule(executor), FAKE_DETAILS, null /* bucket */);
 
@@ -211,7 +212,7 @@ public class AbstractBucketLifecycleManagerTest {
     }
 
     @Test
-    public void testFailingBucketCheck() throws Exception {
+    void testFailingBucketCheck() throws Exception {
         final Bucket bucket = new Bucket().setName(BUCKET_NAME);
 
         FakeUpload underTest = new FakeUpload(BUCKET_URI, new MockUploadModule(executor), FAKE_DETAILS, bucket);
@@ -224,7 +225,7 @@ public class AbstractBucketLifecycleManagerTest {
     }
 
     @Test
-    public void testPassingBucketCheck() throws Exception {
+    void testPassingBucketCheck() throws Exception {
         final Bucket bucket = new Bucket().setName(BUCKET_NAME);
 
         FakeUpload underTest = new FakeUpload(
@@ -237,7 +238,7 @@ public class AbstractBucketLifecycleManagerTest {
     }
 
     @Test
-    public void testPassingBucketCheckAfterNotFoundThenConflict() throws Exception {
+    void testPassingBucketCheckAfterNotFoundThenConflict() throws Exception {
         final Bucket bucket = new Bucket().setName(BUCKET_NAME);
 
         FakeUpload underTest = new FakeUpload(BUCKET_URI, new MockUploadModule(executor), FAKE_DETAILS, bucket);
@@ -251,28 +252,28 @@ public class AbstractBucketLifecycleManagerTest {
         underTest.perform(CREDENTIALS_ID, build, build.getWorkspace(), TaskListener.NULL);
     }
 
-    @Test(expected = UploadException.class)
-    public void testRandomErrorExecutor() throws Exception {
+    @Test
+    void testRandomErrorExecutor() {
         FakeUpload underTest = new FakeUpload(
                 BUCKET_URI, new MockUploadModule(executor), FAKE_DETAILS, null /* pass the bucket check */);
-
         executor.throwWhen(Storage.Buckets.Get.class, conflictException);
-
-        underTest.perform(CREDENTIALS_ID, build, build.getWorkspace(), TaskListener.NULL);
-    }
-
-    @Test(expected = UploadException.class)
-    public void testRandomErrorIOException() throws Exception {
-        FakeUpload underTest = new FakeUpload(
-                BUCKET_URI, new MockUploadModule(executor), FAKE_DETAILS, null /* pass the bucket check */);
-
-        executor.throwWhen(Storage.Buckets.Get.class, new IOException("test"));
-
-        underTest.perform(CREDENTIALS_ID, build, build.getWorkspace(), TaskListener.NULL);
+        FilePath workspace = build.getWorkspace();
+        TaskListener x = TaskListener.NULL;
+        assertThrows(UploadException.class, () -> underTest.perform(CREDENTIALS_ID, build, workspace, x));
     }
 
     @Test
-    public void testCustomBucketNameValidation() throws Exception {
+    void testRandomErrorIOException() {
+        FakeUpload underTest = new FakeUpload(
+                BUCKET_URI, new MockUploadModule(executor), FAKE_DETAILS, null /* pass the bucket check */);
+        executor.throwWhen(Storage.Buckets.Get.class, new IOException("test"));
+        FilePath workspace = build.getWorkspace();
+        TaskListener x = TaskListener.NULL;
+        assertThrows(UploadException.class, () -> underTest.perform(CREDENTIALS_ID, build, workspace, x));
+    }
+
+    @Test
+    void testCustomBucketNameValidation() throws Exception {
         FakeUpload underTest = new FakeUpload(
                 BUCKET_URI, new MockUploadModule(executor), FAKE_DETAILS, null /* pass the bucket check */);
 

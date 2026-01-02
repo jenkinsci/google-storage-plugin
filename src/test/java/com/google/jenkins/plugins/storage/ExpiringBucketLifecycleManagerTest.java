@@ -15,10 +15,10 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -38,19 +38,25 @@ import com.google.jenkins.plugins.util.NotFoundException;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.TaskListener;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.rules.Verifier;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.WithoutJenkins;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Tests for {@link ExpiringBucketLifecycleManager}. */
-public class ExpiringBucketLifecycleManagerTest {
+@WithJenkins
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ExpiringBucketLifecycleManagerTest {
 
-    @org.junit.Rule
-    public JenkinsRule jenkins = new JenkinsRule();
+    private JenkinsRule jenkins;
 
     @Mock
     private GoogleRobotCredentials credentials;
@@ -65,15 +71,12 @@ public class ExpiringBucketLifecycleManagerTest {
     private NotFoundException notFoundException;
 
     private Predicate<Storage.Buckets.Update> checkHasOneRuleLifecycle() {
-        return new Predicate<Storage.Buckets.Update>() {
-            @Override
-            public boolean apply(Storage.Buckets.Update operation) {
-                Bucket bucket = (Bucket) operation.getJsonContent();
-                assertNotNull(bucket.getLifecycle());
-                assertNotNull(bucket.getLifecycle().getRule());
-                assertEquals(1, bucket.getLifecycle().getRule().size());
-                return true;
-            }
+        return operation -> {
+            Bucket bucket = (Bucket) operation.getJsonContent();
+            assertNotNull(bucket.getLifecycle());
+            assertNotNull(bucket.getLifecycle().getRule());
+            assertEquals(1, bucket.getLifecycle().getRule().size());
+            return true;
         };
     }
 
@@ -90,21 +93,12 @@ public class ExpiringBucketLifecycleManagerTest {
         private final MockExecutor executor;
     }
 
-    @org.junit.Rule
-    public Verifier verifySawAll = new Verifier() {
-        @Override
-        public void verify() {
-            assertTrue(executor.sawAll());
-            assertFalse(executor.sawUnexpected());
-        }
-    };
-
     private FreeStyleProject project;
     private FreeStyleBuild build;
 
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) throws Exception {
+        jenkins = rule;
 
         when(credentials.getId()).thenReturn(CREDENTIALS_ID);
         when(credentials.getProjectId()).thenReturn(PROJECT_ID);
@@ -135,16 +129,22 @@ public class ExpiringBucketLifecycleManagerTest {
                 BUCKET_URI, new MockUploadModule(executor), TTL, null /* legacy arg */, null /* legacy arg */);
     }
 
+    @AfterEach
+    void afterEach() {
+        assertTrue(executor.sawAll());
+        assertFalse(executor.sawUnexpected());
+    }
+
     @Test
     @WithoutJenkins
-    public void testGetters() {
+    void testGetters() {
         assertEquals(BUCKET_URI, underTest.getBucket());
         assertEquals(TTL, underTest.getTtl());
     }
 
     @Test
     @WithoutJenkins
-    public void testGettersWithLegacy() {
+    void testGettersWithLegacy() {
         underTest = new ExpiringBucketLifecycleManager(
                 null /* bucket */, new MockUploadModule(executor), null /* ttl */, BUCKET_URI, TTL);
         assertEquals(BUCKET_URI, underTest.getBucket());
@@ -152,7 +152,7 @@ public class ExpiringBucketLifecycleManagerTest {
     }
 
     @Test
-    public void testFailingCheckWithAnnotation() throws Exception {
+    void testFailingCheckWithAnnotation() throws Exception {
         final Bucket bucket = new Bucket().setName(BUCKET_NAME);
 
         // A get that returns a bucket should trigger a check/decorate/update
@@ -163,7 +163,7 @@ public class ExpiringBucketLifecycleManagerTest {
     }
 
     @Test
-    public void testBadTTLWithUpdate() throws Exception {
+    void testBadTTLWithUpdate() throws Exception {
         final Bucket bucket = new Bucket()
                 .setName(BUCKET_NAME)
                 .setLifecycle(new Bucket.Lifecycle()
@@ -179,7 +179,7 @@ public class ExpiringBucketLifecycleManagerTest {
     }
 
     @Test
-    public void testReplaceComplexLifecycle() throws Exception {
+    void testReplaceComplexLifecycle() throws Exception {
         final Rule expireGoodTTL = new Rule()
                 .setCondition(new Rule.Condition().setAge(TTL))
                 .setAction(new Rule.Action().setType("Delete"));
@@ -199,7 +199,7 @@ public class ExpiringBucketLifecycleManagerTest {
     }
 
     @Test
-    public void testBadAction() throws Exception {
+    void testBadAction() throws Exception {
         final Bucket bucket = new Bucket()
                 .setName(BUCKET_NAME)
                 .setLifecycle(new Bucket.Lifecycle()
@@ -215,7 +215,7 @@ public class ExpiringBucketLifecycleManagerTest {
     }
 
     @Test
-    public void testBadCondition() throws Exception {
+    void testBadCondition() throws Exception {
         final Bucket bucket = new Bucket()
                 .setName(BUCKET_NAME)
                 .setLifecycle(new Bucket.Lifecycle()
@@ -231,7 +231,7 @@ public class ExpiringBucketLifecycleManagerTest {
     }
 
     @Test
-    public void testBadComplexCondition() throws Exception {
+    void testBadComplexCondition() throws Exception {
         final Bucket bucket = new Bucket()
                 .setName(BUCKET_NAME)
                 .setLifecycle(new Bucket.Lifecycle()
@@ -247,7 +247,7 @@ public class ExpiringBucketLifecycleManagerTest {
     }
 
     @Test
-    public void testPassingCheck() throws Exception {
+    void testPassingCheck() throws Exception {
         final Bucket bucket = new Bucket()
                 .setName(BUCKET_NAME)
                 .setLifecycle(new Bucket.Lifecycle()

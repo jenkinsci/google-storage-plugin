@@ -15,15 +15,15 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Tests for {@link HttpHeaders}. */
-public class HttpHeadersTest {
+class HttpHeadersTest {
 
     @Test
-    public void testGetContentDisposition_ascii() {
+    void testGetContentDisposition_ascii() {
         assertEquals(
                 "attachment; filename=\"myapp.war\"; filename*=UTF-8''myapp.war",
                 HttpHeaders.getContentDisposition("myapp.war", false));
@@ -34,42 +34,42 @@ public class HttpHeadersTest {
     }
 
     @Test
-    public void testGetContentDisposition_asciiInline() {
+    void testGetContentDisposition_asciiInline() {
         assertEquals(
                 "inline; filename=\"build-log.txt\"; filename*=UTF-8''build-log.txt",
                 HttpHeaders.getContentDisposition("build-log.txt", true));
     }
 
     @Test
-    public void testGetContentDisposition_unicodeBmp() {
+    void testGetContentDisposition_unicodeBmp() {
         assertEquals(
                 "attachment; filename=\"snowman _.txt\"; " + "filename*=UTF-8''snowman%20%E2%98%83.txt",
                 HttpHeaders.getContentDisposition("snowman ☃.txt", false));
     }
 
     @Test
-    public void testGetContentDisposition_unicodeNonBmp() {
+    void testGetContentDisposition_unicodeNonBmp() {
         assertEquals(
                 "attachment; filename=\"_.zip\"; filename*=UTF-8''%F0%9D%92%9E.zip",
                 HttpHeaders.getContentDisposition("𝒞.zip", false));
     }
 
     @Test
-    public void testGetContentDisposition_rfc2616Escapes() {
+    void testGetContentDisposition_rfc2616Escapes() {
         assertEquals(
                 "attachment; filename=\"-\\\\-\\\"-\"; filename*=UTF-8''-%5C-%22-",
                 HttpHeaders.getContentDisposition("-\\-\"-", false));
     }
 
     @Test
-    public void testGetContentDisposition_rfc5987IdentitySymbols() {
+    void testGetContentDisposition_rfc5987IdentitySymbols() {
         assertEquals(
                 "attachment; filename=\"!#$&+-.^_`|~\"; filename*=UTF-8''!#$&+-.^_`|~",
                 HttpHeaders.getContentDisposition("!#$&+-.^_`|~", false));
     }
 
     @Test
-    public void testGetContentDisposition_rfc5987PercentEncodedSymbols() {
+    void testGetContentDisposition_rfc5987PercentEncodedSymbols() {
         assertEquals(
                 "attachment; filename=\"@%*()=[]{}\\\\:;\\\"'<>,/?\"; "
                         + "filename*=UTF-8''%40%25%2A%28%29%3D%5B%5D%7B%7D%5C%3A%3B%22%27"
