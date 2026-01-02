@@ -15,7 +15,7 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -31,19 +31,23 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
-import java.io.IOException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit test for {@link StdoutUpload} and friends. */
-public class StdoutUploadTest {
+@WithJenkins
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class StdoutUploadTest {
 
-    @Rule
-    public JenkinsRule jenkins = new JenkinsRule();
+    private JenkinsRule jenkins;
 
     @Mock
     private GoogleRobotCredentials credentials;
@@ -57,9 +61,9 @@ public class StdoutUploadTest {
 
     private NotFoundException notFoundException;
 
-    @Before
-    public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) throws Exception {
+        jenkins = rule;
 
         when(credentials.getId()).thenReturn(CREDENTIALS_ID);
         when(credentials.getProjectId()).thenReturn(PROJECT_ID);
@@ -85,7 +89,7 @@ public class StdoutUploadTest {
     }
 
     @Test
-    public void doCheckLogNameTest() throws IOException {
+    void doCheckLogNameTest() {
         DescriptorImpl descriptor = new DescriptorImpl();
 
         assertEquals(FormValidation.Kind.OK, descriptor.doCheckLogName("asdf").kind);
@@ -98,7 +102,7 @@ public class StdoutUploadTest {
     }
 
     @Test
-    public void doCheckLogNameExpansion() throws Exception {
+    void doCheckLogNameExpansion() throws Exception {
         StdoutUpload underTest =
                 new StdoutUpload(BUCKET_URI, new MockUploadModule(executor), "build.$BUILD_NUMBER.log", null);
 

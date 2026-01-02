@@ -15,27 +15,28 @@
  */
 package com.google.jenkins.plugins.storage.reports;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import hudson.model.Actionable;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit test for {@link AbstractGcsUploadReport}. */
-public class AbstractGcsUploadReportTest {
+@ExtendWith(MockitoExtension.class)
+class AbstractGcsUploadReportTest {
 
     @Mock
     private Actionable parent;
 
     private AbstractGcsUploadReport underTest;
 
-    @Before
-    public void setup() {
-        MockitoAnnotations.initMocks(this);
+    @BeforeEach
+    void beforeEach() {
         underTest = new AbstractGcsUploadReport(parent) {
             @Override
             public Set<String> getStorageObjects() {
@@ -55,7 +56,7 @@ public class AbstractGcsUploadReportTest {
     }
 
     @Test
-    public void getters() {
+    void getters() {
         assertEquals(parent, underTest.getParent());
         assertEquals(Messages.AbstractGcsUploadReport_DisplayName(), underTest.getDisplayName());
         assertNotNull(underTest.getIconFileName());

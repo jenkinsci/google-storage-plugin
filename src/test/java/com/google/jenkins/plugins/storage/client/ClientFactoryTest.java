@@ -15,8 +15,8 @@
  */
 package com.google.jenkins.plugins.storage.client;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
@@ -28,21 +28,27 @@ import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredent
 import com.google.jenkins.plugins.credentials.oauth.JsonServiceAccountConfig;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 /** Tests {@link ClientFactory}. */
-public class ClientFactoryTest {
-    public static final String ACCOUNT_ID = "test-account-id";
-    public static final byte[] PK_BYTES =
+@WithJenkins
+class ClientFactoryTest {
+    private static final String ACCOUNT_ID = "test-account-id";
+    private static final byte[] PK_BYTES =
             "{\"client_email\": \"example@example.com\"}".getBytes(StandardCharsets.UTF_8);
 
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+    private JenkinsRule r;
+
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) {
+        r = rule;
+    }
 
     @Test
-    public void defaultTransport() throws Exception {
+    void defaultTransport() throws Exception {
         final String credentialId = "my-google-credential";
 
         SecretBytes bytes = SecretBytes.fromBytes(PK_BYTES);

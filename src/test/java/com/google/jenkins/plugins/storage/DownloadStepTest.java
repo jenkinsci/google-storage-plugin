@@ -15,11 +15,11 @@
  */
 package com.google.jenkins.plugins.storage;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -35,29 +35,36 @@ import hudson.AbortException;
 import hudson.FilePath;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
-import hudson.util.IOUtils;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.WithoutJenkins;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Tests for {@link AbstractUpload}. */
-public class DownloadStepTest {
+@WithJenkins
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class DownloadStepTest {
 
-    @Rule
-    public JenkinsRule jenkins = new JenkinsRule();
+    private JenkinsRule jenkins;
 
-    @Rule
-    public TemporaryFolder tempDir = new TemporaryFolder();
+    @TempDir
+    private File tempDir;
 
     @Mock
     private GoogleRobotCredentials credentials;
@@ -66,9 +73,9 @@ public class DownloadStepTest {
 
     private final MockExecutor executor = new MockExecutor();
 
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) throws Exception {
+        jenkins = rule;
 
         when(credentials.getId()).thenReturn(CREDENTIALS_ID);
         when(credentials.getProjectId()).thenReturn(PROJECT_ID);
@@ -91,7 +98,7 @@ public class DownloadStepTest {
     }
 
     @Test
-    public void testRoundtrip() throws Exception {
+    void testRoundtrip() throws Exception {
         DownloadStep step = new DownloadStep(CREDENTIALS_ID, "bucket", "Dir", new MockUploadModule(executor));
         ConfigurationRoundTripTest(step);
 
@@ -100,7 +107,7 @@ public class DownloadStepTest {
     }
 
     @Test
-    public void testBuild() throws Exception {
+    void testBuild() throws Exception {
         MockUploadModule module = new MockUploadModule(executor);
         DownloadStep step = new DownloadStep(CREDENTIALS_ID, "gs://bucket/path/to/object.txt", "", module);
         FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
@@ -111,7 +118,7 @@ public class DownloadStepTest {
         objToGet.setName("path/to/obj.txt");
         executor.when(Storage.Objects.Get.class, objToGet, MockUploadModule.checkGetObject("path/to/object.txt"));
 
-        module.addNextMedia(IOUtils.toInputStream("test", "UTF-8"));
+        module.addNextMedia(IOUtils.toInputStream("test", StandardCharsets.UTF_8));
 
         project.getBuildersList().add(step);
         FreeStyleBuild build = jenkins.buildAndAssertSuccess(project);
@@ -122,7 +129,7 @@ public class DownloadStepTest {
     }
 
     @Test
-    public void testBuildPrefix() throws Exception {
+    void testBuildPrefix() throws Exception {
         MockUploadModule module = new MockUploadModule(executor);
         DownloadStep step = new DownloadStep(CREDENTIALS_ID, "gs://bucket/path/to/object.txt", "subPath", module);
         step.setPathPrefix("path/to/");
@@ -134,7 +141,7 @@ public class DownloadStepTest {
         objToGet.setName("path/to/obj.txt");
         executor.when(Storage.Objects.Get.class, objToGet, MockUploadModule.checkGetObject("path/to/object.txt"));
 
-        module.addNextMedia(IOUtils.toInputStream("test", "UTF-8"));
+        module.addNextMedia(IOUtils.toInputStream("test", StandardCharsets.UTF_8));
 
         project.getBuildersList().add(step);
         FreeStyleBuild build = jenkins.buildAndAssertSuccess(project);
@@ -145,7 +152,7 @@ public class DownloadStepTest {
     }
 
     @Test
-    public void testBuildMoreComplex() throws Exception {
+    void testBuildMoreComplex() throws Exception {
         MockUploadModule module = new MockUploadModule(executor);
         DownloadStep step = new DownloadStep(
                 CREDENTIALS_ID, "gs://bucket/download/$BUILD_ID/path/$BUILD_ID/test_$BUILD_ID.txt", "output", module);
@@ -159,7 +166,7 @@ public class DownloadStepTest {
         executor.when(
                 Storage.Objects.Get.class, objToGet, MockUploadModule.checkGetObject("download/1/path/1/test_1.txt"));
 
-        module.addNextMedia(IOUtils.toInputStream("contents 1", "UTF-8"));
+        module.addNextMedia(IOUtils.toInputStream("contents 1", StandardCharsets.UTF_8));
 
         project.getBuildersList().add(step);
         FreeStyleBuild build = jenkins.buildAndAssertSuccess(project);
@@ -181,15 +188,15 @@ public class DownloadStepTest {
 
     @Test
     @WithoutJenkins
-    public void testSplit() throws Exception {
-        assertArrayEquals(DownloadStep.split("a"), new String[] {"a"});
+    void testSplit() throws Exception {
+        assertArrayEquals(new String[] {"a"}, DownloadStep.split("a"));
         assertArrayEquals(
-                DownloadStep.split("asdjfkl2358/9/8024@#$@%^$#^#"), new String[] {"asdjfkl2358/9/8024@#$@%^$#^#"});
+                new String[] {"asdjfkl2358/9/8024@#$@%^$#^#"}, DownloadStep.split("asdjfkl2358/9/8024@#$@%^$#^#"));
 
-        assertArrayEquals(DownloadStep.split("a*"), new String[] {"a", ""});
-        assertArrayEquals(DownloadStep.split("*"), new String[] {"", ""});
+        assertArrayEquals(new String[] {"a", ""}, DownloadStep.split("a*"));
+        assertArrayEquals(new String[] {"", ""}, DownloadStep.split("*"));
 
-        assertArrayEquals(DownloadStep.split("pre-*-post"), new String[] {"pre-", "-post"});
+        assertArrayEquals(new String[] {"pre-", "-post"}, DownloadStep.split("pre-*-post"));
 
         // Not yet supported
         checkSplitException("**");
@@ -206,14 +213,14 @@ public class DownloadStepTest {
      */
     private Objects createObjects(String prefix, List<String> names) {
         Objects o = new Objects();
-        List<StorageObject> items = new ArrayList<StorageObject>();
-        Set<String> prefixes = new HashSet<String>();
+        List<StorageObject> items = new ArrayList<>();
+        Set<String> prefixes = new HashSet<>();
         for (String s : names) {
             if (!s.startsWith(prefix)) {
                 continue;
             }
 
-            String subdirectory[] = s.substring(prefix.length()).split("/");
+            String[] subdirectory = s.substring(prefix.length()).split("/");
             if (subdirectory.length > 1) {
                 // This object is nested deeper. Add a subdirectory
                 prefixes.add(prefix + subdirectory[0]);
@@ -226,7 +233,7 @@ public class DownloadStepTest {
             }
         }
         o.setItems(items);
-        o.setPrefixes(new ArrayList<String>(prefixes));
+        o.setPrefixes(new ArrayList<>(prefixes));
         return o;
     }
 
@@ -236,7 +243,7 @@ public class DownloadStepTest {
 
         FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
 
-        final List<String> objectNames = new ArrayList<String>();
+        final List<String> objectNames = new ArrayList<>();
         objectNames.addAll(Arrays.asList(matches));
         objectNames.addAll(Arrays.asList(notMatches));
 
@@ -255,7 +262,7 @@ public class DownloadStepTest {
             // ensure module has enough streams. Since the order in which they
             // will be queries is undefined, we will not attempt to verify
             // which one belongs to which.
-            module.addNextMedia(IOUtils.toInputStream("contents 1", "UTF-8"));
+            module.addNextMedia(IOUtils.toInputStream("contents 1", StandardCharsets.UTF_8));
         }
 
         // Stub out the response from the Cloud
@@ -271,12 +278,12 @@ public class DownloadStepTest {
         }
         for (String s : notMatches) {
             FilePath result = build.getWorkspace().withSuffix("/" + s);
-            assertFalse("File exists but shouldn't:" + result, result.exists());
+            assertFalse(result.exists(), "File exists but shouldn't:" + result);
         }
     }
 
     @Test
-    public void testBuildWildcards() throws Exception {
+    void testBuildWildcards() throws Exception {
         tryWildcards(
                 "download/log_*.txt",
                 new String[] {
@@ -288,12 +295,12 @@ public class DownloadStepTest {
     }
 
     @Test
-    public void testBuildWildcardsOnly() throws Exception {
+    void testBuildWildcardsOnly() throws Exception {
         tryWildcards("*", new String[] {"a", "b.txt", "l_a_b_d_f"}, new String[] {"a/b.txt", "/b"});
     }
 
     @Test
-    public void testBuildWildcardEnd() throws Exception {
+    void testBuildWildcardEnd() throws Exception {
         tryWildcards("a/*", new String[] {"a/a.txt", "a/b.txt", "a/log"}, new String[] {"a/b/c.txt"});
     }
 

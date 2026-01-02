@@ -16,7 +16,7 @@
 
 package com.google.jenkins.plugins.storage.integration;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
@@ -40,8 +40,8 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 /** Provides a library of utility functions for integration tests. */
 public class ITUtil {
-    private static String projectId = System.getenv("GOOGLE_PROJECT_ID");
-    private static String bucket = System.getenv("GOOGLE_BUCKET");
+    private static final String PROJECT_ID = System.getenv("GOOGLE_PROJECT_ID");
+    private static final String BUCKET = System.getenv("GOOGLE_BUCKET");
 
     // DEV MEMO:
     // In previous versions of google-oauth-plugin, the credentialId was actually the projectId,
@@ -70,7 +70,7 @@ public class ITUtil {
      * @return The contents of the loaded resource.
      * @throws IOException If an error occurred during loading.
      */
-    static String loadResource(Class testClass, String name) throws IOException {
+    static String loadResource(Class<?> testClass, String name) throws IOException {
         return new String(IOUtils.toByteArray(testClass.getResourceAsStream(name)));
     }
 
@@ -83,14 +83,14 @@ public class ITUtil {
      */
     static void dumpLog(Logger logger, Run<?, ?> run) throws IOException {
         BufferedReader reader = new BufferedReader(run.getLogReader());
-        String line = null;
+        String line;
         while ((line = reader.readLine()) != null) {
             logger.info(line);
         }
     }
 
     static String getBucket() {
-        return bucket;
+        return BUCKET;
     }
 
     /**
@@ -102,15 +102,15 @@ public class ITUtil {
      * @throws Exception If there was an issue initializing or storing credentials.
      */
     static EnvVars initializePipelineITEnvironment(String pattern, JenkinsRule jenkinsRule) throws Exception {
-        assertNotNull("GOOGLE_PROJECT_ID env var must be set", projectId);
+        assertNotNull(PROJECT_ID, "GOOGLE_PROJECT_ID env var must be set");
         // This bucket is only used for DownloadStepPipelineIT to download objects from.
-        assertNotNull("GOOGLE_BUCKET env var must be set", bucket);
+        assertNotNull(BUCKET, "GOOGLE_BUCKET env var must be set");
         String serviceAccountKeyJson = System.getenv("GOOGLE_CREDENTIALS");
-        assertNotNull("GOOGLE_CREDENTIALS env var must be set", serviceAccountKeyJson);
+        assertNotNull(serviceAccountKeyJson, "GOOGLE_CREDENTIALS env var must be set");
         Preconditions.checkArgument(!Strings.isNullOrEmpty(pattern));
 
         if (credentialId == null || credentialId.isEmpty()) {
-            credentialId = projectId;
+            credentialId = PROJECT_ID;
         }
 
         SecretBytes secretBytes = SecretBytes.fromBytes(serviceAccountKeyJson.getBytes(StandardCharsets.UTF_8));
@@ -118,7 +118,7 @@ public class ITUtil {
         sac.setSecretJsonKey(secretBytes);
 
         GoogleRobotPrivateKeyCredentials c =
-                new GoogleRobotPrivateKeyCredentials(CredentialsScope.GLOBAL, credentialId, projectId, sac, null);
+                new GoogleRobotPrivateKeyCredentials(CredentialsScope.GLOBAL, credentialId, PROJECT_ID, sac, null);
         CredentialsStore store = new SystemCredentialsProvider.ProviderImpl().getStore(jenkinsRule.jenkins);
         assertNotNull(store);
         store.addCredentials(Domain.global(), c);
@@ -126,7 +126,7 @@ public class ITUtil {
         EnvironmentVariablesNodeProperty prop = new EnvironmentVariablesNodeProperty();
         EnvVars envVars = prop.getEnvVars();
         envVars.put("CREDENTIALS_ID", credentialId);
-        envVars.put("BUCKET", bucket);
+        envVars.put("BUCKET", BUCKET);
         envVars.put("PATTERN", pattern);
         jenkinsRule.jenkins.getGlobalNodeProperties().add(prop);
         return envVars;

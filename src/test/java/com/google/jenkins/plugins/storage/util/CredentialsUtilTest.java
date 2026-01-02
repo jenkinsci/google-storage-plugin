@@ -15,38 +15,45 @@
  */
 package com.google.jenkins.plugins.storage.util;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.google.common.collect.ImmutableList;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotCredentials;
 import com.google.jenkins.plugins.credentials.oauth.GoogleRobotPrivateKeyCredentials;
 import com.google.jenkins.plugins.credentials.oauth.JsonServiceAccountConfig;
 import hudson.AbortException;
 import java.nio.charset.StandardCharsets;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class CredentialsUtilTest {
+@WithJenkins
+class CredentialsUtilTest {
     private static final String TEST_CREDENTIALS_ID = "test-credentials-id";
     private static final String TEST_INVALID_CREDENTIALS_ID = "test-invalid-credentials-id";
 
-    @ClassRule
-    public static JenkinsRule r = new JenkinsRule();
+    private static JenkinsRule r;
 
-    @Test(expected = AbortException.class)
-    public void testGetRobotCredentialsInvalidCredentialsIdAbortException() throws AbortException {
-        CredentialsUtil.getRobotCredentials(
-                r.jenkins, ImmutableList.<DomainRequirement>of(), TEST_INVALID_CREDENTIALS_ID);
+    @BeforeAll
+    static void beforeAll(JenkinsRule rule) {
+        r = rule;
     }
 
-    @Test(expected = GoogleRobotPrivateKeyCredentials.PrivateKeyNotSetException.class)
-    public void testGetGoogleCredentialAbortException() throws Exception {
+    @Test
+    void testGetRobotCredentialsInvalidCredentialsIdAbortException() {
+        assertThrows(
+                AbortException.class,
+                () -> CredentialsUtil.getRobotCredentials(r.jenkins, ImmutableList.of(), TEST_INVALID_CREDENTIALS_ID));
+    }
+
+    @Test
+    void testGetGoogleCredentialAbortException() throws Exception {
         SecretBytes bytes =
                 SecretBytes.fromBytes("{\"client_email\": \"example@example.com\"}".getBytes(StandardCharsets.UTF_8));
         JsonServiceAccountConfig serviceAccountConfig = new JsonServiceAccountConfig();
@@ -56,26 +63,36 @@ public class CredentialsUtilTest {
                 new GoogleRobotPrivateKeyCredentials(TEST_INVALID_CREDENTIALS_ID, serviceAccountConfig, null);
         CredentialsStore store = new SystemCredentialsProvider.ProviderImpl().getStore(r.jenkins);
         store.addCredentials(Domain.global(), robotCreds);
-        CredentialsUtil.getGoogleCredential(robotCreds);
+        assertThrows(
+                GoogleRobotPrivateKeyCredentials.PrivateKeyNotSetException.class,
+                () -> CredentialsUtil.getGoogleCredential(robotCreds));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testGetRobotCredentialsWithEmptyItemGroup() throws AbortException {
-        CredentialsUtil.getRobotCredentials(null, ImmutableList.<DomainRequirement>of(), TEST_CREDENTIALS_ID);
+    @Test
+    void testGetRobotCredentialsWithEmptyItemGroup() {
+        assertThrows(
+                NullPointerException.class,
+                () -> CredentialsUtil.getRobotCredentials(null, ImmutableList.of(), TEST_CREDENTIALS_ID));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testGetRobotCredentialsWithEmptyDomainRequirements() throws AbortException {
-        CredentialsUtil.getRobotCredentials(r.jenkins, null, TEST_CREDENTIALS_ID);
+    @Test
+    void testGetRobotCredentialsWithEmptyDomainRequirements() {
+        assertThrows(
+                NullPointerException.class,
+                () -> CredentialsUtil.getRobotCredentials(r.jenkins, null, TEST_CREDENTIALS_ID));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetRobotCredentialsWithNullCredentialsId() throws AbortException {
-        CredentialsUtil.getRobotCredentials(r.jenkins, ImmutableList.<DomainRequirement>of(), null);
+    @Test
+    void testGetRobotCredentialsWithNullCredentialsId() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> CredentialsUtil.getRobotCredentials(r.jenkins, ImmutableList.of(), null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetRobotCredentialsWithEmptyCredentialsId() throws AbortException {
-        CredentialsUtil.getRobotCredentials(r.jenkins, ImmutableList.<DomainRequirement>of(), "");
+    @Test
+    void testGetRobotCredentialsWithEmptyCredentialsId() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> CredentialsUtil.getRobotCredentials(r.jenkins, ImmutableList.of(), ""));
     }
 }

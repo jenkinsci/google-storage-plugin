@@ -21,7 +21,7 @@ import static com.google.jenkins.plugins.storage.integration.ITUtil.formatRandom
 import static com.google.jenkins.plugins.storage.integration.ITUtil.getBucket;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.initializePipelineITEnvironment;
 import static com.google.jenkins.plugins.storage.integration.ITUtil.loadResource;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.google.api.client.http.InputStreamContent;
 import com.google.jenkins.plugins.storage.DownloadStep;
@@ -35,18 +35,18 @@ import java.util.logging.Logger;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 /** Tests the {@link DownloadStep} for use-cases involving the Jenkins Pipeline DSL. */
-public class DownloadStepPipelineIT {
+@WithJenkins
+class DownloadStepPipelineIT {
     private static final Logger LOGGER = Logger.getLogger(DownloadStepPipelineIT.class.getName());
 
-    @ClassRule
-    public static JenkinsRule jenkinsRule = new JenkinsRule();
+    private static JenkinsRule jenkinsRule;
 
     private static String credentialsId;
     private static final String pattern = "downloadstep_test.txt";
@@ -54,10 +54,11 @@ public class DownloadStepPipelineIT {
     private static StorageClient storageClient;
     private static EnvVars envVars;
 
-    @BeforeClass
-    public static void init() throws Exception {
+    @BeforeAll
+    static void beforeAll(JenkinsRule rule) throws Exception {
         LOGGER.info("Initializing DownloadStepPipelineIT");
 
+        jenkinsRule = rule;
         envVars = initializePipelineITEnvironment(pattern, jenkinsRule);
         credentialsId = envVars.get("CREDENTIALS_ID");
         storageClient = new ClientFactory(jenkinsRule.jenkins, credentialsId).storageClient();
@@ -71,7 +72,7 @@ public class DownloadStepPipelineIT {
     }
 
     @Test
-    public void testDownloadStepSuccessful() throws Exception {
+    void testDownloadStepSuccessful() throws Exception {
         String jobName = formatRandomName("test");
         envVars.put("DIR", jobName);
         WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
@@ -83,7 +84,7 @@ public class DownloadStepPipelineIT {
     }
 
     @Test
-    public void testMalformedDownloadStepFailure() throws Exception {
+    void testMalformedDownloadStepFailure() throws Exception {
         String jobName = formatRandomName("test");
         WorkflowJob testProject = jenkinsRule.createProject(WorkflowJob.class, jobName);
         envVars.put("DIR", jobName);
@@ -95,8 +96,8 @@ public class DownloadStepPipelineIT {
         dumpLog(LOGGER, run);
     }
 
-    @AfterClass
-    public static void cleanUp() throws Exception {
+    @AfterAll
+    static void afterAll() throws Exception {
         storageClient.deleteFromBucket(bucket, pattern);
     }
 }

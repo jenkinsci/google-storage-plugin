@@ -16,7 +16,8 @@
 package com.google.jenkins.plugins.storage.util;
 
 import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_UNAUTHORIZED;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.StubHttpResponseException;
@@ -24,18 +25,16 @@ import com.google.jenkins.plugins.storage.util.RetryStorageOperation.Operation;
 import com.google.jenkins.plugins.storage.util.RetryStorageOperation.RepeatOperation;
 import com.google.jenkins.plugins.util.MockExecutor;
 import java.io.IOException;
-import org.junit.Assert;
-import org.junit.Test;
-import org.jvnet.hudson.test.WithoutJenkins;
+import org.junit.jupiter.api.Test;
 
 /** Tests for {@link StorageUtil}. */
-public class RetryStorageOperationTest {
+class RetryStorageOperationTest {
 
     private final MockExecutor executor = new MockExecutor();
 
     // An action that fails the given number of times before succeeding
     // and then counts the number of successes
-    private class FailOperation implements Operation {
+    private static class FailOperation implements Operation {
 
         public int fails;
         public int succeeded;
@@ -55,23 +54,16 @@ public class RetryStorageOperationTest {
     }
 
     @Test
-    @WithoutJenkins
-    public void retryNoBudgetTest() throws Exception {
+    void retryNoBudgetTest() {
         FailOperation action = new FailOperation(1);
-        try {
-            // Fail immediately if there is no retry budget
-            RetryStorageOperation.performRequestWithRetry(executor, action, 1);
-        } catch (IOException e) {
-            assertEquals(0, action.fails);
-            assertEquals(0, action.succeeded);
-            return;
-        }
-        Assert.fail("Expected exception");
+        // Fail immediately if there is no retry budget
+        assertThrows(IOException.class, () -> RetryStorageOperation.performRequestWithRetry(executor, action, 1));
+        assertEquals(0, action.fails);
+        assertEquals(0, action.succeeded);
     }
 
     @Test
-    @WithoutJenkins
-    public void retrySuccessTest() throws Exception {
+    void retrySuccessTest() throws Exception {
         // Succeed if there is enough budget
         FailOperation action = new FailOperation(1);
         RetryStorageOperation.performRequestWithRetry(executor, action, 2);
@@ -80,8 +72,7 @@ public class RetryStorageOperationTest {
     }
 
     @Test
-    @WithoutJenkins
-    public void retryMoreTimesTest() throws Exception {
+    void retryMoreTimesTest() throws Exception {
         // Correctly count retries for larger numbers
         FailOperation action = new FailOperation(1);
         RetryStorageOperation.performRequestWithRetry(executor, action, 10);
@@ -90,23 +81,16 @@ public class RetryStorageOperationTest {
     }
 
     @Test
-    @WithoutJenkins
-    public void retryMoreTimesFailTest() throws Exception {
+    void retryMoreTimesFailTest() {
         FailOperation action = new FailOperation(9);
-        try {
-            // Fail immediately if there is no retry budget
-            RetryStorageOperation.performRequestWithRetry(executor, action, 5);
-        } catch (IOException e) {
-            assertEquals(4, action.fails);
-            assertEquals(0, action.succeeded);
-            return;
-        }
-        Assert.fail("Expected exception");
+        // Fail immediately if there is no retry budget
+        assertThrows(IOException.class, () -> RetryStorageOperation.performRequestWithRetry(executor, action, 5));
+        assertEquals(4, action.fails);
+        assertEquals(0, action.succeeded);
     }
 
     @Test
-    @WithoutJenkins
-    public void retryLostOfBudgetTest() throws Exception {
+    void retryLostOfBudgetTest() throws Exception {
         // Succeed only once even if there is lots of budget
         FailOperation action = new FailOperation(1);
         RetryStorageOperation.performRequestWithRetry(executor, action, 10);
@@ -115,8 +99,7 @@ public class RetryStorageOperationTest {
     }
 
     @Test
-    @WithoutJenkins
-    public void retryInterruptedException() throws Exception {
+    void retryInterruptedException() throws Exception {
         // Interrupted exception is handled as well
         class MixOperation implements Operation {
 
@@ -148,7 +131,7 @@ public class RetryStorageOperationTest {
         assertEquals(1, action.succeeded);
     }
 
-    private class FailingCredentials implements RepeatOperation<NullPointerException> {
+    private static class FailingCredentials implements RepeatOperation<NullPointerException> {
 
         public int credLength;
         public int usesLeft;
@@ -184,8 +167,7 @@ public class RetryStorageOperationTest {
     }
 
     @Test
-    @WithoutJenkins
-    public void credsRetry() throws Exception {
+    void credsRetry() throws Exception {
         // Perform successful retries
         FailingCredentials cr = new FailingCredentials(2, 10);
 
@@ -195,24 +177,17 @@ public class RetryStorageOperationTest {
     }
 
     @Test
-    @WithoutJenkins
-    public void credsNoBudget() throws Exception {
+    void credsNoBudget() {
         // No retry budget quits after first failure (here that's after credentials
         // expire after 2 steps)
         FailingCredentials cr = new FailingCredentials(2, 10);
 
-        try {
-            RetryStorageOperation.performRequestWithReinitCredentials(cr, 0);
-        } catch (IOException e) {
-            assertEquals(8, cr.stepsLeft);
-            return;
-        }
-        Assert.fail("Expected exception");
+        assertThrows(IOException.class, () -> RetryStorageOperation.performRequestWithReinitCredentials(cr, 0));
+        assertEquals(8, cr.stepsLeft);
     }
 
     @Test
-    @WithoutJenkins
-    public void testStuck() throws Exception {
+    void testStuck() {
         // This Operation gets stuck reloading credentials when 5 steps remaining.
         class StuckCreds extends FailingCredentials {
 
@@ -229,12 +204,7 @@ public class RetryStorageOperationTest {
         }
         StuckCreds cr = new StuckCreds(2, 10);
 
-        try {
-            RetryStorageOperation.performRequestWithReinitCredentials(cr, 2);
-        } catch (IOException e) {
-            assertEquals(5, cr.stepsLeft);
-            return;
-        }
-        Assert.fail("Expected exception");
+        assertThrows(IOException.class, () -> RetryStorageOperation.performRequestWithReinitCredentials(cr, 2));
+        assertEquals(5, cr.stepsLeft);
     }
 }
