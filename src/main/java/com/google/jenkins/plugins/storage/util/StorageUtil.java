@@ -41,10 +41,12 @@ public class StorageUtil {
      */
     public static String getRelative(FilePath include, FilePath workspace) throws UploadException {
         LinkedList<String> segments = new LinkedList<String>();
+        String includePath = include.getRemote();
+        include = new FilePath(include.getChannel(), includePath.replace("\\", "/"));
         while (!include.equals(workspace)) {
             segments.push(include.getName());
             include = include.getParent();
-            if (Strings.isNullOrEmpty(include.getName())) {
+            if (include == null || Strings.isNullOrEmpty(include.getName())) {
                 // When we reach "/" we're done either way.
                 break;
             }
