@@ -423,6 +423,11 @@ public class DownloadStep extends Builder implements SimpleBuildStep, Serializab
             Objects objects = executor.execute(list);
             pageToken = objects.getNextPageToken();
 
+            // The response omits items when no objects match the prefix
+            if (objects.getItems() == null) {
+                continue;
+            }
+
             // Collect the items that match the suffix
             for (StorageObject o : objects.getItems()) {
                 if (o.getName().endsWith(bucketPathSuffix)) {
