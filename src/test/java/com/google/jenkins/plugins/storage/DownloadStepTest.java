@@ -297,6 +297,22 @@ public class DownloadStepTest {
         tryWildcards("a/*", new String[] {"a/a.txt", "a/b.txt", "a/log"}, new String[] {"a/b/c.txt"});
     }
 
+    @Test
+    public void testBuildWildcardNoMatches() throws Exception {
+        MockUploadModule module = new MockUploadModule(executor);
+        DownloadStep step = new DownloadStep(CREDENTIALS_ID, "gs://bucket/download/*", "output", module);
+        FreeStyleProject project = jenkins.createFreeStyleProject("testBuild");
+
+        // Cloud Storage omits items from the list response when nothing matches the prefix
+        executor.when(Storage.Objects.List.class, new Objects());
+
+        project.getBuildersList().add(step);
+        FreeStyleBuild build = jenkins.buildAndAssertSuccess(project);
+
+        jenkins.assertLogContains("Found 0 files to download from pattern: gs://bucket/download/*", build);
+        assertFalse(build.getWorkspace().child("output").exists());
+    }
+
     private static final String PROJECT_ID = "foo.com:bar-baz";
     private static final String CREDENTIALS_ID = "bazinga";
 }
